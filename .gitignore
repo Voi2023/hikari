@@ -1,0 +1,7 @@
+.codegraph/
+node_modules/
+*.json
+.env.dev
+.env
+.env.production
+
