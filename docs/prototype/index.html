@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hikari Cafe — Bảng prototype & kiểm thử</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  /* Brand tokens — đồng bộ với shared/brand.css (inline để prototype tự chạy độc lập) */
+  :root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+  .brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+  .card{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);}
+  .muted{color:var(--muted);}
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 64px; }
+  header.top { text-align: center; margin-bottom: 8px; }
+  header.top .brand-logo { font-size: 3rem; line-height: 1; }
+  .lead { text-align: center; color: var(--muted); margin: 4px 0 28px; }
+  h2 { font-size: 1.05rem; margin: 28px 0 12px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; text-decoration: none; color: inherit; }
+  .row:hover { border-color: var(--matcha); }
+  .row .meta { display: flex; align-items: center; gap: 12px; }
+  .num { width: 34px; height: 34px; border-radius: 9px; background: var(--matcha-soft); color: var(--matcha); font-weight: 700; display: grid; place-items: center; font-size: .85rem; }
+  .name { font-weight: 600; }
+  .st { font-size: .75rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .st.ready { background: var(--matcha-soft); color: var(--matcha); }
+  .st.wait { background: #f4f1ea; color: var(--muted); }
+  .disabled { opacity: .6; pointer-events: none; }
+  .note { background: #fff8e6; border: 1px solid #f0e2b8; border-radius: var(--radius); padding: 14px 16px; font-size: .9rem; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand-logo">Hikari</div>
+    <div class="brand-sub">vegetarian cafe</div>
+  </header>
+  <p class="lead">Bảng prototype &amp; kiểm thử · Quận 10, TP.HCM · Zalo Mini App</p>
+
+  <h2>Mini App (khách hàng)</h2>
+  <div class="grid">
+    <a class="card row" href="menu.html">
+      <div class="meta"><span class="num">01</span><span class="name">Menu đồ ăn &amp; nước</span></div>
+      <span class="st ready">🎨 Sẵn sàng duyệt</span>
+    </a>
+    <span class="card row disabled">
+      <div class="meta"><span class="num">02</span><span class="name">Tích điểm khách hàng</span></div>
+      <span class="st wait">Chờ xác nhận</span>
+    </span>
+    <span class="card row disabled">
+      <div class="meta"><span class="num">03</span><span class="name">Phí giao hàng (BE giao hàng)</span></div>
+      <span class="st wait">Chờ xác nhận</span>
+    </span>
+    <span class="card row disabled">
+      <div class="meta"><span class="num">04</span><span class="name">Thanh toán ZaloPay / chuyển khoản</span></div>
+      <span class="st wait">Chờ xác nhận</span>
+    </span>
+    <span class="card row disabled">
+      <div class="meta"><span class="num">05</span><span class="name">Thông báo cho khách (OA/ZNS)</span></div>
+      <span class="st wait">Chờ xác nhận</span>
+    </span>
+  </div>
+
+  <h2>Tích hợp &amp; quản trị</h2>
+  <div class="grid">
+    <span class="card row disabled">
+      <div class="meta"><span class="num">06</span><span class="name">Đẩy đơn lên Sapo</span></div>
+      <span class="st wait">Chờ xác nhận</span>
+    </span>
+    <span class="card row disabled">
+      <div class="meta"><span class="num">07</span><span class="name">Dashboard — đăng nhập 2FA</span></div>
+      <span class="st wait">Chờ xác nhận</span>
+    </span>
+  </div>
+
+  <div class="note">
+    <strong>Trạng thái:</strong> tính năng <strong>Menu</strong> đã có spec + prototype làm mẫu chuẩn.
+    Các tính năng 02–07 sẽ được viết spec + dựng prototype sau khi chốt 4 điểm tích hợp
+    (giao hàng · ZaloPay/chuyển khoản · Sapo · kiểu 2FA). Xem <code>docs/specs/00-tong-quan.md</code>.
+  </div>
+</div>
+</body>
+</html>
