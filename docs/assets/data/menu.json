@@ -1,0 +1,161 @@
+{
+  "_meta": {
+    "restaurant": "Hikari Vegetarian Cafe",
+    "district": "Quận 10, TP.HCM",
+    "currency": "VND",
+    "note": "Dữ liệu trích từ ảnh menu do chủ quán cung cấp. Món mì lấy giá bản mới nhất (ảnh thg 3/2025); đồ uống lấy từ ảnh thg 10/2024. CẦN chủ quán xác nhận lại giá & tình trạng còn/hết trước khi lên production.",
+    "source_images": ["docs/assets/menu/mon-mi-2025-03.jpg", "docs/assets/menu/do-uong-2024-10.jpg"],
+    "last_reviewed": null,
+    "packaging_fee_takeaway": 5000
+  },
+  "categories": [
+    {
+      "id": "signature-noodles",
+      "name": "Mì signature",
+      "name_en": "Signature Noodles",
+      "items": [
+        {
+          "id": "tamago-ramen",
+          "name": "Tamago Ramen",
+          "price": 50000,
+          "desc": "Mì Ramen dùng với nước dùng từ rau củ + sữa hạt",
+          "desc_en": "Ramen noodles with vegetable broth + nut milk",
+          "toppings_included": ["Mì Ramen", "Trứng lòng đào", "Đậu hủ", "Chả chay", "Nấm kim châm chiên", "Cải thìa", "Gừng đỏ"],
+          "spicy": false,
+          "available": true
+        },
+        {
+          "id": "spicy-tomyum",
+          "name": "Spicy Tomyum",
+          "price": 53000,
+          "desc": "Mì Ramen với nước dùng vị Tomyum chua, cay",
+          "desc_en": "Ramen noodles with sour, spicy Tomyum broth",
+          "toppings_included": ["Mì Ramen", "Đậu hủ", "Chả chay", "Bông cải", "Nấm bào ngư"],
+          "spicy": true,
+          "available": true
+        },
+        {
+          "id": "yaki-udon",
+          "name": "Yaki Udon",
+          "price": 55000,
+          "desc": "Mì Udon trộn cùng nước sốt đặc biệt + soup miso rong biển",
+          "desc_en": "Udon noodles mixed with special sauce + seaweed miso soup",
+          "toppings_included": ["Mì Udon", "Da đậu hủ rim", "Chả nấm bào ngư", "Bắp cải luộc", "Cải thìa"],
+          "options": [
+            { "group": "Chọn sốt trộn", "required": true, "choices": ["Sốt Shoyu (Tương)", "Sốt Tomyum"] }
+          ],
+          "spicy": false,
+          "available": true
+        },
+        {
+          "id": "miso-udon",
+          "name": "Miso Udon",
+          "price": 55000,
+          "desc": "Mì Udon với nước dùng rau củ, ngưu bàng chiên và rong biển",
+          "desc_en": "Udon noodles with vegetable broth, fried burdock and seaweed",
+          "toppings_included": ["Mì Udon", "Ngưu bàng chiên", "Rong biển"],
+          "note": "Ngưu bàng là thảo mộc quý, chứa nhiều chất chống oxy hoá, giàu chất xơ & ít calories",
+          "spicy": false,
+          "available": true
+        },
+        {
+          "id": "spicy-shoyu-udon",
+          "name": "Spicy Shoyu Udon",
+          "price": 55000,
+          "desc": "Mì Udon với nước dùng vị tương Nhật, cay dịu",
+          "desc_en": "Udon noodles with mild spicy Japanese soy sauce broth",
+          "toppings_included": ["Mì Udon", "Da đậu hủ rim", "Chả nấm bào ngư", "Bắp cải luộc", "Cải thìa"],
+          "spicy": true,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "build-your-own",
+      "name": "Tô tự chọn",
+      "name_en": "Build Your Own Bowl",
+      "desc": "'Tự chọn' theo cách của riêng bạn — chọn theo 4 bước",
+      "steps": [
+        {
+          "step": 1,
+          "name": "Chọn loại mì",
+          "name_en": "Choose your type of noodles",
+          "choices": [
+            { "id": "byo-mi-ramen", "name": "Mì Ramen", "unit": "1 phần", "price": 15000 },
+            { "id": "byo-mi-udon", "name": "Mì Udon", "unit": "1 phần", "price": 19000 }
+          ]
+        },
+        {
+          "step": 2,
+          "name": "Chọn topping",
+          "name_en": "Add your favourite toppings",
+          "choices": [
+            { "id": "byo-nam-kim-cham", "name": "Nấm kim châm chiên", "unit": "1 miếng", "price": 9000 },
+            { "id": "byo-trung", "name": "Trứng", "unit": "nửa trái", "price": 5000 },
+            { "id": "byo-dau-hu", "name": "Đậu hủ", "unit": "3 miếng", "price": 5000 },
+            { "id": "byo-cha-chay", "name": "Chả chay", "unit": "1 miếng", "price": 5000 },
+            { "id": "byo-nguu-bang", "name": "Ngưu bàng chiên", "unit": "1 miếng", "price": 5000 }
+          ]
+        },
+        {
+          "step": 3,
+          "name": "Chọn loại rau",
+          "name_en": "Pick your type of vegetables",
+          "choices": [
+            { "id": "byo-cai-thia", "name": "Cải thìa luộc", "unit": "1 phần", "price": 3000 },
+            { "id": "byo-bong-cai", "name": "Bông cải luộc", "unit": "1 phần", "price": 4000 },
+            { "id": "byo-nam-bao-ngu", "name": "Nấm bào ngư luộc", "unit": "1 phần", "price": 4000 }
+          ]
+        },
+        {
+          "step": 4,
+          "name": "Chọn nước dùng",
+          "name_en": "Final touch, choose your ideal broth",
+          "choices": [
+            { "id": "byo-nuoc-ramen", "name": "Nước Ramen (Cashew Paitan)", "price_serving": 20000, "price_bowl": 10000 },
+            { "id": "byo-nuoc-tomyum", "name": "Nước Spicy Tomyum", "price_serving": 27000, "price_bowl": 17000 },
+            { "id": "byo-nuoc-miso", "name": "Nước Miso", "price_serving": 17000, "price_bowl": 10000 },
+            { "id": "byo-nuoc-shoyu", "name": "Nước Spicy Shoyu", "price_serving": 22000, "price_bowl": 12000 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coffee",
+      "name": "Cà phê",
+      "name_en": "Coffee",
+      "items": [
+        { "id": "ca-phe-den", "name": "Cà phê đen", "name_en": "Black Coffee", "price": 25000, "available": true },
+        { "id": "ca-phe-sua", "name": "Cà phê sữa", "name_en": "Milk Coffee", "price": 29000, "available": true },
+        { "id": "bac-xiu", "name": "Bạc xỉu", "name_en": "White Coffee", "price": 29000, "available": true },
+        { "id": "ca-phe-muoi-hong", "name": "Cà phê muối hồng", "name_en": "Himalaya Salt Coffee", "price": 29000, "available": true },
+        { "id": "ca-phe-hat-phi", "name": "Cà phê hạt phỉ", "name_en": "Hazelnut Coffee", "price": 39000, "available": true },
+        { "id": "ca-phe-hat-de", "name": "Cà phê hạt dẻ", "name_en": "Chestnut Coffee", "price": 39000, "available": true }
+      ]
+    },
+    {
+      "id": "latte-milktea",
+      "name": "Latte và trà sữa",
+      "name_en": "Latte & Milktea",
+      "items": [
+        { "id": "tra-sua-an-do", "name": "Trà sữa Ấn Độ", "name_en": "Masala Chai", "price": 42000, "available": true },
+        { "id": "matcha-latte", "name": "Trà xanh Nhật, sữa hạt", "name_en": "Matcha Latte", "price": 45000, "available": true },
+        { "id": "genmaicha-latte", "name": "Trà xanh gạo lứt Nhật, sữa hạt", "name_en": "Genmaicha Latte", "price": 45000, "available": true },
+        { "id": "houjicha-latte", "name": "Trà xanh rang Nhật, sữa hạt", "name_en": "Houjicha Latte", "price": 45000, "available": true }
+      ]
+    },
+    {
+      "id": "specialty-detox",
+      "name": "Món nước nhà làm",
+      "name_en": "Specialty & Detox Drinks",
+      "items": [
+        { "id": "kombucha-hibiscus", "name": "Trà Olong lên men, atiso đỏ", "name_en": "Kombucha Hibiscus", "price": 39000, "available": false, "note": "Ảnh menu đánh dấu X — cần xác nhận" },
+        { "id": "ginger-ale", "name": "Soda & syrup gừng từ thảo mộc", "name_en": "Ginger Ale", "price": 39000, "available": false, "note": "Ảnh menu đánh dấu X — cần xác nhận" },
+        { "id": "herbal-cola", "name": "Soda & syrup cola từ thảo mộc", "name_en": "Herbal Cola", "price": 39000, "available": true },
+        { "id": "black-bean-chia", "name": "Nước đậu đen, hạt chia, hà thủ ô", "name_en": "Black Bean, Chia Seed & Polygonum Drink", "price": 20000, "available": true },
+        { "id": "perilla-drink", "name": "Nước tía tô đẹp da", "name_en": "Perilla Drink", "price": 20000, "available": true },
+        { "id": "blood-herbal", "name": "Nước thảo mộc bổ huyết", "name_en": "Blood Circulation Herbal Drink", "price": 20000, "available": false, "note": "Ảnh menu đánh dấu X — cần xác nhận" }
+      ]
+    }
+  ]
+}

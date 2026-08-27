@@ -1,0 +1,45 @@
+/* Hikari Vegetarian Cafe — brand tokens + base cho prototype
+   Nguồn: docs/assets/brand/brand.md */
+:root {
+  --ink: #1C1B19;
+  --paper: #FAF8F3;
+  --paper-2: #FFFFFF;
+  --matcha: #5F7A4A;
+  --matcha-soft: #EAF0E3;
+  --sun: #F2C94C;
+  --sky: #4A90D9;
+  --chili: #D9534F;
+  --muted: #8A857C;
+  --line: #E7E2D8;
+  --radius: 14px;
+  --shadow: 0 2px 10px rgba(28,27,25,.06), 0 8px 24px rgba(28,27,25,.05);
+  --font: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-script: "Caveat", "Segoe Script", cursive;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: var(--font); color: var(--ink);
+  background: var(--paper); line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.brand-logo { font-family: var(--font-script); font-weight: 700; letter-spacing: .3px; }
+.brand-sub { color: var(--matcha); font-weight: 600; letter-spacing: 2px; text-transform: lowercase; font-size: .72rem; }
+.price { color: var(--ink); font-weight: 700; }
+.price::after { content: "đ"; font-weight: 600; font-size: .78em; margin-left: 1px; }
+.tag { display: inline-flex; align-items: center; gap: 4px; font-size: .7rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 999px; }
+.tag-spicy { background: #fbe9e8; color: var(--chili); }
+.tag-out { background: #eee; color: var(--muted); }
+.tag-veg { background: var(--matcha-soft); color: var(--matcha); }
+.btn { font-family: inherit; font-weight: 600; border: none; border-radius: 10px; cursor: pointer;
+  padding: 10px 16px; background: var(--ink); color: #fff; }
+.btn:active { transform: translateY(1px); }
+.btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn-matcha { background: var(--matcha); }
+.card { background: var(--paper-2); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.muted { color: var(--muted); }
+/* Khung điện thoại cho prototype mini app */
+.phone { width: 390px; max-width: 100%; margin: 24px auto; background: var(--paper);
+  border: 10px solid #171614; border-radius: 40px; overflow: hidden; box-shadow: var(--shadow); position: relative; }
+.phone-screen { height: 760px; max-height: 82vh; overflow-y: auto; }
+.phone-notch { height: 26px; background: #171614; }
