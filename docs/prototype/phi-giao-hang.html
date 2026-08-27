@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hikari Cafe — Prototype Giao hàng</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,sans-serif;--font-script:"Caveat",cursive;}
+  *{box-sizing:border-box;} body{margin:0;font-family:var(--font);color:var(--ink);background:#efece5;line-height:1.5;}
+  .brand-logo{font-family:var(--font-script);font-weight:700;} .muted{color:var(--muted);} .price::after{content:"đ";font-size:.78em;}
+  .phone{width:390px;max-width:100%;margin:24px auto;background:var(--paper);border:10px solid #171614;border-radius:40px;overflow:hidden;box-shadow:var(--shadow);}
+  .phone-notch{height:26px;background:#171614;} .screen{height:760px;max-height:82vh;overflow-y:auto;}
+  .head{padding:14px 16px 8px;} .head .brand-logo{font-size:1.6rem;} .head .sub{color:var(--matcha);font-size:.62rem;letter-spacing:2px;text-transform:lowercase;font-weight:600;}
+  .sec{margin:14px 16px;} .sec h3{font-size:.95rem;margin:0 0 8px;}
+  .addr{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:10px;margin-bottom:8px;display:flex;gap:10px;align-items:center;cursor:pointer;font-size:.86rem;}
+  .addr.sel{border-color:var(--matcha);background:var(--matcha-soft);} .addr .pin{font-size:1.1rem;}
+  .quote{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
+  .quote .big{display:flex;align-items:baseline;gap:8px;} .quote .fee{font-size:1.6rem;font-weight:700;}
+  .quote .meta{display:flex;gap:14px;margin-top:8px;font-size:.8rem;color:var(--muted);}
+  .oos{background:#fbe9e8;color:var(--chili);border:1px solid #f3c9c7;border-radius:var(--radius);padding:12px;font-size:.85rem;}
+  .sum{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
+  .row{display:flex;justify-content:space-between;font-size:.86rem;margin:4px 0;} .row.t{font-weight:700;font-size:1rem;border-top:1px solid var(--line);margin-top:8px;padding-top:8px;}
+  .btn{width:100%;border:none;border-radius:10px;background:var(--ink);color:#fff;font:inherit;font-weight:600;padding:12px;cursor:pointer;margin-top:10px;}
+  .tl{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
+  .step{display:flex;gap:12px;align-items:flex-start;padding:6px 0;} .step .dot{width:14px;height:14px;border-radius:50%;background:var(--line);margin-top:3px;flex:none;}
+  .step.done .dot{background:var(--matcha);} .step.now .dot{background:var(--sun);box-shadow:0 0 0 4px #f7e6a8;}
+  .step .txt{font-size:.86rem;} .step.pending .txt{color:var(--muted);}
+  .disc{text-align:center;font-size:.68rem;color:var(--muted);padding:8px 16px;}
+  .warn{margin:8px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-radius:12px;padding:10px 12px;font-size:.76rem;}
+</style>
+</head>
+<body>
+<div class="phone"><div class="phone-notch"></div><div class="screen">
+  <div class="head"><div class="brand-logo">Hikari</div><div class="sub">vegetarian cafe</div></div>
+
+  <div class="warn">⚠️ Prototype: phí &amp; ETA là <strong>mô phỏng theo bán kính</strong>. Tích hợp BE (be.com.vn) cần API đối tác — xem spec 03.</div>
+
+  <div class="sec"><h3>Địa chỉ giao</h3><div id="addrs"></div></div>
+  <div class="sec"><h3>Phí giao hàng (BE)</h3><div id="quote"></div></div>
+
+  <div class="sec"><h3>Tạm tính đơn</h3>
+    <div class="sum">
+      <div class="row"><span>Món (2 phần)</span><span class="price">105.000</span></div>
+      <div class="row" id="shipRow"><span>Phí giao hàng</span><span class="price" id="shipFee">—</span></div>
+      <div class="row t"><span>Tổng cộng</span><span class="price" id="total">105.000</span></div>
+      <button class="btn" id="placeBtn" onclick="place()">Đặt &amp; giao đến địa chỉ này</button>
+    </div>
+  </div>
+
+  <div class="sec" id="trackSec" style="display:none"><h3>Theo dõi giao hàng · đơn #H1043</h3>
+    <div class="tl" id="timeline"></div>
+  </div>
+  <div class="disc">Prototype — mô phỏng, không gọi BE/API thật.</div>
+</div></div>
+
+<script>
+const SUBTOTAL = 105000;
+const addresses = [
+  { id:"a1", label:"Nhà — 12 Nguyễn Tri Phương, Q10", km:1.2, serviceable:true },
+  { id:"a2", label:"Công ty — 350 Lê Văn Sỹ, Q3", km:3.8, serviceable:true },
+  { id:"a3", label:"Nhà bạn — Nhà Bè", km:14.5, serviceable:false },
+];
+let selected = "a1";
+const vnd = n => n.toLocaleString("vi-VN");
+// mô phỏng phí BE: 15k mở cửa + 5k/km, ETA ~ 8' + 3'/km, phục vụ trong 10km
+function calcQuote(km){ return { fee: Math.round((15000 + km*5000)/1000)*1000, eta: Math.round(8 + km*3), km }; }
+
+function renderAddrs(){
+  document.getElementById("addrs").innerHTML = addresses.map(a=>`
+    <div class="addr ${a.id===selected?'sel':''}" onclick="pick('${a.id}')">
+      <span class="pin">📍</span><div>${a.label}<div class="muted" style="font-size:.74rem">${a.km} km từ quán</div></div></div>`).join("");
+}
+function pick(id){ selected=id; renderAddrs(); renderQuote(); }
+function renderQuote(){
+  const a = addresses.find(x=>x.id===selected);
+  const q = document.getElementById("quote");
+  const btn = document.getElementById("placeBtn");
+  if(!a.serviceable){
+    q.innerHTML = `<div class="oos">😔 Ngoài vùng giao hàng (${a.km} km &gt; 10 km). Vui lòng chọn địa chỉ gần hơn hoặc đến quán.</div>`;
+    document.getElementById("shipFee").textContent = "—";
+    document.getElementById("total").textContent = vnd(SUBTOTAL);
+    btn.disabled = true; btn.style.opacity=.5; return;
+  }
+  const c = calcQuote(a.km);
+  q.innerHTML = `<div class="quote">
+    <div class="big"><span class="fee price">${vnd(c.fee)}</span><span class="muted">phí giao</span></div>
+    <div class="meta"><span>🛵 ~${c.eta} phút</span><span>📏 ${c.km} km</span><span>đối tác: BE</span></div></div>`;
+  document.getElementById("shipFee").textContent = vnd(c.fee);
+  document.getElementById("total").textContent = vnd(SUBTOTAL + c.fee);
+  btn.disabled = false; btn.style.opacity=1;
+}
+const STEPS = ["Đang tìm tài xế","Tài xế đã lấy hàng","Đang giao đến bạn","Đã giao thành công"];
+function place(){
+  document.getElementById("trackSec").style.display="block";
+  document.getElementById("trackSec").scrollIntoView({behavior:"smooth"});
+  let cur = 0;
+  const draw = ()=>{ document.getElementById("timeline").innerHTML = STEPS.map((s,i)=>`
+    <div class="step ${i<cur?'done':i===cur?'now':'pending'}"><span class="dot"></span><span class="txt">${s}</span></div>`).join(""); };
+  draw();
+  const iv = setInterval(()=>{ cur++; draw(); if(cur>=STEPS.length-1){ clearInterval(iv);} }, 1400);
+}
+renderAddrs(); renderQuote();
+</script>
+</body>
+</html>

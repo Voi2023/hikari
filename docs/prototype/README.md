@@ -20,4 +20,9 @@ Prototype HTML **chạy được bằng cách mở trực tiếp trong trình du
 | Prototype | Chức năng | Trạng thái |
 |---|---|---|
 | [menu.html](menu.html) | 01 — Menu đồ ăn & nước | 🎨 Sẵn sàng duyệt |
-| _(sắp)_ | 02–08 | Chờ xác nhận điểm tích hợp |
+| [tich-diem.html](tich-diem.html) | 02 — Tích điểm khách hàng | 🎨 Sẵn sàng duyệt |
+| [phi-giao-hang.html](phi-giao-hang.html) | 03 — Phí giao hàng (BE) | 🎨 Sẵn sàng duyệt |
+| [thanh-toan.html](thanh-toan.html) | 04 — Thanh toán ZaloPay | 🎨 Sẵn sàng duyệt |
+| [thong-bao.html](thong-bao.html) | 05 — Thông báo cho khách | 🎨 Sẵn sàng duyệt |
+| [sapo.html](sapo.html) | 06 — Đẩy đơn lên Sapo (dashboard) | 🎨 Sẵn sàng duyệt |
+| [dashboard.html](dashboard.html) | 07 — Dashboard + đăng nhập 2FA | 🎨 Sẵn sàng duyệt |

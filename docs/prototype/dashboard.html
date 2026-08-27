@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hikari Admin — Dashboard (2FA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,sans-serif;--font-script:"Caveat",cursive;}
+  *{box-sizing:border-box;} body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.5;}
+  .brand-logo{font-family:var(--font-script);font-weight:700;} .muted{color:var(--muted);} .price::after{content:"đ";font-size:.78em;}
+  /* login */
+  .auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(1200px 500px at 50% -10%, #e7eede, var(--paper));}
+  .box{width:380px;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:28px;}
+  .box .brand-logo{font-size:2.2rem;text-align:center;display:block;} .box .sub{text-align:center;color:var(--matcha);font-size:.62rem;letter-spacing:3px;text-transform:lowercase;font-weight:600;margin-bottom:20px;}
+  label{font-size:.8rem;font-weight:600;display:block;margin:12px 0 5px;}
+  input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;}
+  input:focus{outline:none;border-color:var(--matcha);}
+  .btn{width:100%;border:none;border-radius:10px;background:var(--ink);color:#fff;font:inherit;font-weight:600;padding:12px;cursor:pointer;margin-top:18px;}
+  .hint{font-size:.75rem;color:var(--muted);text-align:center;margin-top:14px;}
+  .otp{display:flex;gap:8px;justify-content:center;margin:18px 0 4px;}
+  .otp input{width:44px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;padding:0;}
+  .err{color:var(--chili);font-size:.8rem;text-align:center;margin-top:10px;min-height:18px;}
+  .back{background:none;border:none;color:var(--muted);font:inherit;cursor:pointer;font-size:.82rem;margin-top:10px;width:100%;}
+  .qrbox{display:flex;gap:14px;align-items:center;background:var(--paper);border-radius:12px;padding:12px;margin:10px 0;}
+  .qrbox svg{width:84px;height:84px;flex:none;background:#fff;border-radius:8px;padding:5px;}
+  /* app */
+  #app{display:none;} #app.on{display:block;}
+  .layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh;}
+  .side{background:#20281b;color:#dfe6d6;padding:18px 12px;}
+  .side .brand-logo{font-size:1.7rem;color:#fff;padding:0 8px;} .side .sub{color:var(--sun);font-size:.58rem;letter-spacing:2px;text-transform:lowercase;padding:0 8px;margin-bottom:18px;}
+  .nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;color:#cdd6c2;text-decoration:none;font-size:.88rem;cursor:pointer;margin-bottom:2px;}
+  .nav a.active,.nav a:hover{background:#2e3a26;color:#fff;} .nav .badge{margin-left:auto;background:var(--chili);color:#fff;font-size:.65rem;border-radius:999px;padding:1px 7px;font-weight:700;}
+  .main{padding:22px 26px;} .main h1{font-size:1.3rem;margin:0 0 2px;} .crumb{color:var(--muted);font-size:.82rem;margin-bottom:18px;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;} .who{font-size:.85rem;color:var(--muted);}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+  .kpi .n{font-size:1.7rem;font-weight:700;} .kpi .l{font-size:.78rem;color:var(--muted);} .kpi .d{font-size:.72rem;margin-top:4px;} .kpi .up{color:var(--matcha);}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+  th,td{text-align:left;padding:10px 14px;font-size:.85rem;border-bottom:1px solid var(--line);} th{background:#faf8f3;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.4px;}
+  tr:last-child td{border-bottom:none;}
+  .st{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:999px;} .st.new{background:#fff3d6;color:#a9791b;} .st.cook{background:#e6f0ff;color:var(--sky);} .st.done{background:var(--matcha-soft);color:var(--matcha);}
+  .simbtn{border:1px dashed var(--matcha);background:var(--matcha-soft);color:var(--matcha);border-radius:10px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;font-size:.82rem;}
+</style>
+</head>
+<body>
+
+<!-- ===== ĐĂNG NHẬP ===== -->
+<div class="auth" id="auth">
+  <div class="box">
+    <span class="brand-logo">Hikari</span><span class="sub">admin</span>
+
+    <!-- bước 1 -->
+    <div id="step1">
+      <label>Email</label><input id="email" type="email" value="quanly@hikari.vn">
+      <label>Mật khẩu</label><input id="pw" type="password" value="••••••••">
+      <button class="btn" onclick="toStep2()">Đăng nhập</button>
+      <div class="hint">🔒 Tài khoản admin bắt buộc xác thực 2 lớp (TOTP)</div>
+    </div>
+
+    <!-- bước 2: TOTP -->
+    <div id="step2" style="display:none">
+      <p style="text-align:center;font-weight:600;margin:4px 0">Nhập mã xác thực</p>
+      <p class="muted" style="text-align:center;font-size:.82rem;margin:0 0 6px">Mở app Authenticator và nhập mã 6 số</p>
+      <div class="qrbox">
+        <svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#fff"/><g fill="#1C1B19"><rect x="8" y="8" width="22" height="22"/><rect x="13" y="13" width="12" height="12" fill="#fff"/><rect x="70" y="8" width="22" height="22"/><rect x="75" y="13" width="12" height="12" fill="#fff"/><rect x="8" y="70" width="22" height="22"/><rect x="13" y="75" width="12" height="12" fill="#fff"/><rect x="40" y="10" width="6" height="6"/><rect x="52" y="10" width="6" height="6"/><rect x="40" y="40" width="6" height="6"/><rect x="52" y="52" width="6" height="6"/><rect x="70" y="40" width="6" height="6"/><rect x="84" y="52" width="6" height="6"/><rect x="40" y="70" width="6" height="6"/><rect x="64" y="64" width="6" height="6"/><rect x="82" y="82" width="6" height="6"/><rect x="10" y="40" width="6" height="6"/><rect x="24" y="52" width="6" height="6"/></g></svg>
+        <div style="font-size:.76rem" class="muted">Lần đầu: quét QR này bằng Google Authenticator/Authy để liên kết, rồi nhập mã.</div>
+      </div>
+      <div class="otp" id="otp">
+        <input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric"><input maxlength="1" inputmode="numeric">
+      </div>
+      <div class="err" id="otpErr"></div>
+      <button class="btn" onclick="verify()">Xác thực & vào Dashboard</button>
+      <div class="hint">Mô phỏng: nhập <strong>123456</strong> để vào (mã khác sẽ báo sai).</div>
+      <button class="back" onclick="toStep1()">‹ Quay lại</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+  <div class="layout">
+    <aside class="side">
+      <div class="brand-logo">Hikari</div><div class="sub">admin</div>
+      <nav class="nav">
+        <a class="active">📊 Tổng quan</a>
+        <a>🧾 Đơn hàng <span class="badge">3</span></a>
+        <a>🍜 Menu</a>
+        <a>⭐ Khách & điểm</a>
+        <a>🔔 Thông báo</a>
+        <a>🛵 Giao hàng</a>
+        <a>🔗 Sapo</a>
+        <a>📈 Báo cáo</a>
+      </nav>
+    </aside>
+    <main class="main">
+      <div class="topbar"><div><h1>Tổng quan</h1><div class="crumb">Hôm nay · 27/08/2026</div></div>
+        <div class="who">👤 Minh Anh · <em>manager</em> · <a href="#" onclick="logout();return false" style="color:var(--chili)">Đăng xuất</a></div></div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Đơn hôm nay</div><div class="n" id="kOrders">42</div><div class="d up">▲ 12% so với hôm qua</div></div>
+        <div class="kpi"><div class="l">Doanh thu</div><div class="n price">3.180.000</div><div class="d up">▲ 8%</div></div>
+        <div class="kpi"><div class="l">Đơn chờ xử lý</div><div class="n" id="kPending" style="color:var(--sky)">3</div><div class="d muted">cần xác nhận</div></div>
+        <div class="kpi"><div class="l">Sapo lỗi</div><div class="n" style="color:var(--chili)">2</div><div class="d muted">cần thử lại</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h1 style="font-size:1.05rem">Đơn mới nhất</h1>
+        <button class="simbtn" onclick="newOrder()">📲 Mô phỏng đơn mới (realtime)</button>
+      </div>
+      <table><thead><tr><th>Mã</th><th>Khách</th><th>Món</th><th>Tiền</th><th>Hình thức</th><th>Trạng thái</th></tr></thead>
+        <tbody id="orderRows"></tbody></table>
+    </main>
+  </div>
+</div>
+
+<script>
+/* ==== auth flow ==== */
+function toStep2(){ document.getElementById("step1").style.display="none"; document.getElementById("step2").style.display="block"; document.querySelector("#otp input").focus(); }
+function toStep1(){ document.getElementById("step2").style.display="none"; document.getElementById("step1").style.display="block"; document.getElementById("otpErr").textContent=""; }
+// auto-advance otp
+document.querySelectorAll("#otp input").forEach((inp,i,arr)=>{
+  inp.addEventListener("input",()=>{ if(inp.value && i<arr.length-1) arr[i+1].focus(); });
+  inp.addEventListener("keydown",e=>{ if(e.key==="Backspace" && !inp.value && i>0) arr[i-1].focus(); });
+});
+function verify(){
+  const code = [...document.querySelectorAll("#otp input")].map(i=>i.value).join("");
+  if(code==="123456"){ document.getElementById("auth").style.display="none"; document.getElementById("app").classList.add("on"); renderOrders(); }
+  else { document.getElementById("otpErr").textContent="Mã không đúng. Thử lại (mô phỏng: 123456)."; }
+}
+function logout(){ location.reload(); }
+
+/* ==== dashboard data ==== */
+let orders = [
+  { id:"H1043", cus:"Minh Anh", item:"Tamago Ramen +1", amount:106000, mode:"Giao hàng", status:"new" },
+  { id:"H1042", cus:"Khách vãng lai", item:"Matcha Latte x2", amount:90000, mode:"Tại quán", status:"cook" },
+  { id:"H1041", cus:"Thanh Nguyên", item:"Yaki Udon", amount:55000, mode:"Mang về", status:"cook" },
+  { id:"H1040", cus:"Hồng Vân", item:"Tô tự chọn", amount:74000, mode:"Giao hàng", status:"done" },
+];
+const vnd = n => n.toLocaleString("vi-VN");
+const SL = { new:["new","Mới"], cook:["cook","Đang làm"], done:["done","Hoàn tất"] };
+function renderOrders(){
+  document.getElementById("orderRows").innerHTML = orders.map(o=>`
+    <tr><td><strong>#${o.id}</strong></td><td>${o.cus}</td><td>${o.item}</td><td class="price">${vnd(o.amount)}</td>
+      <td>${o.mode}</td><td><span class="st ${SL[o.status][0]}">${SL[o.status][1]}</span></td></tr>`).join("");
+}
+let seq = 1044;
+function newOrder(){
+  const samples = [["Spicy Tomyum","Giao hàng",53000],["Cà phê muối hồng","Tại quán",29000],["Miso Udon +Trứng","Mang về",60000]];
+  const s = samples[Math.floor((Date.now()/1000)%samples.length)];
+  orders.unshift({ id:"H"+(seq++), cus:"Khách mới", item:s[0], amount:s[2], mode:s[1], status:"new" });
+  document.getElementById("kOrders").textContent = 42 + (seq-1044);
+  document.getElementById("kPending").textContent = orders.filter(o=>o.status==="new").length;
+  renderOrders();
+}
+</script>
+</body>
+</html>

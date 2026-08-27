@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hikari Cafe — Prototype Thanh toán</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,sans-serif;--font-script:"Caveat",cursive;--zalopay:#0068FF;}
+  *{box-sizing:border-box;} body{margin:0;font-family:var(--font);color:var(--ink);background:#efece5;line-height:1.5;}
+  .brand-logo{font-family:var(--font-script);font-weight:700;} .muted{color:var(--muted);} .price::after{content:"đ";font-size:.78em;}
+  .phone{width:390px;max-width:100%;margin:24px auto;background:var(--paper);border:10px solid #171614;border-radius:40px;overflow:hidden;box-shadow:var(--shadow);position:relative;}
+  .phone-notch{height:26px;background:#171614;} .screen{height:760px;max-height:82vh;overflow-y:auto;position:relative;}
+  .head{padding:14px 16px 8px;} .head .brand-logo{font-size:1.6rem;} .head .sub{color:var(--matcha);font-size:.62rem;letter-spacing:2px;text-transform:lowercase;font-weight:600;}
+  .sec{margin:14px 16px;} .sec h3{font-size:.95rem;margin:0 0 8px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
+  .row{display:flex;justify-content:space-between;font-size:.86rem;margin:4px 0;} .row.t{font-weight:700;font-size:1.05rem;border-top:1px solid var(--line);margin-top:8px;padding-top:8px;}
+  .pm{display:flex;align-items:center;gap:12px;border:2px solid var(--zalopay);border-radius:var(--radius);padding:12px;background:#f0f6ff;}
+  .pm .logo{width:40px;height:40px;border-radius:9px;background:var(--zalopay);color:#fff;font-weight:700;display:grid;place-items:center;font-size:.7rem;}
+  .pm .b{flex:1;font-weight:600;font-size:.9rem;} .pm .chk{color:var(--zalopay);font-weight:700;}
+  .btn{width:100%;border:none;border-radius:12px;background:var(--zalopay);color:#fff;font:inherit;font-weight:700;padding:14px;cursor:pointer;font-size:1rem;}
+  .disc{text-align:center;font-size:.68rem;color:var(--muted);padding:8px 16px;}
+  /* overlay cổng zalopay */
+  .gate{position:absolute;inset:0;background:var(--zalopay);color:#fff;display:none;flex-direction:column;z-index:30;}
+  .gate.open{display:flex;} .gate .gh{padding:18px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+  .gate .body{flex:1;background:#fff;color:var(--ink);border-radius:20px 20px 0 0;padding:20px 16px;}
+  .gate .amt{text-align:center;margin:10px 0 20px;} .gate .amt .n{font-size:2.2rem;font-weight:700;color:var(--zalopay);}
+  .gate .mrc{background:var(--paper);border-radius:12px;padding:12px;font-size:.85rem;margin-bottom:16px;}
+  .gate .pay{width:100%;border:none;border-radius:12px;background:var(--zalopay);color:#fff;font:inherit;font-weight:700;padding:14px;margin-bottom:8px;cursor:pointer;}
+  .gate .cancel{width:100%;border:none;background:transparent;color:var(--muted);font:inherit;padding:8px;cursor:pointer;}
+  .spin{width:44px;height:44px;border:4px solid #cfe1ff;border-top-color:var(--zalopay);border-radius:50%;margin:30px auto;animation:sp 1s linear infinite;} @keyframes sp{to{transform:rotate(360deg)}}
+  /* kết quả */
+  .result{position:absolute;inset:0;background:var(--paper);display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;z-index:40;}
+  .result.open{display:flex;} .result .ic{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;font-size:2.6rem;margin-bottom:16px;}
+  .result.ok .ic{background:var(--matcha-soft);} .result.fail .ic{background:#fbe9e8;}
+  .result h2{margin:0 0 6px;} .result .btn2{margin-top:20px;border:none;border-radius:12px;padding:12px 24px;font:inherit;font-weight:600;cursor:pointer;background:var(--ink);color:#fff;}
+</style>
+</head>
+<body>
+<div class="phone"><div class="phone-notch"></div><div class="screen">
+  <div class="head"><div class="brand-logo">Hikari</div><div class="sub">vegetarian cafe</div></div>
+
+  <div class="sec"><h3>Đơn hàng #H1043</h3>
+    <div class="card">
+      <div class="row"><span>Tamago Ramen</span><span class="price">50.000</span></div>
+      <div class="row"><span>Matcha Latte</span><span class="price">45.000</span></div>
+      <div class="row"><span>Phí giao hàng (BE)</span><span class="price">21.000</span></div>
+      <div class="row"><span>Giảm giá (100 điểm)</span><span class="price" style="color:var(--matcha)">−10.000</span></div>
+      <div class="row t"><span>Cần thanh toán</span><span class="price">106.000</span></div>
+    </div>
+  </div>
+
+  <div class="sec"><h3>Phương thức thanh toán</h3>
+    <div class="pm"><div class="logo">Zalo<br>Pay</div><div class="b">Ví ZaloPay</div><span class="chk">✓</span></div>
+  </div>
+
+  <div class="sec"><button class="btn" onclick="openGate()">Thanh toán 106.000đ với ZaloPay</button></div>
+  <div class="disc">Prototype — mô phỏng cổng ZaloPay, không giao dịch thật. Callback server mới là nguồn xác nhận (spec 04).</div>
+
+  <!-- cổng ZaloPay mô phỏng -->
+  <div class="gate" id="gate">
+    <div class="gh"><span>‹ ZaloPay</span><span>🔒 Bảo mật</span></div>
+    <div class="body">
+      <div class="amt"><div class="muted">Số tiền thanh toán</div><div class="n">106.000đ</div></div>
+      <div class="mrc"><strong>Hikari Vegetarian Cafe</strong><br><span class="muted">Đơn #H1043 · app_trans_id: 260827_H1043</span></div>
+      <div id="gateBody">
+        <button class="pay" onclick="paySuccess()">Xác nhận thanh toán</button>
+        <button class="cancel" onclick="payFail()">Huỷ / mô phỏng thất bại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- kết quả -->
+  <div class="result" id="result">
+    <div class="ic" id="rIc"></div><h2 id="rTitle"></h2><div class="muted" id="rMsg"></div>
+    <button class="btn2" onclick="reset()" id="rBtn"></button>
+  </div>
+</div></div>
+
+<script>
+function openGate(){ document.getElementById("gate").classList.add("open"); }
+function paySuccess(){
+  document.getElementById("gateBody").innerHTML = '<div class="spin"></div><p class="muted" style="text-align:center">Đang xử lý giao dịch…</p>';
+  setTimeout(()=>{ // mô phỏng: ZaloPay callback về server → server xác nhận
+    show(true, "Thanh toán thành công", "Đơn #H1043 đã được xác nhận qua callback ZaloPay. Bạn được +96 điểm, quán đang chuẩn bị món.");
+  }, 1600);
+}
+function payFail(){ show(false, "Thanh toán chưa hoàn tất", "Giao dịch bị huỷ. Đơn giữ trạng thái 'chờ thanh toán', bạn có thể thử lại."); }
+function show(ok, title, msg){
+  document.getElementById("gate").classList.remove("open");
+  const r = document.getElementById("result");
+  r.className = "result open " + (ok?"ok":"fail");
+  document.getElementById("rIc").textContent = ok?"✅":"⚠️";
+  document.getElementById("rTitle").textContent = title;
+  document.getElementById("rMsg").textContent = msg;
+  document.getElementById("rBtn").textContent = ok?"Xem đơn hàng":"Thử lại";
+}
+function reset(){
+  document.getElementById("result").className="result";
+  document.getElementById("gateBody").innerHTML = '<button class="pay" onclick="paySuccess()">Xác nhận thanh toán</button><button class="cancel" onclick="payFail()">Huỷ / mô phỏng thất bại</button>';
+}
+</script>
+</body>
+</html>

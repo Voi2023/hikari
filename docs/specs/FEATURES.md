@@ -7,22 +7,22 @@
 | # | Chức năng | Trạng thái | Spec | Prototype |
 |---|---|---|---|---|
 | 01 | **Menu đồ ăn & nước** | 🎨 Prototype | [01-menu.md](01-menu.md) | [menu.html](../prototype/menu.html) |
-| 02 | **Tích điểm khách hàng** (loyalty) | 🚧 Đang viết spec | [02-tich-diem.md](02-tich-diem.md) | [tich-diem.html](../prototype/tich-diem.html) |
-| 03 | **Phí giao hàng** (BE — be.com.vn) | 🚧 Đang viết spec | [03-phi-giao-hang.md](03-phi-giao-hang.md) | [phi-giao-hang.html](../prototype/phi-giao-hang.html) |
-| 04 | **Thanh toán ZaloPay** (đã có merchant) | 🚧 Đang viết spec | [04-thanh-toan-zalopay.md](04-thanh-toan-zalopay.md) | [thanh-toan.html](../prototype/thanh-toan.html) |
-| 05 | **Thông báo cho khách** (OA/ZNS + in-app) | 🚧 Đang viết spec | [05-thong-bao.md](05-thong-bao.md) | [thong-bao.html](../prototype/thong-bao.html) |
+| 02 | **Tích điểm khách hàng** (loyalty) | 🎨 Prototype | [02-tich-diem.md](02-tich-diem.md) | [tich-diem.html](../prototype/tich-diem.html) |
+| 03 | **Phí giao hàng** (BE — be.com.vn) | 🎨 Prototype | [03-phi-giao-hang.md](03-phi-giao-hang.md) | [phi-giao-hang.html](../prototype/phi-giao-hang.html) |
+| 04 | **Thanh toán ZaloPay** (đã có merchant) | 🎨 Prototype | [04-thanh-toan-zalopay.md](04-thanh-toan-zalopay.md) | [thanh-toan.html](../prototype/thanh-toan.html) |
+| 05 | **Thông báo cho khách** (OA/ZNS + in-app) | 🎨 Prototype | [05-thong-bao.md](05-thong-bao.md) | [thong-bao.html](../prototype/thong-bao.html) |
 
 ## Tích hợp hệ thống
 
 | # | Chức năng | Trạng thái | Spec | Prototype |
 |---|---|---|---|---|
-| 06 | **Đẩy đơn lên Sapo** (chưa có API key) | 🚧 Đang viết spec | [06-day-don-sapo.md](06-day-don-sapo.md) | [sapo.html](../prototype/sapo.html) |
+| 06 | **Đẩy đơn lên Sapo** (chưa có API key) | 🎨 Prototype | [06-day-don-sapo.md](06-day-don-sapo.md) | [sapo.html](../prototype/sapo.html) |
 
 ## Dashboard quản trị (admin)
 
 | # | Chức năng | Trạng thái | Spec | Prototype |
 |---|---|---|---|---|
-| 07 | **Dashboard + đăng nhập 2FA (TOTP)** | 🚧 Đang viết spec | [07-dashboard.md](07-dashboard.md) | [dashboard.html](../prototype/dashboard.html) |
+| 07 | **Dashboard + đăng nhập 2FA (TOTP)** | 🎨 Prototype | [07-dashboard.md](07-dashboard.md) | [dashboard.html](../prototype/dashboard.html) |
 
 ## Nền tảng (đã dựng)
 

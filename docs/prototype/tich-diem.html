@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hikari Cafe — Prototype Tích điểm</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,sans-serif;--font-script:"Caveat",cursive;}
+  *{box-sizing:border-box;} body{margin:0;font-family:var(--font);color:var(--ink);background:#efece5;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .brand-logo{font-family:var(--font-script);font-weight:700;} .muted{color:var(--muted);} .price::after{content:"đ";font-size:.78em;}
+  .phone{width:390px;max-width:100%;margin:24px auto;background:var(--paper);border:10px solid #171614;border-radius:40px;overflow:hidden;box-shadow:var(--shadow);}
+  .phone-notch{height:26px;background:#171614;} .screen{height:760px;max-height:82vh;overflow-y:auto;padding-bottom:24px;}
+  .head{padding:14px 16px 8px;} .head .brand-logo{font-size:1.6rem;} .head .sub{color:var(--matcha);font-size:.62rem;letter-spacing:2px;text-transform:lowercase;font-weight:600;}
+  .card-mem{margin:8px 16px;padding:18px;border-radius:18px;background:linear-gradient(135deg,#2b3a24,#5F7A4A);color:#fff;position:relative;overflow:hidden;box-shadow:var(--shadow);}
+  .card-mem::after{content:"光";position:absolute;right:-6px;bottom:-24px;font-size:8rem;opacity:.08;font-family:serif;}
+  .card-mem .tier{display:inline-block;background:var(--sun);color:var(--ink);font-weight:700;font-size:.7rem;padding:3px 10px;border-radius:999px;}
+  .card-mem .name{font-weight:600;margin-top:10px;font-size:1.05rem;}
+  .card-mem .pts{font-size:2.6rem;font-weight:700;line-height:1;margin-top:6px;}
+  .card-mem .pts small{font-size:.9rem;font-weight:600;opacity:.85;}
+  .qr{position:absolute;top:16px;right:16px;width:52px;height:52px;background:#fff;border-radius:8px;padding:5px;}
+  .qr svg{width:100%;height:100%;}
+  .sec{margin:16px;} .sec h3{font-size:.95rem;margin:0 0 8px;}
+  .prog{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
+  .bar{height:8px;background:var(--matcha-soft);border-radius:999px;overflow:hidden;margin:8px 0 6px;}
+  .bar i{display:block;height:100%;background:var(--matcha);width:62%;}
+  .reward{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:8px;}
+  .reward .ic{width:40px;height:40px;border-radius:10px;background:var(--matcha-soft);display:grid;place-items:center;font-size:1.2rem;}
+  .reward .b{flex:1;} .reward .b .t{font-weight:600;font-size:.9rem;} .reward .b .c{font-size:.76rem;color:var(--muted);}
+  .btn{border:none;border-radius:10px;background:var(--matcha);color:#fff;font:inherit;font-weight:600;padding:8px 14px;cursor:pointer;font-size:.82rem;}
+  .btn:disabled{background:#cfcabf;cursor:not-allowed;}
+  .tx{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:.86rem;}
+  .tx .p{font-weight:700;} .tx .plus{color:var(--matcha);} .tx .minus{color:var(--chili);}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:.85rem;opacity:0;transition:.3s;}
+  .toast.show{opacity:1;}
+  .disc{text-align:center;font-size:.68rem;color:var(--muted);padding:6px 16px;}
+</style>
+</head>
+<body>
+<div class="phone"><div class="phone-notch"></div><div class="screen">
+  <div class="head"><div class="brand-logo">Hikari</div><div class="sub">vegetarian cafe</div></div>
+
+  <div class="card-mem">
+    <span class="tier" id="tier">🥈 Hạng Bạc</span>
+    <div class="qr"><svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#fff"/><g fill="#1C1B19"><rect x="8" y="8" width="24" height="24"/><rect x="14" y="14" width="12" height="12" fill="#fff"/><rect x="68" y="8" width="24" height="24"/><rect x="74" y="14" width="12" height="12" fill="#fff"/><rect x="8" y="68" width="24" height="24"/><rect x="14" y="74" width="12" height="12" fill="#fff"/><rect x="44" y="8" width="8" height="8"/><rect x="44" y="24" width="8" height="8"/><rect x="44" y="44" width="8" height="8"/><rect x="60" y="44" width="8" height="8"/><rect x="76" y="44" width="8" height="8"/><rect x="44" y="60" width="8" height="8"/><rect x="60" y="68" width="8" height="8"/><rect x="76" y="76" width="8" height="8"/><rect x="24" y="44" width="8" height="8"/><rect x="8" y="44" width="8" height="8"/></g></svg></div>
+    <div class="name">Chào, Minh Anh 👋</div>
+    <div class="pts"><span id="pts">560</span> <small>điểm</small></div>
+  </div>
+
+  <div class="sec">
+    <h3>Tiến trình lên hạng Vàng</h3>
+    <div class="prog">
+      <div class="muted" style="font-size:.8rem">Đã tích luỹ <strong>1.860.000đ</strong> · cần thêm <strong>1.140.000đ</strong></div>
+      <div class="bar"><i></i></div>
+      <div class="muted" style="font-size:.72rem">🥈 Bạc → 🥇 Vàng (mốc 3.000.000đ)</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Đổi điểm lấy ưu đãi</h3>
+    <div id="rewards"></div>
+  </div>
+
+  <div class="sec">
+    <h3>Lịch sử điểm</h3>
+    <div id="history"></div>
+  </div>
+  <div class="disc">Prototype — dữ liệu mẫu, quy tắc điểm chờ chủ quán chốt (xem spec 02).</div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+let points = 560;
+const rewards = [
+  { id:"r1", ic:"🎟️", t:"Giảm 10.000đ", c:"100 điểm", cost:100 },
+  { id:"r2", ic:"🍵", t:"Miễn phí 1 Matcha Latte", c:"400 điểm", cost:400 },
+  { id:"r3", ic:"🍜", t:"Giảm 30.000đ cho đơn mì", c:"280 điểm", cost:280 },
+];
+let history = [
+  { t:"Đơn #H1042 · Tamago Ramen", p:+50, d:"Hôm nay" },
+  { t:"Đơn #H1039 · Matcha Latte x2", p:+90, d:"Hôm qua" },
+  { t:"Đổi ưu đãi · Giảm 10.000đ", p:-100, d:"3 ngày trước" },
+  { t:"Đơn #H1021 · Yaki Udon", p:+55, d:"Tuần trước" },
+];
+const vnd = n => n.toLocaleString("vi-VN");
+function render(){
+  document.getElementById("pts").textContent = vnd(points);
+  document.getElementById("rewards").innerHTML = rewards.map(r=>`
+    <div class="reward"><div class="ic">${r.ic}</div>
+      <div class="b"><div class="t">${r.t}</div><div class="c">${r.c}</div></div>
+      <button class="btn" ${points<r.cost?'disabled':''} onclick="redeem('${r.id}')">Đổi</button></div>`).join("");
+  document.getElementById("history").innerHTML = history.map(h=>`
+    <div class="tx"><div><div>${h.t}</div><div class="muted" style="font-size:.72rem">${h.d}</div></div>
+      <div class="p ${h.p>0?'plus':'minus'}">${h.p>0?'+':''}${h.p}</div></div>`).join("");
+}
+function redeem(id){
+  const r = rewards.find(x=>x.id===id);
+  if(points < r.cost){ toast("Không đủ điểm"); return; }
+  points -= r.cost;
+  history.unshift({ t:"Đổi ưu đãi · "+r.t, p:-r.cost, d:"Vừa xong" });
+  render(); toast("Đã đổi: "+r.t+" 🎉");
+}
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1800); }
+render();
+</script>
+</body>
+</html>

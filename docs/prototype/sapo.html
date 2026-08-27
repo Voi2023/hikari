@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hikari Admin — Đồng bộ Sapo</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,sans-serif;--font-script:"Caveat",cursive;}
+  *{box-sizing:border-box;} body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.5;}
+  .brand-logo{font-family:var(--font-script);font-weight:700;} .muted{color:var(--muted);} .price::after{content:"đ";font-size:.78em;}
+  .top{background:#fff;border-bottom:1px solid var(--line);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;}
+  .top .brand-logo{font-size:1.6rem;} .top .sub{color:var(--matcha);font-size:.6rem;letter-spacing:2px;text-transform:lowercase;font-weight:600;}
+  .top .who{font-size:.85rem;color:var(--muted);}
+  .wrap{max-width:960px;margin:0 auto;padding:24px 20px 60px;}
+  h1{font-size:1.3rem;margin:6px 0 2px;} .crumb{font-size:.8rem;color:var(--muted);margin-bottom:18px;}
+  .warn{background:#fff8e6;border:1px solid #f0e2b8;border-radius:12px;padding:12px 14px;font-size:.85rem;margin-bottom:18px;}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+  .stat .n{font-size:1.9rem;font-weight:700;} .stat .l{font-size:.8rem;color:var(--muted);}
+  .stat.ok .n{color:var(--matcha);} .stat.wait .n{color:var(--sky);} .stat.err .n{color:var(--chili);}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+  th,td{text-align:left;padding:11px 14px;font-size:.86rem;border-bottom:1px solid var(--line);} th{background:#faf8f3;font-weight:600;color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.4px;}
+  tr:last-child td{border-bottom:none;}
+  .st{font-size:.74rem;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;}
+  .st.synced{background:var(--matcha-soft);color:var(--matcha);} .st.pending{background:#e6f0ff;color:var(--sky);} .st.failed{background:#fbe9e8;color:var(--chili);}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 12px;font:inherit;font-size:.78rem;font-weight:600;cursor:pointer;}
+  .btn:hover{border-color:var(--matcha);color:var(--matcha);} .btn:disabled{opacity:.4;cursor:default;}
+  .disc{text-align:center;font-size:.72rem;color:var(--muted);padding:16px;}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><span class="brand-logo">Hikari</span> <span class="sub">admin</span></div>
+  <div class="who">Quản lý · Minh Anh ▾</div>
+</div>
+<div class="wrap">
+  <div class="crumb">Dashboard › Tích hợp › Đồng bộ Sapo</div>
+  <h1>Đồng bộ đơn sang Sapo</h1>
+  <div class="warn">⚠️ Prototype: dùng <strong>MockSapoClient</strong>. Cần đăng ký Sapo Developer để lấy API key thật (xem spec 06).</div>
+
+  <div class="cards">
+    <div class="stat ok"><div class="n" id="cOk">0</div><div class="l">Đã đồng bộ</div></div>
+    <div class="stat wait"><div class="n" id="cWait">0</div><div class="l">Đang chờ</div></div>
+    <div class="stat err"><div class="n" id="cErr">0</div><div class="l">Lỗi — cần xử lý</div></div>
+  </div>
+
+  <table>
+    <thead><tr><th>Mã đơn</th><th>Thời gian</th><th>Tiền</th><th>Sapo ID</th><th>Trạng thái</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="disc">Prototype — bấm “Thử lại” ở đơn lỗi để mô phỏng đẩy lại (idempotent theo mã đơn).</div>
+</div>
+
+<script>
+let rows = [
+  { id:"H1043", time:"27/08 10:24", amount:106000, sapo:"SP-88021", status:"synced" },
+  { id:"H1042", time:"27/08 10:02", amount:50000,  sapo:"SP-88020", status:"synced" },
+  { id:"H1041", time:"27/08 09:47", amount:145000, sapo:null, status:"pending" },
+  { id:"H1040", time:"27/08 09:31", amount:74000,  sapo:null, status:"failed", err:"Sapo 401: token hết hạn" },
+  { id:"H1039", time:"26/08 20:15", amount:90000,  sapo:"SP-87994", status:"synced" },
+  { id:"H1038", time:"26/08 19:58", amount:55000,  sapo:null, status:"failed", err:"Timeout gọi Sapo" },
+];
+const vnd = n => n.toLocaleString("vi-VN");
+const LABEL = { synced:"Đã đồng bộ", pending:"Đang chờ", failed:"Lỗi" };
+function render(){
+  document.getElementById("cOk").textContent = rows.filter(r=>r.status==="synced").length;
+  document.getElementById("cWait").textContent = rows.filter(r=>r.status==="pending").length;
+  document.getElementById("cErr").textContent = rows.filter(r=>r.status==="failed").length;
+  document.getElementById("rows").innerHTML = rows.map(r=>`
+    <tr><td><strong>#${r.id}</strong></td><td>${r.time}</td><td class="price">${vnd(r.amount)}</td>
+      <td>${r.sapo || '<span class="muted">—</span>'}</td>
+      <td><span class="st ${r.status}">${LABEL[r.status]}</span>${r.err?`<div class="muted" style="font-size:.7rem">${r.err}</div>`:''}</td>
+      <td>${r.status==="failed"?`<button class="btn" onclick="retry('${r.id}')">Thử lại</button>`:''}</td></tr>`).join("");
+}
+function retry(id){
+  const r = rows.find(x=>x.id===id); if(!r) return;
+  r.status = "pending"; r.err = null; render();
+  setTimeout(()=>{ // mô phỏng đẩy lại thành công
+    r.status = "synced"; r.sapo = "SP-"+(88030 + Math.floor((Date.now()/1000)%50)); render();
+  }, 1200);
+}
+render();
+</script>
+</body>
+</html>
