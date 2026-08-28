@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thông báo — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+<style>
+  /* Xem trước tin trên điện thoại — dùng .phone của tokens, thu nhỏ cho vừa cột phải */
+  .preview{width:280px;border-width:8px;border-radius:30px}
+  .preview .phone-screen{height:auto;min-height:300px;padding:14px}
+  .zmsg{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:var(--shadow)}
+  .zhead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .zhead .av{width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-family:var(--font-script);font-size:17px;font-weight:700}
+</style>
+</head>
+<body>
+<main id="page">
+  <div class="stat-grid" id="kpis"></div>
+
+  <div class="grid-dispatch">
+    <div class="panel">
+      <h2>Soạn thông báo</h2>
+
+      <div class="grid-2">
+        <div class="field"><label for="ch">Kênh gửi</label>
+          <select id="ch" onchange="preview()"></select>
+          <div class="muted" style="font-size:12px;margin-top:4px" id="chHint"></div></div>
+        <div class="field"><label for="aud">Đối tượng nhận</label>
+          <select id="aud" onchange="preview()">
+            <option data-n="1284">Tất cả khách đã theo dõi OA</option>
+            <option data-n="412">Khách hạng Bạc trở lên</option>
+            <option data-n="58">Khách hạng Vàng</option>
+            <option data-n="96">Khách có điểm sắp hết hạn (30 ngày)</option>
+            <option data-n="203">Khách chưa quay lại trên 60 ngày</option>
+            <option data-n="260">Khách trong bán kính 3km</option>
+          </select></div>
+      </div>
+
+      <div class="field"><label for="title">Tiêu đề <span style="color:var(--danger)">*</span></label>
+        <input id="title" value="Ưu đãi trưa T2–T6: giảm 15% mì signature" oninput="preview()"></div>
+      <div class="field"><label for="body">Nội dung <span style="color:var(--danger)">*</span></label>
+        <textarea id="body" rows="4" oninput="preview()">Chào {{ten_khach}}, từ 11h–14h các ngày trong tuần, Hikari giảm 15% toàn bộ mì signature. Đặt ngay trong Mini App nhé!</textarea>
+        <div class="muted" style="font-size:12px;margin-top:4px">
+          Biến thay thế: <code class="inline">{{ten_khach}}</code> <code class="inline">{{diem}}</code> <code class="inline">{{hang}}</code></div></div>
+
+      <div class="grid-2">
+        <div class="field"><label for="when">Thời điểm gửi</label>
+          <select id="when" onchange="document.getElementById('atWrap').style.display=this.value==='later'?'block':'none'">
+            <option value="now">Gửi ngay</option><option value="later">Hẹn giờ</option></select></div>
+        <div class="field" id="atWrap" style="display:none"><label for="atTime">Gửi lúc</label>
+          <input id="atTime" type="datetime-local"></div>
+      </div>
+
+      <div class="schedule-banner" id="quota"></div>
+
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="send()"><i class="ti ti-send"></i> Gửi thông báo</button>
+        <button class="btn btn-outline" onclick="testSend()"><i class="ti ti-flask"></i> Gửi thử cho tôi</button>
+        <button class="btn btn-ghost" onclick="toast('Đã lưu nháp')"><i class="ti ti-device-floppy"></i> Lưu nháp</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Khách sẽ thấy</h2>
+        <div class="phone preview"><div class="phone-notch"></div>
+          <div class="phone-screen"><div class="zmsg">
+            <div class="zhead"><span class="av">H</span>
+              <div><b style="font-size:13px">Hikari Vegetarian Cafe</b>
+                <div class="muted" style="font-size:11px" id="pvCh">Zalo OA</div></div></div>
+            <div style="font-weight:700;font-size:13.5px;margin-bottom:4px" id="pvTitle"></div>
+            <div style="font-size:13px;line-height:1.55" id="pvBody"></div>
+            <button class="btn btn-primary btn-sm" style="width:100%;margin-top:10px">Mở Mini App</button>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Lịch sử gửi</h2>
+    <div class="table-scroll"><table class="data wide" id="his"></table></div>
+  </div>
+</main>
+
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:'thong-bao', title:'Thông báo cho khách', sub:'ZNS · Zalo OA · trong Mini App' })
+
+document.getElementById('ch').innerHTML = optionsOf('channel', 'OA')
+
+/* Ba kênh ba luật chơi khác nhau — nói rõ ngay dưới ô chọn, vì gửi nhầm kênh thì
+   tiền ZNS mất thật mà tin có khi không tới được ai. */
+const CH_HINT = {
+  ZNS:    'Tin có phí, template phải được Zalo duyệt trước. Gửi được cả khách CHƯA theo dõi OA.',
+  OA:     'Miễn phí, nhưng chỉ tới khách ĐÃ theo dõi OA và trong 7 ngày kể từ lần khách nhắn cuối.',
+  IN_APP: 'Miễn phí, hiện trong Mini App. Khách chỉ thấy khi mở app — không có thông báo đẩy.',
+}
+
+function audienceSize(){
+  const o = document.getElementById('aud').selectedOptions[0]
+  return Number(o.dataset.n)
+}
+
+function preview(){
+  const ch = document.getElementById('ch').value
+  document.getElementById('chHint').textContent = CH_HINT[ch]
+  document.getElementById('pvCh').textContent = meta('channel', ch).label
+  document.getElementById('pvTitle').textContent = document.getElementById('title').value
+  document.getElementById('pvBody').textContent = document.getElementById('body').value
+    .replace('{{ten_khach}}', 'Minh Anh').replace('{{diem}}', '1.840').replace('{{hang}}', 'Vàng')
+
+  const n = audienceSize()
+  const cost = ch === 'ZNS' ? n * 300 : 0
+  document.getElementById('quota').innerHTML = ch === 'ZNS'
+    ? `Ước tính <b>${vnd(n)}</b> người nhận · chi phí ZNS khoảng <b class="price">${vnd(cost)}</b>
+       <span class="muted">(giả định 300đ/tin — ❓ cần chốt theo hợp đồng Zalo)</span>`
+    : `Ước tính <b>${vnd(n)}</b> người nhận · miễn phí.
+       ${ch === 'OA' ? '<b>Lưu ý:</b> khách ngoài cửa sổ 7 ngày sẽ không nhận được, hệ thống tự bỏ qua và ghi vào báo cáo gửi lỗi.' : ''}`
+}
+
+function send(){
+  const t = document.getElementById('title').value.trim()
+  if(!t) return toast('<i class="ti ti-alert-triangle"></i> Chưa nhập tiêu đề')
+  const n = audienceSize(), ch = document.getElementById('ch').value
+  const later = document.getElementById('when').value === 'later'
+  modal({ title: later ? 'Xác nhận hẹn giờ gửi' : 'Xác nhận gửi ngay',
+    sub:'Đã gửi thì không thu hồi được. Kiểm tra kỹ đối tượng và nội dung.',
+    body:`<div class="kv"><b>Kênh</b><span>${badge('channel', ch)}</span></div>
+      <div class="kv"><b>Đối tượng</b><span>${document.getElementById('aud').value}</span></div>
+      <div class="kv"><b>Số người nhận</b><span><b>${vnd(n)}</b></span></div>
+      ${ch === 'ZNS' ? `<div class="kv"><b>Chi phí</b><span>${money(n * 300)}</span></div>` : ''}
+      <div class="kv"><b>Tiêu đề</b><span>${t}</span></div>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="doSend(${n})">${later ? 'Hẹn giờ' : 'Gửi ngay'}</button>` })
+}
+function doSend(n){
+  const later = document.getElementById('when').value === 'later'
+  CAMPAIGNS.unshift({ id:'TB-'+(107 + CAMPAIGNS.length - 6), title:document.getElementById('title').value,
+    channel:document.getElementById('ch').value, audience:document.getElementById('aud').value,
+    to:n, sent: later ? 0 : n, failed:0, status: later ? 'SCHEDULED' : 'SENDING',
+    at:new Date().toISOString() })
+  closeModal(); renderHis(); renderKpis()
+  toast(later ? '<i class="ti ti-clock"></i> Đã hẹn giờ gửi' : '<i class="ti ti-send"></i> Đang gửi…')
+  if(!later) setTimeout(() => { CAMPAIGNS[0].status = 'SENT'; renderHis(); renderKpis()
+    toast(`<i class="ti ti-check"></i> Đã gửi xong <b>${vnd(n)}</b> tin`) }, 1400)
+}
+function testSend(){ toast('<i class="ti ti-flask"></i> Đã gửi thử tới Zalo của bạn — kiểm tra trước khi gửi hàng loạt') }
+
+function renderKpis(){
+  const sent = CAMPAIGNS.filter(c => c.status === 'SENT')
+  const totalSent = sent.reduce((s,c) => s + c.sent, 0)
+  const totalFail = CAMPAIGNS.reduce((s,c) => s + c.failed, 0)
+  const card = (l,v,f) => `<div class="stat-card" style="cursor:default"><div class="label">${l}</div>
+    <div class="value">${v}</div><div class="kpi-trend muted" style="margin-top:4px">${f}</div></div>`
+  document.getElementById('kpis').innerHTML =
+    card('Chiến dịch đã gửi', sent.length, '30 ngày gần nhất') +
+    card('Tin đã gửi', vnd(totalSent), 'ZNS + OA + in-app') +
+    card('Gửi lỗi', `<span style="color:${totalFail ? 'var(--danger)' : 'inherit'}">${totalFail}</span>`,
+         totalFail ? 'phần lớn do ngoài cửa sổ 7 ngày của OA' : 'không có lỗi') +
+    card('Đang hẹn giờ', CAMPAIGNS.filter(c => c.status === 'SCHEDULED').length, 'sẽ tự gửi đúng giờ')
+}
+
+function renderHis(){
+  document.getElementById('his').innerHTML = `
+    <thead><tr><th>Mã</th><th>Tiêu đề</th><th>Kênh</th><th>Đối tượng</th>
+      <th class="center">Gửi / Lỗi</th><th>Trạng thái</th><th>Thời điểm</th><th></th></tr></thead>
+    <tbody>${CAMPAIGNS.map(c => `<tr>
+      <td class="mono">${c.id}</td>
+      <td><b>${c.title}</b></td>
+      <td>${badge('channel', c.channel)}</td>
+      <td style="font-size:12.6px">${c.audience}<div class="muted" style="font-size:11.5px">${vnd(c.to)} người</div></td>
+      <td class="center">${vnd(c.sent)}${c.failed ? ` / <span style="color:var(--danger)">${c.failed}</span>` : ''}</td>
+      <td>${badge('notify', c.status)}</td>
+      <td style="font-size:12.6px">${dmy(c.at)} ${hhmm(c.at)}</td>
+      <td class="right">${c.status === 'FAILED'
+        ? `<button class="btn btn-outline btn-sm" onclick="resend('${c.id}')">Gửi lại ${c.failed} tin lỗi</button>`
+        : c.status === 'SCHEDULED'
+          ? `<button class="btn btn-ghost btn-sm" onclick="cancelSchedule('${c.id}')">Huỷ hẹn</button>` : ''}</td>
+    </tr>`).join('')}</tbody>`
+}
+function resend(id){
+  const c = CAMPAIGNS.find(x => x.id === id)
+  c.sent += c.failed; c.failed = 0; c.status = 'SENT'
+  renderHis(); renderKpis(); toast('<i class="ti ti-refresh"></i> Đã gửi lại các tin lỗi')
+}
+function cancelSchedule(id){
+  const c = CAMPAIGNS.find(x => x.id === id)
+  c.status = 'DRAFT'
+  renderHis(); renderKpis(); toast('<i class="ti ti-clock-off"></i> Đã huỷ hẹn giờ — chuyển về nháp')
+}
+
+preview(); renderKpis(); renderHis()
+</script>
+</body>
+</html>

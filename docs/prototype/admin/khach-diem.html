@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khách &amp; điểm — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+</head>
+<body>
+<main id="page">
+  <div class="stat-grid" id="kpis"></div>
+
+  <div class="grid-dispatch">
+    <div class="panel">
+      <h2>Danh sách khách</h2>
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="Tìm tên, Zalo, số điện thoại, mã khách…" oninput="render()">
+        <select id="fTier" onchange="render()"><option value="">Mọi hạng</option></select>
+        <select id="sort" onchange="render()">
+          <option value="points">Sắp xếp: điểm cao nhất</option>
+          <option value="spent">Chi tiêu nhiều nhất</option>
+          <option value="orders">Nhiều đơn nhất</option>
+          <option value="last">Ghé gần đây nhất</option>
+        </select>
+      </div>
+      <div class="table-scroll"><table class="data wide" id="tbl"></table></div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Quy tắc hạng &amp; điểm</h2>
+        <table class="data" id="tiers"></table>
+        <div class="schedule-banner" style="margin-top:12px">
+          ❓ <b>Chờ chủ quán chốt:</b> tỷ lệ tích điểm (đang giả định <b>1 điểm / 1.000đ</b>),
+          mốc lên hạng, hạn dùng điểm và giá trị quy đổi 1 điểm = bao nhiêu đồng.
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Điểm sắp hết hạn</h2>
+        <ul class="timeline" id="expiring"></ul>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:'khach-diem', title:'Khách & điểm', sub:'Tích điểm theo spec 02',
+  actions:`<button class="btn btn-outline btn-sm" onclick="location.href='thong-bao.html'">
+             <i class="ti ti-send"></i> Gửi thông báo cho nhóm khách</button>` })
+
+document.getElementById('fTier').innerHTML = '<option value="">Mọi hạng</option>' + optionsOf('tier')
+
+function renderKpis(){
+  const total = CUSTOMERS.length
+  const gold = CUSTOMERS.filter(c => c.tier === 'GOLD').length
+  const pts = CUSTOMERS.reduce((s,c) => s + c.points, 0)
+  const back = CUSTOMERS.filter(c => c.orders >= 5).length
+  const card = (l,v,f) => `<div class="stat-card" style="cursor:default"><div class="label">${l}</div>
+    <div class="value">${v}</div><div class="kpi-trend muted" style="margin-top:4px">${f}</div></div>`
+  document.getElementById('kpis').innerHTML =
+    card('Khách có tài khoản', total, 'đăng nhập bằng Zalo') +
+    card('Khách hạng Vàng', gold, `${pct(gold,total)}% tổng số khách`) +
+    card('Điểm đang lưu hành', vnd(pts), `≈ ${vnd(pts * 1000)}đ giá trị mua hàng`) +
+    card('Khách quay lại', back, 'từ 5 đơn trở lên')
+}
+
+function render(){
+  const q = document.getElementById('q').value.trim().toLowerCase()
+  const tier = document.getElementById('fTier').value
+  const by = document.getElementById('sort').value
+  const rows = CUSTOMERS
+    .filter(c => (!tier || c.tier === tier) &&
+      (!q || [c.id, c.name, c.zalo, c.phone].join(' ').toLowerCase().includes(q)))
+    .sort((a,b) => by === 'last' ? new Date(b.last) - new Date(a.last) : b[by] - a[by])
+
+  document.getElementById('tbl').innerHTML = `
+    <thead><tr><th>Khách</th><th>Hạng</th><th class="right">Điểm</th><th class="right">Chi tiêu</th>
+      <th class="center">Đơn</th><th>Ghé gần nhất</th><th></th></tr></thead>
+    <tbody>${rows.map(c => `
+      <tr class="row-link" onclick="detail('${c.id}')">
+        <td><b>${c.name}</b><div class="muted" style="font-size:11.5px">${c.id} · ${c.phone} · zalo/${c.zalo}</div></td>
+        <td>${badge('tier', c.tier)}</td>
+        <td class="right"><b>${vnd(c.points)}</b></td>
+        <td class="right">${money(c.spent)}</td>
+        <td class="center">${c.orders}</td>
+        <td>${timeAgo(c.last)}</td>
+        <td class="right"><button class="btn btn-outline btn-sm"
+          onclick="event.stopPropagation();adjust('${c.id}')"><i class="ti ti-adjustments"></i> Chỉnh điểm</button></td>
+      </tr>`).join('') || `<tr><td colspan="7"><div class="empty-state">
+        <i class="ti ti-user-search" style="font-size:26px"></i><p>Không tìm thấy khách nào.</p></div></td></tr>`}</tbody>`
+  renderKpis()
+}
+
+function renderTiers(){
+  document.getElementById('tiers').innerHTML = `
+    <thead><tr><th>Hạng</th><th class="right">Từ điểm</th><th>Quyền lợi</th><th class="center">Khách</th></tr></thead>
+    <tbody>${TIER_RULE.map(t => `<tr>
+      <td>${badge('tier', t.tier)}</td><td class="right">${vnd(t.from)}</td>
+      <td style="font-size:12.8px">${t.perk}</td>
+      <td class="center">${CUSTOMERS.filter(c => c.tier === t.tier).length}</td></tr>`).join('')}</tbody>`
+}
+
+function renderExpiring(){
+  const soon = CUSTOMERS.filter(c => c.points > 200).slice(0, 4)
+  document.getElementById('expiring').innerHTML = soon.map((c, i) => `
+    <li><div class="t-status">${c.name} — <b>${vnd(Math.round(c.points * 0.3))}</b> điểm</div>
+      <div class="t-meta">hết hạn sau ${12 + i * 6} ngày · ${badge('tier', c.tier)}</div>
+      <div class="t-note">Nên nhắc qua ZNS trước 7 ngày — điểm hết hạn không báo trước là nguồn khiếu nại phổ biến nhất của chương trình tích điểm.</div>
+    </li>`).join('')
+}
+
+function detail(id){
+  const c = CUSTOMERS.find(x => x.id === id)
+  const his = ORDERS.filter(o => o.customer === c.name)
+  modal({ lg:true, title:c.name, sub:`${c.id} · ${c.phone} · zalo/${c.zalo}`,
+    body:`
+      <div class="detail-grid">
+        <div>
+          <div class="kv"><b>Hạng</b><span>${badge('tier', c.tier)}</span></div>
+          <div class="kv"><b>Điểm</b><span><span style="font-weight:700">${vnd(c.points)}</span> ≈ ${money(c.points * 1000)}</span></div>
+          <div class="kv"><b>Tổng chi tiêu</b><span>${money(c.spent)}</span></div>
+          <div class="kv"><b>Số đơn</b><span>${c.orders} đơn · TB ${money(Math.round(c.spent / c.orders))}/đơn</span></div>
+          <div class="kv"><b>Ghé gần nhất</b><span>${dmy(c.last)} (${timeAgo(c.last)})</span></div>
+          <hr class="divider">
+          <b style="font-size:13px">Tiến độ lên hạng</b>
+          ${(() => {
+            const nx = TIER_RULE.find(t => t.from > c.points)
+            if(!nx) return '<p class="muted" style="font-size:13px">Đã ở hạng cao nhất.</p>'
+            return `<div class="progress-bar" style="margin:8px 0 5px"><span style="width:${pct(c.points, nx.from)}%"></span></div>
+              <div class="muted" style="font-size:12.5px">Còn <b>${vnd(nx.from - c.points)}</b> điểm để lên hạng ${meta('tier', nx.tier).label}</div>`
+          })()}
+        </div>
+        <div>
+          <b style="font-size:13px">Đơn gần đây</b>
+          <div class="table-scroll" style="margin-top:8px"><table class="items-sub">
+            <thead><tr><th>Mã</th><th>Món</th><th class="right">Tiền</th><th>Trạng thái</th></tr></thead>
+            <tbody>${his.length ? his.map(o => `<tr><td>#${o.code}</td><td>${itemsText(o)}</td>
+              <td class="right">${money(orderTotal(o))}</td><td>${badge('order', o.status)}</td></tr>`).join('')
+              : '<tr><td colspan="4" class="muted center">Chưa có đơn nào hôm nay.</td></tr>'}</tbody></table></div>
+        </div>
+      </div>`,
+    actions:`<button class="btn btn-outline" data-close>Đóng</button>
+             <button class="btn btn-primary" onclick="adjust('${c.id}')"><i class="ti ti-adjustments"></i> Chỉnh điểm</button>` })
+}
+
+/* Chỉnh điểm tay — bắt buộc nhập lý do. Điểm là tiền của khách; một dòng nhật ký không
+   nói được vì sao thì tháng sau không ai đối soát nổi. */
+function adjust(id){
+  const c = CUSTOMERS.find(x => x.id === id)
+  modal({ persistent:true, title:`Chỉnh điểm — ${c.name}`,
+    sub:`Điểm hiện tại: ${vnd(c.points)}. Mọi lần chỉnh đều ghi nhật ký kèm người thực hiện.`,
+    body:`
+      <div class="field"><label for="delta">Số điểm cộng / trừ <span style="color:var(--danger)">*</span></label>
+        <input id="delta" type="number" placeholder="VD: 200 hoặc -50">
+        <div class="muted" style="font-size:12px;margin-top:4px">Số âm là trừ điểm.</div></div>
+      <div class="field"><label for="reason">Lý do <span style="color:var(--danger)">*</span></label>
+        <select id="reason">
+          <option>Bù điểm đơn lỗi hệ thống</option>
+          <option>Khuyến mãi / tri ân khách</option>
+          <option>Khách khiếu nại — đền bù</option>
+          <option>Trừ điểm đơn đã hoàn tiền</option>
+          <option>Khác (ghi rõ bên dưới)</option>
+        </select></div>
+      <div class="field"><label for="note">Ghi chú</label>
+        <textarea id="note" rows="2" placeholder="Ví dụ: đơn H1032 hết món, bù 200 điểm cho khách"></textarea></div>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="saveAdjust('${id}')">Xác nhận chỉnh điểm</button>` })
+}
+function saveAdjust(id){
+  const d = Number(document.getElementById('delta').value)
+  if(!d) return toast('<i class="ti ti-alert-triangle"></i> Chưa nhập số điểm cần cộng/trừ')
+  const c = CUSTOMERS.find(x => x.id === id)
+  const old = c.points
+  c.points = Math.max(0, c.points + d)
+  const t = [...TIER_RULE].reverse().find(t => c.points >= t.from)
+  const tierChanged = t.tier !== c.tier
+  c.tier = t.tier
+  closeModal(); render()
+  toast(`<i class="ti ti-check"></i> ${c.name}: ${vnd(old)} → <b>${vnd(c.points)}</b> điểm`
+    + (tierChanged ? ` · lên/xuống hạng <b>${meta('tier', c.tier).label}</b>` : '') + ' · đã ghi nhật ký')
+}
+
+render(); renderTiers(); renderExpiring()
+</script>
+</body>
+</html>

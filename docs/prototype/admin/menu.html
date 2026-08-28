@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu &amp; giá — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+</head>
+<body>
+<main id="page">
+  <div class="stat-grid" id="kpis"></div>
+
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Tìm món…" oninput="render()">
+    <select id="fCat" onchange="render()"></select>
+    <label class="row-flex" style="font-size:13px;gap:6px">
+      <input type="checkbox" class="switch" id="onlyOut" onchange="render()"> Chỉ món đang hết
+    </label>
+  </div>
+
+  <div id="cats"></div>
+
+  <div class="panel">
+    <h2>Ghi chú nghiệp vụ</h2>
+    <div class="schedule-banner">
+      <b>Tắt món ≠ xoá món.</b> Tắt chỉ ẩn khỏi Mini App và chặn đặt mới — đơn đang chế biến vẫn giữ nguyên.
+      Xoá món làm hỏng lịch sử đơn cũ và báo cáo doanh thu theo món, nên chỉ ẩn chứ không xoá.
+    </div>
+    <div class="schedule-banner" style="background:var(--info-bg)">
+      ❓ <b>Chờ chủ quán chốt:</b> phí hộp mang về đang để <b class="price">5.000</b>/đơn (theo menu.json).
+      Tính theo đơn hay theo món? Có miễn phí hộp cho đơn trên một mức tiền không?
+    </div>
+  </div>
+</main>
+
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:'menu', title:'Menu & giá', sub:'Nguồn món: docs/assets/data/menu.json',
+  actions: can('menu')
+    ? `<button class="btn btn-primary btn-sm" onclick="editItem()"><i class="ti ti-plus"></i> Thêm món</button>`
+    : `<span class="badge gray"><i class="ti ti-lock"></i> Chỉ xem</span>` })
+
+const editable = can('menu')
+
+function renderKpis(){
+  const all = MENU.flatMap(c => c.items)
+  const out = all.filter(i => !i.available)
+  const avg = Math.round(all.reduce((s,i)=> s+i.price, 0) / all.length)
+  const card = (l,v,f) => `<div class="stat-card" style="cursor:default"><div class="label">${l}</div>
+      <div class="value">${v}</div><div class="kpi-trend muted" style="margin-top:4px">${f}</div></div>`
+  document.getElementById('kpis').innerHTML =
+    card('Tổng số món', all.length, `${MENU.length} nhóm`) +
+    card('Đang bán', all.length - out.length, 'hiện trên Mini App') +
+    card('Đang hết', `<span style="color:var(--danger)">${out.length}</span>`, out.map(i=>i.name).slice(0,2).join(', ') || '—') +
+    card('Giá trung bình', `<span class="price">${vnd(avg)}</span>`, `thấp nhất ${vnd(Math.min(...all.map(i=>i.price)))}đ`)
+}
+
+function initCat(){
+  document.getElementById('fCat').innerHTML = '<option value="">Mọi nhóm món</option>' +
+    MENU.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+}
+
+function render(){
+  const q = document.getElementById('q').value.trim().toLowerCase()
+  const cat = document.getElementById('fCat').value
+  const onlyOut = document.getElementById('onlyOut').checked
+  document.getElementById('cats').innerHTML = MENU.filter(c => !cat || c.id === cat).map(c => {
+    const items = c.items.filter(i => (!q || i.name.toLowerCase().includes(q)) && (!onlyOut || !i.available))
+    if(!items.length) return ''
+    return `<div class="panel">
+      <h2>${c.name} <span class="muted" style="font-size:12.5px;font-weight:600">${items.length} món</span></h2>
+      <div class="table-scroll"><table class="data wide">
+        <thead><tr><th style="width:34px"></th><th>Món</th><th class="right" style="width:110px">Giá</th>
+          <th class="center" style="width:110px">Bán hôm nay</th>
+          <th class="center" style="width:100px">Còn hàng</th><th style="width:220px"></th></tr></thead>
+        <tbody>${items.map((i, idx) => `
+          <tr class="${i.available ? '' : 'blocked'}">
+            <td class="center muted mono" style="font-size:11.5px">${idx+1}</td>
+            <td><b>${i.name}</b>
+              <div class="chip-list" style="margin-top:4px">
+                <span class="tag tag-veg">chay</span>
+                ${i.spicy ? '<span class="tag tag-spicy">cay</span>' : ''}
+                ${i.available ? '' : '<span class="tag tag-out">tạm hết</span>'}
+              </div></td>
+            <td class="right">${money(i.price)}</td>
+            <td class="center">${i.sold}</td>
+            <td class="center"><input type="checkbox" class="switch" ${i.available ? 'checked' : ''}
+                ${editable ? `onchange="toggle('${i.id}', this.checked)"` : 'disabled title="Không đủ quyền"'}></td>
+            <td class="right">
+              <button class="btn btn-outline btn-sm" ${editable ? `onclick="editItem('${i.id}')"` : 'disabled'}>
+                <i class="ti ti-pencil"></i> Sửa</button>
+              <button class="btn btn-ghost btn-sm" ${editable ? `onclick="moveItem('${c.id}','${i.id}',-1)"` : 'disabled'} title="Đưa lên"><i class="ti ti-arrow-up"></i></button>
+              <button class="btn btn-ghost btn-sm" ${editable ? `onclick="moveItem('${c.id}','${i.id}',1)"` : 'disabled'} title="Đưa xuống"><i class="ti ti-arrow-down"></i></button>
+            </td>
+          </tr>`).join('')}</tbody></table></div></div>`
+  }).join('') || `<div class="panel"><div class="empty-state">
+    <i class="ti ti-search-off" style="font-size:26px"></i><p>Không có món nào khớp bộ lọc.</p></div></div>`
+  renderKpis()
+}
+
+const findItem = id => MENU.flatMap(c => c.items).find(i => i.id === id)
+
+function toggle(id, on){
+  const i = findItem(id)
+  i.available = on
+  render()
+  toast(on
+    ? `<i class="ti ti-eye"></i> <b>${i.name}</b> đã bật lại — khách đặt được ngay`
+    : `<i class="ti ti-eye-off"></i> <b>${i.name}</b> tạm hết — ẩn khỏi Mini App, đơn đang làm giữ nguyên`)
+}
+
+function moveItem(catId, id, dir){
+  const c = MENU.find(x => x.id === catId)
+  const k = c.items.findIndex(i => i.id === id)
+  const j = k + dir
+  if(j < 0 || j >= c.items.length) return
+  ;[c.items[k], c.items[j]] = [c.items[j], c.items[k]]
+  render()
+  toast('<i class="ti ti-arrows-sort"></i> Đã đổi thứ tự hiển thị trên Mini App')
+}
+
+/* Thêm / sửa món — persistent vì có nhập liệu: bấm hụt ra nền là mất sạch nội dung đang gõ. */
+function editItem(id){
+  const i = id ? findItem(id) : null
+  modal({ persistent:true, lg:true,
+    title: i ? `Sửa món — ${i.name}` : 'Thêm món mới',
+    sub: 'Đổi giá được ghi vào nhật ký (ai đổi, từ giá nào sang giá nào).',
+    body:`
+      <div class="grid-2">
+        <div class="field"><label for="mName">Tên món <span style="color:var(--danger)">*</span></label>
+          <input id="mName" value="${i ? i.name : ''}" placeholder="VD: Tamago Ramen"></div>
+        <div class="field"><label for="mPrice">Giá bán (đ) <span style="color:var(--danger)">*</span></label>
+          <input id="mPrice" type="number" step="1000" value="${i ? i.price : ''}" placeholder="50000"></div>
+      </div>
+      <div class="field"><label for="mDesc">Mô tả hiển thị trên Mini App</label>
+        <textarea id="mDesc" rows="2" placeholder="Mì Ramen dùng với nước dùng từ rau củ + sữa hạt"></textarea></div>
+      <div class="grid-2">
+        <div class="field"><label for="mCat">Nhóm món</label>
+          <select id="mCat">${MENU.map(c => `<option ${i && c.items.includes(i) ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
+        <div class="field"><label>Thuộc tính</label>
+          <div class="row-flex" style="padding-top:6px">
+            <label class="row-flex" style="gap:6px;font-size:13px"><input type="checkbox" class="switch" ${i && i.spicy ? 'checked' : ''}> Món cay</label>
+            <label class="row-flex" style="gap:6px;font-size:13px"><input type="checkbox" class="switch" ${!i || i.available ? 'checked' : ''}> Còn hàng</label>
+          </div></div>
+      </div>
+      ${i ? `<div class="schedule-banner">Giá hiện tại <b class="price">${vnd(i.price)}</b> — đơn đã đặt trước đó
+        <b>không</b> đổi giá theo; giá mới chỉ áp cho đơn tạo sau khi lưu.</div>` : ''}`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="saveItem('${id || ''}')">${i ? 'Lưu thay đổi' : 'Thêm món'}</button>` })
+}
+
+function saveItem(id){
+  const name = document.getElementById('mName').value.trim()
+  const price = Number(document.getElementById('mPrice').value)
+  if(!name || !price) return toast('<i class="ti ti-alert-triangle"></i> Cần nhập tên món và giá bán')
+  if(id){
+    const i = findItem(id), old = i.price
+    i.name = name; i.price = price
+    closeModal(); render()
+    toast(old !== price
+      ? `<i class="ti ti-check"></i> <b>${name}</b>: giá ${vnd(old)}đ → <b>${vnd(price)}đ</b> · đã ghi nhật ký`
+      : `<i class="ti ti-check"></i> Đã lưu <b>${name}</b>`)
+  } else {
+    MENU[0].items.push({ id:'moi-'+Date.now(), name, price, spicy:false, available:true, sold:0 })
+    closeModal(); render()
+    toast(`<i class="ti ti-check"></i> Đã thêm <b>${name}</b> vào menu`)
+  }
+}
+
+initCat(); render()
+</script>
+</body>
+</html>

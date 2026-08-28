@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đăng nhập — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+<style>
+  .otp{display:flex;gap:8px;margin:14px 0 4px}
+  .otp input{width:100%;height:54px;text-align:center;font-size:22px;font-weight:800;padding:0;font-variant-numeric:tabular-nums}
+  .err{color:var(--danger);font-size:13px;min-height:20px;margin-top:8px}
+  .qrbox{display:flex;gap:14px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin:12px 0}
+  .qrbox svg{width:92px;height:92px;flex:none;background:#fff;border-radius:8px;padding:5px}
+  .backup{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+  .backup code{font-family:var(--font-mono);background:var(--bg);border:1px dashed var(--border);border-radius:7px;padding:7px 10px;text-align:center;font-size:13px;letter-spacing:1px}
+  .lockbar{background:var(--danger-bg);color:var(--danger);border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-side">
+      <div>
+        <div class="brand-logo" style="font-size:44px;color:#fff">Hikari</div>
+        <div class="brand-sub" style="margin-bottom:20px">vegetarian cafe</div>
+        <span class="portal-pill"><span class="dot"></span> Cổng quản trị</span>
+        <h2 style="margin-top:16px">Quản lý quán trong một màn hình</h2>
+        <p>Đơn hàng realtime, menu &amp; giá, tích điểm, thông báo cho khách, đồng bộ Sapo và báo cáo doanh thu.</p>
+        <div class="chips">
+          <span>Đơn realtime</span><span>Menu &amp; giá</span><span>Tích điểm</span>
+          <span>ZNS / OA</span><span>Sapo</span><span>Báo cáo</span>
+        </div>
+      </div>
+      <div class="copyright">© 2026 Hikari Vegetarian Cafe · Quận 10, TP.HCM</div>
+    </div>
+
+    <div class="auth-form">
+      <!-- Bước 1 — email + mật khẩu -->
+      <div id="step1">
+        <h1>Đăng nhập</h1>
+        <p class="sub">Tài khoản quản trị bắt buộc xác thực 2 lớp.</p>
+        <div class="lockbar" id="lockbar" style="display:none"></div>
+        <div class="field"><label for="email">Email</label><input id="email" type="email" value="quanly@hikari.vn"></div>
+        <div class="field"><label for="pw">Mật khẩu</label><input id="pw" type="password" value="MatKhauDemo123"></div>
+        <div class="err" id="pwErr"></div>
+        <button class="btn btn-primary" style="width:100%" onclick="login()">Tiếp tục</button>
+        <p class="muted" style="font-size:12.5px;text-align:center;margin-top:14px">
+          <i class="ti ti-lock"></i> Mật khẩu băm Argon2id · giới hạn số lần thử theo IP + email
+        </p>
+      </div>
+
+      <!-- Bước 2 — mã TOTP -->
+      <div id="step2" style="display:none">
+        <h1>Xác thực 2 lớp</h1>
+        <p class="sub">Mở Google Authenticator / Authy và nhập mã 6 số đang hiển thị.</p>
+        <div class="otp" id="otp">
+          <input maxlength="1" inputmode="numeric" aria-label="Số 1"><input maxlength="1" inputmode="numeric" aria-label="Số 2">
+          <input maxlength="1" inputmode="numeric" aria-label="Số 3"><input maxlength="1" inputmode="numeric" aria-label="Số 4">
+          <input maxlength="1" inputmode="numeric" aria-label="Số 5"><input maxlength="1" inputmode="numeric" aria-label="Số 6">
+        </div>
+        <div class="err" id="otpErr"></div>
+        <button class="btn btn-primary" style="width:100%" onclick="verify()">Xác thực &amp; vào quản trị</button>
+        <div class="row-flex" style="justify-content:space-between;margin-top:12px">
+          <button class="btn btn-ghost btn-sm" onclick="step(1)"><i class="ti ti-arrow-left"></i> Quay lại</button>
+          <button class="btn btn-ghost btn-sm" onclick="useBackup()">Mất thiết bị? Dùng mã dự phòng</button>
+        </div>
+        <div class="schedule-banner" style="margin-top:16px">
+          <b>Mô phỏng:</b> nhập <code class="inline">123456</code> để vào. Sai 5 lần → khoá tạm 15 phút.
+        </div>
+      </div>
+
+      <!-- Thiết lập 2FA lần đầu -->
+      <div id="setup" style="display:none">
+        <h1>Bật xác thực 2 lớp</h1>
+        <p class="sub">Tài khoản này chưa liên kết ứng dụng xác thực. Bắt buộc bật trước khi dùng.</p>
+        <div class="qrbox">
+          <svg viewBox="0 0 100 100" aria-label="Mã QR otpauth"><rect width="100" height="100" fill="#fff"/><g fill="#1C1B19">
+            <rect x="8" y="8" width="22" height="22"/><rect x="13" y="13" width="12" height="12" fill="#fff"/>
+            <rect x="70" y="8" width="22" height="22"/><rect x="75" y="13" width="12" height="12" fill="#fff"/>
+            <rect x="8" y="70" width="22" height="22"/><rect x="13" y="75" width="12" height="12" fill="#fff"/>
+            <rect x="40" y="10" width="6" height="6"/><rect x="52" y="10" width="6" height="6"/><rect x="40" y="40" width="6" height="6"/>
+            <rect x="52" y="52" width="6" height="6"/><rect x="70" y="40" width="6" height="6"/><rect x="84" y="52" width="6" height="6"/>
+            <rect x="40" y="70" width="6" height="6"/><rect x="64" y="64" width="6" height="6"/><rect x="82" y="82" width="6" height="6"/>
+            <rect x="10" y="40" width="6" height="6"/><rect x="24" y="52" width="6" height="6"/></g></svg>
+          <div style="font-size:12.8px" class="muted">Quét mã này bằng ứng dụng xác thực, rồi nhập 1 mã đúng để xác nhận liên kết.<br>
+            <code class="inline" style="font-size:11px">otpauth://totp/Hikari:quanly@hikari.vn</code></div>
+        </div>
+        <b style="font-size:13px">8 mã dự phòng — lưu lại ngay, chỉ hiện một lần</b>
+        <div class="backup">
+          <code>4KJ2-9ZQD</code><code>P7XM-31VC</code><code>B2NR-8LKT</code><code>Z9WQ-64HS</code>
+          <code>M3TP-27YB</code><code>C8VL-95RX</code><code>Q4DF-13NW</code><code>H6ZK-70JM</code>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="step(2)">Tôi đã lưu — nhập mã xác nhận</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/kit.js"></script>
+<script>
+let fails = 0
+function step(n){ ['step1','step2','setup'].forEach((id,i)=> document.getElementById(id).style.display = (i===n-1?'block':'none'))
+  if(n===2) document.querySelector('#otp input').focus() }
+function login(){
+  const pw = document.getElementById('pw').value
+  if(!pw){ document.getElementById('pwErr').textContent = 'Chưa nhập mật khẩu.'; return }
+  // Tài khoản bếp chưa bật 2FA → buộc đi qua màn thiết lập trước (spec 07 §2)
+  step(document.getElementById('email').value.trim() === 'bep@hikari.vn' ? 3 : 2)
+}
+document.querySelectorAll('#otp input').forEach((inp,i,arr)=>{
+  inp.addEventListener('input',()=>{ if(inp.value && i<arr.length-1) arr[i+1].focus() })
+  inp.addEventListener('keydown',e=>{ if(e.key==='Backspace' && !inp.value && i>0) arr[i-1].focus() })
+  inp.addEventListener('paste',e=>{ const t=(e.clipboardData.getData('text')||'').replace(/\D/g,'').slice(0,6)
+    if(t){ e.preventDefault(); arr.forEach((x,k)=> x.value = t[k]||''); arr[Math.min(t.length,5)].focus() } })
+})
+function verify(){
+  const code = [...document.querySelectorAll('#otp input')].map(i=>i.value).join('')
+  if(code === '123456'){
+    // Vai trò suy từ email đã nhập — để duyệt RBAC ngay từ màn đăng nhập
+    const em = document.getElementById('email').value.trim()
+    const r = em === 'chuquan@hikari.vn' ? 'owner' : em === 'thungan@hikari.vn' ? 'staff' : 'manager'
+    try { sessionStorage.setItem('hikari_proto_role', r) } catch {}
+    location.href = 'tong-quan.html'
+    return
+  }
+  fails++
+  const left = 5 - fails
+  document.getElementById('otpErr').textContent = left > 0
+    ? `Mã không đúng. Còn ${left} lần thử. (mô phỏng: 123456)`
+    : 'Sai quá số lần cho phép — tài khoản bị khoá tạm 15 phút.'
+  if(left <= 0){
+    const bar = document.getElementById('lockbar')
+    bar.style.display = 'block'
+    bar.innerHTML = '<i class="ti ti-lock"></i> Tài khoản tạm khoá 15 phút do nhập sai mã 5 lần.'
+    step(1)
+    fails = 0
+  }
+  document.querySelectorAll('#otp input').forEach(i=> i.value='')
+  document.querySelector('#otp input').focus()
+}
+function useBackup(){
+  modal({ title:'Dùng mã dự phòng', sub:'Mỗi mã chỉ dùng được một lần. Hết mã thì chủ quán reset 2FA (có ghi nhật ký).',
+    body:'<div class="field"><label for="bk">Mã dự phòng</label><input id="bk" placeholder="VD: 4KJ2-9ZQD" class="mono"></div>',
+    persistent:true,
+    actions:'<button class="btn btn-outline" data-close>Huỷ</button><button class="btn btn-primary" onclick="closeModal();toast(\'Mô phỏng: mã dự phòng hợp lệ — đang vào quản trị\');setTimeout(()=>location.href=\'tong-quan.html\',900)">Xác thực</button>' })
+}
+</script>
+</body>
+</html>

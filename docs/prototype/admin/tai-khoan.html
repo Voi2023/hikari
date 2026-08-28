@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tài khoản &amp; nhật ký — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+</head>
+<body>
+<main id="page">
+  <div class="toolbar"><div class="tabs" id="tabs"></div></div>
+  <div id="view"></div>
+</main>
+
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:'tai-khoan', title:'Tài khoản & nhật ký', sub:'Phân quyền · 2FA · lịch sử thao tác',
+  actions: role() === 'owner'
+    ? `<button class="btn btn-primary btn-sm" onclick="editUser()"><i class="ti ti-user-plus"></i> Thêm tài khoản</button>`
+    : `<span class="badge gray"><i class="ti ti-lock"></i> Chỉ chủ quán mới sửa được</span>` })
+
+const isOwner = role() === 'owner'
+const TABS = [['users','Tài khoản'],['roles','Phân quyền'],['audit','Nhật ký thao tác']]
+let tab = 'users'
+
+const PERMS = [
+  ['Xem & xử lý đơn hàng',        ['owner','manager','staff']],
+  ['Theo dõi giao hàng',          ['owner','manager','staff']],
+  ['Sửa menu, đổi giá',           ['owner','manager']],
+  ['Xem & chỉnh điểm khách',      ['owner','manager']],
+  ['Gửi thông báo hàng loạt',     ['owner','manager']],
+  ['Đồng bộ Sapo, đổi token',     ['owner','manager']],
+  ['Xem báo cáo doanh thu',       ['owner','manager']],
+  ['Huỷ đơn / hoàn tiền',         ['owner','manager']],
+  ['Quản lý tài khoản, reset 2FA', ['owner']],
+]
+
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = TABS.map(([k,l]) =>
+    `<button class="${tab===k?'active':''}" onclick="setTab('${k}')">${l}</button>`).join('')
+}
+function setTab(k){ tab = k; renderTabs(); render() }
+function render(){
+  document.getElementById('view').innerHTML = ({ users:vUsers, roles:vRoles, audit:vAudit })[tab]()
+  if(tab === 'audit') filterAudit()   // bảng nhật ký dựng rỗng rồi mới đổ dòng theo bộ lọc
+}
+
+function vUsers(){
+  return `<div class="panel"><h2>Tài khoản quản trị · ${ADMINS.length}</h2>
+    <div class="table-scroll"><table class="data wide">
+      <thead><tr><th>Người dùng</th><th>Vai trò</th><th>2FA</th><th class="center">Mã dự phòng</th>
+        <th>Đăng nhập gần nhất</th><th></th></tr></thead>
+      <tbody>${ADMINS.map(a => `<tr>
+        <td><b>${a.name}</b><div class="muted" style="font-size:11.5px">${a.email} · ${a.id}</div></td>
+        <td>${badge('role', a.role)}</td>
+        <td>${a.totp ? '<span class="badge green"><i class="ti ti-shield-check"></i> Đã bật</span>'
+                     : '<span class="badge red"><i class="ti ti-shield-off"></i> Chưa bật</span>'}</td>
+        <td class="center">${a.totp ? `${a.backup}/8` : '—'}</td>
+        <td>${a.last ? `${hhmm(a.last)} · ${timeAgo(a.last)}` : '<span class="muted">chưa từng đăng nhập</span>'}</td>
+        <td class="right">
+          <button class="btn btn-outline btn-sm" ${isOwner ? `onclick="editUser('${a.id}')"` : 'disabled'}>
+            <i class="ti ti-pencil"></i> Sửa</button>
+          <button class="btn btn-ghost btn-sm" ${isOwner ? `onclick="reset2fa('${a.id}')"` : 'disabled'}
+            title="Reset 2FA khi nhân viên mất điện thoại"><i class="ti ti-shield-lock"></i> Reset 2FA</button>
+        </td></tr>`).join('')}</tbody></table></div>
+
+    <div class="schedule-banner" style="margin-top:14px;background:var(--danger-bg)">
+      <b>Tài khoản "Quốc Anh" chưa bật 2FA</b> — theo spec 07 §2, 2FA là bắt buộc: tài khoản này
+      không đăng nhập được cho tới khi quét QR liên kết ứng dụng xác thực ở lần đăng nhập kế tiếp.
+    </div>
+    <div class="schedule-banner">
+      <b>Reset 2FA là đường vòng qua lớp bảo vệ</b>, nên chỉ chủ quán làm được và luôn ghi nhật ký
+      (ai reset, cho ai, lúc nào, từ IP nào). Nhân viên mất điện thoại thì dùng mã dự phòng trước;
+      reset là phương án cuối.
+    </div></div>`
+}
+
+function vRoles(){
+  const roles = ['owner','manager','staff']
+  return `<div class="panel"><h2>Ma trận phân quyền (RBAC)</h2>
+    <div class="table-scroll"><table class="data wide">
+      <thead><tr><th>Quyền</th>${roles.map(r => `<th class="center">${meta('role', r).label}</th>`).join('')}</tr></thead>
+      <tbody>${PERMS.map(([name, allow]) => `<tr>
+        <td>${name}</td>
+        ${roles.map(r => `<td class="center">${allow.includes(r)
+          ? '<i class="ti ti-check" style="color:var(--ok);font-size:17px"></i>'
+          : '<i class="ti ti-minus" style="color:var(--border);font-size:17px"></i>'}</td>`).join('')}
+      </tr>`).join('')}</tbody></table></div>
+    <div class="schedule-banner" style="margin-top:14px">
+      <b>Nhân viên không bị ẩn menu, chỉ bị khoá.</b> Ẩn hẳn thì người ta tưởng hệ thống thiếu chức năng
+      và đi hỏi vòng quanh; khoá kèm lý do thì biết ngay là phải nhờ quản lý. Đổi thử vai trò ở góc
+      dưới trái sidebar để xem từng vai trò nhìn thấy gì.
+    </div></div>`
+}
+
+function vAudit(){
+  return `<div class="panel"><h2>Nhật ký thao tác · ${AUDIT.length} dòng gần nhất</h2>
+    <div class="toolbar">
+      <input type="search" id="qa" placeholder="Tìm theo người, hành động, đối tượng…" oninput="filterAudit()">
+      <select id="ra" onchange="filterAudit()"><option value="">Mọi vai trò</option>${optionsOf('role')}</select>
+    </div>
+    <div class="table-scroll"><table class="data wide" id="auditTbl"></table></div>
+    <div class="schedule-banner" style="margin-top:14px">
+      Nhật ký ghi <b>mọi hành động chạm tới tiền hoặc quyền</b>: đổi giá, chỉnh điểm, huỷ/hoàn đơn,
+      gửi thông báo hàng loạt, reset 2FA, đăng nhập (kể cả thất bại).
+      <b>Không</b> ghi mật khẩu, secret TOTP hay JWT.
+    </div></div>`
+}
+function filterAudit(){
+  const q = (document.getElementById('qa').value || '').trim().toLowerCase()
+  const r = document.getElementById('ra').value
+  const rows = AUDIT.filter(a => (!r || a.role === r) &&
+    (!q || [a.who, a.action, a.target].join(' ').toLowerCase().includes(q)))
+  document.getElementById('auditTbl').innerHTML = `
+    <thead><tr><th>Thời điểm</th><th>Người thực hiện</th><th>Hành động</th><th>Đối tượng</th><th>IP</th></tr></thead>
+    <tbody>${rows.map(a => `<tr>
+      <td>${hhmm(a.at)}<div class="muted" style="font-size:11.5px">${timeAgo(a.at)}</div></td>
+      <td>${a.who} ${badge('role', a.role)}</td>
+      <td class="${a.action.includes('thất bại') ? '' : ''}" style="${a.action.includes('thất bại') ? 'color:var(--danger);font-weight:600' : ''}">${a.action}</td>
+      <td class="mono" style="font-size:12.3px">${a.target}</td>
+      <td class="mono muted" style="font-size:12px">${a.ip}</td></tr>`).join('')
+      || `<tr><td colspan="5"><div class="empty-state">Không có dòng nhật ký nào khớp.</div></td></tr>`}</tbody>`
+}
+
+function editUser(id){
+  const a = id ? ADMINS.find(x => x.id === id) : null
+  modal({ persistent:true, title: a ? `Sửa tài khoản — ${a.name}` : 'Thêm tài khoản quản trị',
+    sub:'Tài khoản mới bắt buộc bật 2FA ở lần đăng nhập đầu tiên.',
+    body:`
+      <div class="grid-2">
+        <div class="field"><label for="uName">Họ tên <span style="color:var(--danger)">*</span></label>
+          <input id="uName" value="${a ? a.name : ''}"></div>
+        <div class="field"><label for="uMail">Email đăng nhập <span style="color:var(--danger)">*</span></label>
+          <input id="uMail" type="email" value="${a ? a.email : ''}" placeholder="ten@hikari.vn"></div>
+      </div>
+      <div class="field"><label for="uRole">Vai trò</label>
+        <select id="uRole">${['owner','manager','staff'].map(r =>
+          `<option value="${r}" ${a && a.role === r ? 'selected' : ''}>${meta('role', r).label}</option>`).join('')}</select>
+        <div class="muted" style="font-size:12px;margin-top:4px">Xem quyền cụ thể ở tab <b>Phân quyền</b>.</div></div>
+      ${a && a.role === 'owner' ? `<div class="schedule-banner" style="background:var(--danger-bg)">
+        Hạ quyền tài khoản chủ quán cuối cùng sẽ khiến <b>không ai</b> reset được 2FA cho người khác nữa.</div>` : ''}`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="saveUser('${id || ''}')">${a ? 'Lưu' : 'Tạo tài khoản'}</button>` })
+}
+function saveUser(id){
+  const name = document.getElementById('uName').value.trim()
+  const email = document.getElementById('uMail').value.trim()
+  const r = document.getElementById('uRole').value
+  if(!name || !email) return toast('<i class="ti ti-alert-triangle"></i> Cần nhập họ tên và email')
+  if(id){
+    const a = ADMINS.find(x => x.id === id)
+    Object.assign(a, { name, email, role: r })
+    toast(`<i class="ti ti-check"></i> Đã cập nhật <b>${name}</b> · đã ghi nhật ký`)
+  } else {
+    ADMINS.push({ id:'AD0'+(ADMINS.length+1), name, email, role:r, totp:false, backup:0, last:null })
+    toast(`<i class="ti ti-user-plus"></i> Đã tạo <b>${name}</b> — gửi email mời đặt mật khẩu & bật 2FA`)
+  }
+  closeModal(); render()
+}
+function reset2fa(id){
+  const a = ADMINS.find(x => x.id === id)
+  modal({ title:`Reset 2FA — ${a.name}`,
+    sub:'Sau khi reset, người này đăng nhập lần tới sẽ phải quét QR liên kết lại ứng dụng xác thực.',
+    body:`<div class="schedule-banner" style="background:var(--danger-bg)">
+        Chỉ reset khi đã <b>xác minh được đúng người</b> (gọi trực tiếp, không qua tin nhắn).
+        Reset nhầm cho kẻ mạo danh là mở toang cửa vào toàn bộ quản trị.</div>
+      <div class="field"><label for="rr">Lý do <span style="color:var(--danger)">*</span></label>
+        <select id="rr"><option>Mất điện thoại</option><option>Đổi điện thoại mới</option>
+          <option>Hết mã dự phòng</option><option>Khác</option></select></div>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-danger" onclick="doReset('${id}')">Xác nhận reset 2FA</button>` })
+}
+function doReset(id){
+  const a = ADMINS.find(x => x.id === id)
+  a.totp = false; a.backup = 0
+  AUDIT.unshift({ at:new Date().toISOString(), who:USERS[role()].name, role:role(),
+    action:'Reset 2FA cho tài khoản', target:`${a.id} · ${a.name}`, ip:'113.161.x.9' })
+  closeModal(); render()
+  toast(`<i class="ti ti-shield-lock"></i> Đã reset 2FA cho <b>${a.name}</b> · đã ghi nhật ký`)
+}
+
+renderTabs(); render()
+</script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đơn hàng — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+</head>
+<body>
+<main id="page">
+  <div class="toolbar">
+    <div class="tabs" id="statusTabs"></div>
+    <input type="search" id="q" placeholder="Tìm mã đơn, tên khách, số điện thoại…" oninput="render()">
+    <select id="fFul" onchange="render()"><option value="">Mọi hình thức</option></select>
+    <select id="fPay" onchange="render()"><option value="">Mọi trạng thái thanh toán</option></select>
+    <button class="btn btn-outline btn-sm" onclick="resetFilter()"><i class="ti ti-filter-off"></i> Bỏ lọc</button>
+  </div>
+
+  <div class="panel">
+    <h2><span id="count"></span>
+      <span class="muted" style="font-size:12.5px;font-weight:600">Bấm một dòng để mở chi tiết</span></h2>
+    <div class="table-scroll"><table class="data wide" id="tbl"></table></div>
+  </div>
+</main>
+
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:'don-hang', title:'Đơn hàng', sub: todayLabel(),
+  actions:`<button class="btn btn-outline btn-sm" onclick="exportCsv()"><i class="ti ti-download"></i> Xuất CSV</button>` })
+
+/* Máy trạng thái đơn — nguồn DUY NHẤT quyết định nút nào hiện ra.
+   Để rời rạc ở từng nút thì sớm muộn sẽ có màn cho phép nhảy từ "Đã huỷ" về "Đang giao". */
+const NEXT = {
+  NEW:        ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED:  ['PREPARING', 'CANCELLED'],
+  PREPARING:  ['READY', 'CANCELLED'],
+  READY:      o => o.fulfilment === 'DELIVERY' ? ['DELIVERING', 'CANCELLED'] : ['COMPLETED', 'CANCELLED'],
+  DELIVERING: ['COMPLETED', 'CANCELLED'],
+  COMPLETED:  ['REFUNDED'],
+  CANCELLED:  [],
+  REFUNDED:   [],
+}
+const ACT_LABEL = {
+  CONFIRMED:'Xác nhận đơn', PREPARING:'Bắt đầu chế biến', READY:'Báo món xong',
+  DELIVERING:'Giao cho tài xế', COMPLETED:'Hoàn tất đơn', CANCELLED:'Huỷ đơn', REFUNDED:'Hoàn tiền',
+}
+// Huỷ & hoàn tiền động tới tiền của khách → chỉ quản lý trở lên (spec 07 §3)
+const NEEDS_MANAGER = ['CANCELLED', 'REFUNDED']
+const nextOf = o => (typeof NEXT[o.status] === 'function' ? NEXT[o.status](o) : NEXT[o.status])
+
+let tab = 'ALL'
+const TABS = [['ALL','Tất cả'],['NEW','Đơn mới'],['PREPARING','Đang làm'],['READY','Sẵn sàng'],
+              ['DELIVERING','Đang giao'],['COMPLETED','Hoàn tất'],['CANCELLED','Huỷ / hoàn']]
+
+function initFilters(){
+  document.getElementById('fFul').innerHTML = '<option value="">Mọi hình thức</option>' + optionsOf('fulfilment')
+  document.getElementById('fPay').innerHTML = '<option value="">Mọi trạng thái thanh toán</option>' + optionsOf('payment')
+  document.getElementById('statusTabs').innerHTML = TABS.map(([k,l]) =>
+    `<button class="${tab===k?'active':''}" onclick="setTab('${k}')">${l}${count(k)?` (${count(k)})`:''}</button>`).join('')
+}
+function count(k){
+  if(k==='ALL') return ORDERS.length
+  if(k==='CANCELLED') return ORDERS.filter(o=>['CANCELLED','REFUNDED'].includes(o.status)).length
+  return ORDERS.filter(o=>o.status===k).length
+}
+function setTab(k){ tab = k; initFilters(); render() }
+function resetFilter(){ tab='ALL'; document.getElementById('q').value=''
+  document.getElementById('fFul').value=''; document.getElementById('fPay').value=''; initFilters(); render() }
+
+function filtered(){
+  const q = document.getElementById('q').value.trim().toLowerCase()
+  const ful = document.getElementById('fFul').value, pay = document.getElementById('fPay').value
+  return ORDERS.filter(o => {
+    if(tab === 'CANCELLED' ? !['CANCELLED','REFUNDED'].includes(o.status) : (tab !== 'ALL' && o.status !== tab)) return false
+    if(ful && o.fulfilment !== ful) return false
+    if(pay && o.payment !== pay) return false
+    if(q && ![o.code, o.customer, o.phone, itemsText(o)].join(' ').toLowerCase().includes(q)) return false
+    return true
+  })
+}
+
+function render(){
+  const rows = filtered()
+  document.getElementById('count').textContent = `${rows.length} đơn`
+  document.getElementById('tbl').innerHTML = `
+    <thead><tr><th>Mã · giờ</th><th>Khách</th><th>Món</th><th class="right">Tiền</th>
+      <th>Nhận hàng</th><th>Thanh toán</th><th>Trạng thái</th><th>Sapo</th></tr></thead>
+    <tbody>${rows.map(o => `
+      <tr class="row-link" onclick="detail('${o.code}')">
+        <td><b>#${o.code}</b><div class="muted" style="font-size:11.5px">${hhmm(o.at)} · ${timeAgo(o.at)}</div></td>
+        <td>${o.customer}${o.tier ? '<br>'+badge('tier', o.tier) : ''}
+            <div class="muted" style="font-size:11.5px">${o.phone}</div></td>
+        <td style="max-width:250px">${itemsText(o)}
+            ${o.note ? `<div class="muted" style="font-size:11.5px"><i class="ti ti-message-2"></i> ${o.note}</div>` : ''}</td>
+        <td class="right">${money(orderTotal(o))}</td>
+        <td>${badge('fulfilment', o.fulfilment)}</td>
+        <td>${badge('payment', o.payment)}<div class="muted" style="font-size:11.5px">${meta('method', o.method).label}</div></td>
+        <td>${badge('order', o.status)}</td>
+        <td>${badge('sync', o.sync)}</td>
+      </tr>`).join('') || `<tr><td colspan="8"><div class="empty-state">
+        <i class="ti ti-search-off" style="font-size:26px"></i><p>Không có đơn nào khớp bộ lọc.</p></div></td></tr>`}</tbody>`
+}
+
+/* ---- Chi tiết đơn ---- */
+function detail(code){
+  const o = ORDERS.find(x => x.code === code)
+  const lines = o.items.map(([n,q,p]) => `<tr><td>${n}</td><td class="center">${q}</td>
+      <td class="right">${money(p)}</td><td class="right">${money(q*p)}</td></tr>`).join('')
+  const sub = o.items.reduce((s,[,q,p])=> s+q*p, 0)
+
+  const steps = ['NEW','CONFIRMED','PREPARING','READY','DELIVERING','COMPLETED']
+  const done = steps.indexOf(o.status)
+  const tl = ['CANCELLED','REFUNDED'].includes(o.status)
+    ? `<li><div class="t-status">${meta('order', o.status).label}</div>
+         <div class="t-meta">${hhmm(o.at)}</div>${o.note ? `<div class="t-note">${o.note}</div>` : ''}</li>`
+    : steps.slice(0, Math.max(done,0)+1).map((s,i) => `<li>
+        <div class="t-status">${meta('order', s).label}</div>
+        <div class="t-meta">${hhmm(o.at)} · ${i===done ? 'hiện tại' : 'đã qua'}</div></li>`).join('')
+
+  const acts = nextOf(o).map(s => {
+    const danger = ['CANCELLED','REFUNDED'].includes(s)
+    const blocked = NEEDS_MANAGER.includes(s) && role() === 'staff'
+    return `<button class="btn ${danger ? 'btn-outline' : 'btn-primary'} btn-sm"
+      ${blocked ? `disabled title="Nhân viên không có quyền huỷ/hoàn tiền"` : `onclick="move('${o.code}','${s}')"`}
+      ${danger && !blocked ? 'style="color:var(--danger);border-color:var(--danger)"' : ''}>
+      ${blocked ? '<i class="ti ti-lock"></i> ' : ''}${ACT_LABEL[s]}</button>`
+  }).join('') || '<span class="muted" style="font-size:13px">Đơn đã kết thúc — không còn thao tác.</span>'
+
+  modal({ lg:true, title:`Đơn #${o.code}`,
+    sub:`${dmy(o.at)} ${hhmm(o.at)} · ${o.customer} · ${o.phone}`,
+    body:`
+      <div class="detail-grid">
+        <div>
+          <div class="kv"><b>Trạng thái</b><span>${badge('order', o.status)}</span></div>
+          <div class="kv"><b>Nhận hàng</b><span>${badge('fulfilment', o.fulfilment)}</span></div>
+          <div class="kv"><b>Thanh toán</b><span>${badge('payment', o.payment)} <span class="muted">${meta('method', o.method).label}</span></span></div>
+          ${o.shipment ? `<div class="kv"><b>Giao hàng</b><span>${badge('shipment', o.shipment)}</span></div>
+            <div class="kv"><b>Tài xế</b><span>${o.driver || '<span class="muted">chưa gán</span>'}</span></div>` : ''}
+          <div class="kv"><b>Sapo</b><span>${badge('sync', o.sync)}
+            ${o.sync === 'FAILED' ? `<button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="retry('${o.code}')">Thử lại</button>` : ''}</span></div>
+          ${o.note ? `<div class="kv"><b>Ghi chú</b><span>${o.note}</span></div>` : ''}
+          <hr class="divider">
+          <div class="table-scroll"><table class="items-sub">
+            <thead><tr><th>Món</th><th class="center">SL</th><th class="right">Đơn giá</th><th class="right">Thành tiền</th></tr></thead>
+            <tbody>${lines}</tbody></table></div>
+          <div class="kv" style="margin-top:10px"><b>Tạm tính</b><span class="right">${money(sub)}</span></div>
+          ${o.packaging ? `<div class="kv"><b>Hộp mang về</b><span class="right">${money(o.packaging)}</span></div>` : ''}
+          ${o.ship ? `<div class="kv"><b>Phí giao</b><span class="right">${money(o.ship)}</span></div>` : ''}
+          <div class="kv" style="font-size:15px"><b>Tổng cộng</b><span class="right"><span style="font-weight:700">${money(orderTotal(o))}</span></span></div>
+        </div>
+        <div>
+          <b style="font-size:13px">Diễn biến đơn</b>
+          <ul class="timeline" style="margin-top:10px">${tl}</ul>
+          <hr class="divider">
+          <b style="font-size:13px">Thao tác tiếp theo</b>
+          <div class="action-row">${acts}</div>
+        </div>
+      </div>`,
+    actions:`<button class="btn btn-outline" data-close>Đóng</button>
+             <button class="btn btn-ghost" onclick="toast('Mô phỏng: đã gửi lại thông báo trạng thái cho khách qua Zalo')">
+               <i class="ti ti-send"></i> Gửi lại thông báo</button>` })
+}
+
+function move(code, to){
+  const o = ORDERS.find(x => x.code === code)
+  o.status = to
+  if(to === 'DELIVERING' && o.shipment === 'PENDING') o.shipment = 'ASSIGNED'
+  if(to === 'COMPLETED' && o.shipment) o.shipment = 'DELIVERED'
+  if(to === 'CANCELLED' && o.shipment) o.shipment = 'CANCELLED'
+  if(to === 'REFUNDED') o.payment = 'REFUNDED'
+  closeModal(); initFilters(); render()
+  toast(`<i class="ti ti-check"></i> #${code} → <b>${meta('order', to).label}</b> · đã ghi nhật ký`)
+}
+function retry(code){
+  const o = ORDERS.find(x => x.code === code)
+  o.sync = 'RETRYING'; render()
+  setTimeout(() => { o.sync = 'SYNCED'; render(); closeModal()
+    toast(`<i class="ti ti-plug-connected"></i> #${code} đã đồng bộ lên Sapo`) }, 900)
+}
+function exportCsv(){
+  toast(`<i class="ti ti-download"></i> Mô phỏng: xuất ${filtered().length} đơn ra CSV (bản thật gọi API rồi tải file)`)
+}
+
+initFilters(); render()
+// Mở thẳng chi tiết khi vào từ link #H1043 ở trang Tổng quan
+if(location.hash.length > 1){
+  const c = location.hash.slice(1)
+  if(ORDERS.some(o => o.code === c)) detail(c)
+}
+</script>
+</body>
+</html>

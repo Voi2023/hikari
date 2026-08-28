@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đồng bộ Sapo — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+</head>
+<body>
+<main id="page">
+  <div class="stat-grid" id="kpis"></div>
+
+  <div class="panel">
+    <h2>Kết nối Sapo
+      <span class="badge green"><i class="ti ti-plug-connected"></i> Đang hoạt động</span></h2>
+    <div class="grid-2">
+      <div>
+        <div class="kv"><b>Cửa hàng</b><span>hikari-cafe.mysapo.net</span></div>
+        <div class="kv"><b>Token</b><span class="mono">sapo_at_••••••••••3f9c</span></div>
+        <div class="kv"><b>Hết hạn</b><span>còn 22 ngày <span class="badge amber">nên gia hạn sớm</span></span></div>
+        <div class="kv"><b>Đồng bộ lần cuối</b><span id="lastSync">—</span></div>
+      </div>
+      <div>
+        <div class="kv"><b>Cách đẩy</b><span>tự động khi đơn chuyển <span style="font-weight:700">Hoàn tất</span></span></div>
+        <div class="kv"><b>Thử lại</b><span>3 lần, giãn cách 1 / 5 / 15 phút</span></div>
+        <div class="kv"><b>Chống trùng</b><span>khoá theo mã đơn (idempotency key)</span></div>
+        <div class="action-row">
+          <button class="btn btn-outline btn-sm" onclick="toast('Mô phỏng: kết nối Sapo OK — token còn hạn')">
+            <i class="ti ti-plug"></i> Kiểm tra kết nối</button>
+          <button class="btn btn-ghost btn-sm" onclick="toast('Mô phỏng: đã mở màn nhập token mới')">
+            <i class="ti ti-key"></i> Cập nhật token</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2><span id="title"></span>
+      <span>
+        <button class="btn btn-outline btn-sm" onclick="retryAll()"><i class="ti ti-refresh"></i> Thử lại tất cả đơn lỗi</button>
+      </span></h2>
+    <div class="toolbar"><div class="tabs" id="tabs"></div></div>
+    <div class="table-scroll"><table class="data wide" id="tbl"></table></div>
+  </div>
+
+  <div class="panel">
+    <h2>Vì sao đơn không lên được Sapo</h2>
+    <div class="schedule-banner" style="background:var(--danger-bg)">
+      <b>Lỗi thường gặp nhất: món trong đơn chưa có mã hàng bên Sapo.</b> Sapo từ chối cả đơn chứ không
+      bỏ qua riêng dòng hàng đó, nên một món mới chưa khai bên Sapo có thể chặn toàn bộ đơn của cả ngày.
+      Thêm món mới trong <a href="menu.html" style="color:var(--brand);font-weight:700">Menu &amp; giá</a>
+      thì phải khai mã hàng tương ứng bên Sapo trước khi bật bán.
+    </div>
+    <div class="schedule-banner">
+      <b>Đẩy trùng không làm hỏng số liệu:</b> mỗi đơn đẩy kèm khoá chống trùng theo mã đơn — bấm "Thử lại"
+      nhiều lần cũng chỉ tạo đúng một đơn bên Sapo. Cứ thử lại thoải mái khi nghi ngờ.
+    </div>
+  </div>
+</main>
+
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:'sapo', title:'Đồng bộ Sapo', sub:'Đẩy đơn sang phần mềm bán hàng (spec 06)' })
+
+const ERRORS = {
+  H1039: 'HTTP 422 — product_variant_id không tồn tại: "Cà phê sữa" chưa khai mã hàng bên Sapo',
+  H1033: 'HTTP 401 — access_token hết hiệu lực tại thời điểm đẩy (đã tự làm mới, chờ thử lại)',
+}
+let tab = 'ALL'
+const TABS = [['ALL','Tất cả'],['PENDING','Chờ đồng bộ'],['SYNCED','Đã đồng bộ'],['FAILED','Lỗi'],['SKIPPED','Bỏ qua']]
+
+function renderKpis(){
+  const c = k => ORDERS.filter(o => o.sync === k).length
+  const card = (l,v,f) => `<div class="stat-card" style="cursor:default"><div class="label">${l}</div>
+    <div class="value">${v}</div><div class="kpi-trend muted" style="margin-top:4px">${f}</div></div>`
+  document.getElementById('kpis').innerHTML =
+    card('Đã đồng bộ', c('SYNCED'), `${pct(c('SYNCED'), ORDERS.length)}% tổng đơn`) +
+    card('Chờ đồng bộ', c('PENDING') + c('RETRYING'), 'đơn chưa hoàn tất hoặc đang thử lại') +
+    card('Lỗi đồng bộ', `<span style="color:${c('FAILED')?'var(--danger)':'inherit'}">${c('FAILED')}</span>`, 'cần can thiệp tay') +
+    card('Bỏ qua', c('SKIPPED'), 'đơn huỷ / hoàn tiền — không đẩy')
+  document.getElementById('lastSync').textContent = new Date().toLocaleString('vi-VN')
+}
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = TABS.map(([k,l]) => {
+    const n = k === 'ALL' ? ORDERS.length : ORDERS.filter(o => o.sync === k).length
+    return `<button class="${tab===k?'active':''}" onclick="setTab('${k}')">${l}${n?` (${n})`:''}</button>`
+  }).join('')
+}
+function setTab(k){ tab = k; render() }
+
+function render(){
+  const rows = ORDERS.filter(o => tab === 'ALL' || o.sync === tab)
+  document.getElementById('title').textContent = `Nhật ký đồng bộ · ${rows.length} đơn`
+  document.getElementById('tbl').innerHTML = `
+    <thead><tr><th>Đơn</th><th>Khách</th><th class="right">Tiền</th><th>Trạng thái đơn</th>
+      <th>Đồng bộ</th><th>Chi tiết lỗi</th><th></th></tr></thead>
+    <tbody>${rows.map(o => `<tr>
+      <td><b>#${o.code}</b><div class="muted" style="font-size:11.5px">${hhmm(o.at)}</div></td>
+      <td>${o.customer}</td>
+      <td class="right">${money(orderTotal(o))}</td>
+      <td>${badge('order', o.status)}</td>
+      <td>${badge('sync', o.sync)}</td>
+      <td style="max-width:330px;font-size:12.4px" class="${ERRORS[o.code] ? '' : 'muted'}">
+        ${o.sync === 'FAILED' ? `<span class="mono" style="color:var(--danger)">${ERRORS[o.code] || 'HTTP 500 — Sapo không phản hồi'}</span>`
+          : o.sync === 'SYNCED' ? `Sapo #SO-${8400 + (Number(o.code.slice(1)) % 900)}`
+          : o.sync === 'SKIPPED' ? 'Đơn huỷ/hoàn — theo quy tắc không đẩy' : '—'}</td>
+      <td class="right">${o.sync === 'FAILED'
+        ? `<button class="btn btn-primary btn-sm" onclick="retry('${o.code}')">Thử lại</button>`
+        : o.sync === 'PENDING' && o.status === 'COMPLETED'
+          ? `<button class="btn btn-outline btn-sm" onclick="retry('${o.code}')">Đẩy ngay</button>` : ''}</td>
+    </tr>`).join('')}</tbody>`
+  renderKpis(); renderTabs()
+}
+
+function retry(code){
+  const o = ORDERS.find(x => x.code === code)
+  o.sync = 'RETRYING'; render()
+  setTimeout(() => {
+    // H1039 vẫn hỏng cho tới khi món được khai mã bên Sapo — thử lại suông không cứu được
+    if(code === 'H1039'){
+      o.sync = 'FAILED'; render()
+      toast(`<i class="ti ti-alert-triangle"></i> #${code} vẫn lỗi: phải khai mã hàng bên Sapo trước rồi mới đẩy được`, 4200)
+    } else {
+      o.sync = 'SYNCED'; render()
+      toast(`<i class="ti ti-check"></i> #${code} đã lên Sapo`)
+    }
+  }, 1000)
+}
+function retryAll(){
+  const bad = ORDERS.filter(o => o.sync === 'FAILED')
+  if(!bad.length) return toast('Không có đơn lỗi nào để thử lại')
+  bad.forEach(o => retry(o.code))
+  toast(`<i class="ti ti-refresh"></i> Đang thử lại ${bad.length} đơn…`)
+}
+
+render()
+</script>
+</body>
+</html>

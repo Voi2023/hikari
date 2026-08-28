@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Giao hàng — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+</head>
+<body>
+<main id="page">
+  <div class="stat-grid" id="kpis"></div>
+
+  <div class="panel">
+    <h2>Chuyến giao hôm nay
+      <span class="muted" style="font-size:12.5px;font-weight:600">Đối tác: BE · cập nhật qua webhook</span></h2>
+    <div class="toolbar">
+      <div class="tabs" id="tabs"></div>
+      <input type="search" id="q" placeholder="Tìm mã đơn, khách, tài xế…" oninput="render()">
+    </div>
+    <div class="table-scroll"><table class="data wide" id="tbl"></table></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <h2>Bảng phí dự phòng (chỉ dùng khi API đối tác lỗi)</h2>
+      <table class="data">
+        <thead><tr><th>Khoảng cách</th><th class="right">Phí khách trả</th><th>Ghi chú</th></tr></thead>
+        <tbody>
+          <tr><td>≤ 2 km</td><td class="right"><span class="price">18.000</span></td><td class="muted">giá tối thiểu</td></tr>
+          <tr><td>2 – 5 km</td><td class="right"><span class="price">24.000</span></td><td class="muted">phổ biến nhất</td></tr>
+          <tr><td>5 – 8 km</td><td class="right"><span class="price">32.000</span></td><td class="muted"></td></tr>
+          <tr><td>&gt; 8 km</td><td class="right">—</td><td class="muted">ngoài vùng giao</td></tr>
+        </tbody></table>
+      <div class="schedule-banner" style="margin-top:12px">
+        <b>App không tự tính phí ship.</b> Phí hiển thị cho khách là phí <b>đơn vị giao hàng báo về</b>
+        tại thời điểm đặt (spec 03) — bảng trên chỉ là mức tạm tính khi API đối tác không phản hồi,
+        và khi đó phải nói rõ với khách là <i>tạm tính</i>: chênh lệch phí ship ở bước cuối là lý do
+        khách bỏ giỏ hàng nhiều nhất.
+      </div>
+      <div class="schedule-banner" style="background:var(--info-bg)">
+        ❓ <b>Chờ chốt đối tác:</b> đang thiết kế theo <code class="inline">ShippingProvider</code> với BE
+        (be.com.vn). BE chưa chắc có Open API tự phục vụ — nếu không có hợp đồng B2B + API key thì
+        chuyển sang <b>Ahamove / GrabExpress</b> mà không phải sửa phần còn lại của hệ thống.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Chuyến cần xử lý</h2>
+      <ul class="timeline" id="issues"></ul>
+    </div>
+  </div>
+</main>
+
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:"giao-hang", title:"Giao hàng", sub:"Đơn vị vận chuyển: BE — dự phòng Ahamove (spec 03)",
+  actions:`<button class="btn btn-outline btn-sm" onclick="simulateWebhook()">
+             <i class="ti ti-webhook"></i> Mô phỏng webhook BE</button>` })
+
+const shipOrders = () => ORDERS.filter(o => o.fulfilment === 'DELIVERY' && o.shipment)
+let tab = 'ALL'
+const TABS = [['ALL','Tất cả'],['PENDING','Chờ tài xế'],['ON_ROUTE','Đang giao'],
+              ['DELIVERED','Đã giao'],['FAILED','Thất bại']]
+
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = TABS.map(([k,l]) => {
+    const n = k === 'ALL' ? shipOrders().length : shipOrders().filter(o => o.shipment === k).length
+    return `<button class="${tab===k?'active':''}" onclick="setTab('${k}')">${l}${n?` (${n})`:''}</button>`
+  }).join('')
+}
+function setTab(k){ tab = k; renderTabs(); render() }
+
+function renderKpis(){
+  const s = shipOrders()
+  const onRoute = s.filter(o => ['ASSIGNED','PICKING','ON_ROUTE'].includes(o.shipment)).length
+  const done = s.filter(o => o.shipment === 'DELIVERED').length
+  const fail = s.filter(o => o.shipment === 'FAILED').length
+  const fee = s.reduce((t,o) => t + (o.ship || 0), 0)
+  const card = (l,v,f) => `<div class="stat-card" style="cursor:default"><div class="label">${l}</div>
+    <div class="value">${v}</div><div class="kpi-trend muted" style="margin-top:4px">${f}</div></div>`
+  document.getElementById('kpis').innerHTML =
+    card('Đang trên đường', onRoute, 'gồm cả chờ tài xế đến lấy') +
+    card('Đã giao xong', done, `tỷ lệ thành công ${pct(done, done + fail)}%`) +
+    card('Giao thất bại', `<span style="color:${fail?'var(--danger)':'inherit'}">${fail}</span>`, fail ? 'cần liên hệ khách' : 'không có') +
+    card('Tổng phí giao', `<span class="price">${vnd(fee)}</span>`, `TB ${vnd(Math.round(fee / (s.length||1)))}đ/chuyến`)
+}
+
+function render(){
+  const q = document.getElementById('q').value.trim().toLowerCase()
+  const rows = shipOrders().filter(o =>
+    (tab === 'ALL' || o.shipment === tab) &&
+    (!q || [o.code, o.customer, o.driver || ''].join(' ').toLowerCase().includes(q)))
+  document.getElementById('tbl').innerHTML = `
+    <thead><tr><th>Đơn</th><th>Khách</th><th>Tài xế / xe</th><th class="right">Phí giao</th>
+      <th>Trạng thái chuyến</th><th>Trạng thái đơn</th><th></th></tr></thead>
+    <tbody>${rows.map(o => `<tr>
+      <td><b>#${o.code}</b><div class="muted" style="font-size:11.5px">${hhmm(o.at)}</div></td>
+      <td>${o.customer}<div class="muted" style="font-size:11.5px">${o.phone}</div></td>
+      <td>${o.driver ? `<i class="ti ti-motorbike"></i> ${o.driver}` : '<span class="muted">chưa gán tài xế</span>'}</td>
+      <td class="right">${money(o.ship)}</td>
+      <td>${badge('shipment', o.shipment)}</td>
+      <td>${badge('order', o.status)}</td>
+      <td class="right">
+        ${o.shipment === 'FAILED'
+          ? `<button class="btn btn-primary btn-sm" onclick="rebook('${o.code}')"><i class="ti ti-refresh"></i> Đặt lại chuyến</button>`
+          : o.shipment === 'PENDING'
+            ? `<button class="btn btn-outline btn-sm" onclick="assign('${o.code}')">Gán tài xế</button>`
+            : `<button class="btn btn-ghost btn-sm" onclick="track('${o.code}')"><i class="ti ti-map-pin"></i> Theo dõi</button>`}
+      </td></tr>`).join('') || `<tr><td colspan="7"><div class="empty-state">
+        <i class="ti ti-truck-off" style="font-size:26px"></i><p>Không có chuyến nào ở trạng thái này.</p></div></td></tr>`}</tbody>`
+  renderKpis(); renderTabs(); renderIssues()
+}
+
+function renderIssues(){
+  const bad = shipOrders().filter(o => ['FAILED','PENDING'].includes(o.shipment))
+  document.getElementById('issues').innerHTML = bad.length ? bad.map(o => `
+    <li><div class="t-status">#${o.code} — ${meta('shipment', o.shipment).label}</div>
+      <div class="t-meta">${o.customer} · ${o.phone} · ${money(orderTotal(o))}</div>
+      <div class="t-note">${o.shipment === 'FAILED'
+        ? (o.note || 'Tài xế báo giao không thành công.') + ' Xử lý: gọi khách xác nhận → đặt lại chuyến hoặc hoàn tiền.'
+        : 'Chưa tìm được tài xế. Quá 10 phút nên gọi khách báo trước, đừng để khách tự phát hiện.'}</div></li>`).join('')
+    : '<div class="empty-state">Mọi chuyến đang chạy bình thường.</div>'
+}
+
+function assign(code){
+  const o = ORDERS.find(x => x.code === code)
+  o.shipment = 'ASSIGNED'; o.driver = 'Nguyễn V. Hải · 59K1-772.08'
+  render(); toast(`<i class="ti ti-motorbike"></i> #${code} đã có tài xế nhận chuyến`)
+}
+function rebook(code){
+  const o = ORDERS.find(x => x.code === code)
+  o.shipment = 'PENDING'; o.driver = null
+  if(o.status === 'CANCELLED') o.status = 'READY'
+  render(); toast(`<i class="ti ti-refresh"></i> Đã gửi lại yêu cầu giao cho BE — đơn #${code} chờ tài xế mới`)
+}
+function track(code){
+  const o = ORDERS.find(x => x.code === code)
+  const steps = ['PENDING','ASSIGNED','PICKING','ON_ROUTE','DELIVERED']
+  const at = steps.indexOf(o.shipment)
+  modal({ title:`Theo dõi chuyến — #${o.code}`, sub:`${o.customer} · ${o.phone} · ${o.driver || 'chưa gán tài xế'}`,
+    body:`<ul class="timeline">${steps.slice(0, at + 1).map((s,i) => `
+        <li><div class="t-status">${meta('shipment', s).label}</div>
+          <div class="t-meta">${hhmm(o.at)} · ${i === at ? 'hiện tại' : 'đã qua'}</div></li>`).join('')}</ul>
+      <div class="schedule-banner">Vị trí tài xế do BE đẩy về qua webhook; bản thật sẽ hiện bản đồ tại đây.</div>`,
+    actions:`<button class="btn btn-outline" data-close>Đóng</button>` })
+}
+
+/* Webhook BE đẩy trạng thái về — nút này mô phỏng để duyệt luồng cập nhật realtime. */
+function simulateWebhook(){
+  const next = { PENDING:'ASSIGNED', ASSIGNED:'PICKING', PICKING:'ON_ROUTE', ON_ROUTE:'DELIVERED' }
+  const o = shipOrders().find(x => next[x.shipment])
+  if(!o) return toast('Không còn chuyến nào để cập nhật')
+  o.shipment = next[o.shipment]
+  if(o.shipment === 'ASSIGNED' && !o.driver) o.driver = 'Nguyễn V. Hải · 59K1-772.08'
+  if(o.shipment === 'ON_ROUTE') o.status = 'DELIVERING'
+  if(o.shipment === 'DELIVERED') o.status = 'COMPLETED'
+  render()
+  toast(`<i class="ti ti-webhook"></i> BE báo: #${o.code} → <b>${meta('shipment', o.shipment).label}</b>`)
+}
+
+render()
+</script>
+</body>
+</html>

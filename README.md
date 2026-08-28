@@ -20,15 +20,21 @@ hikari/
 │  ├─ admin/        # Dashboard quản trị — Next.js 14 + Tailwind (đăng nhập 2FA)
 │  └─ api/          # Backend — NestJS 10 + Prisma + PostgreSQL + Redis + Socket.IO
 ├─ packages/
-│  └─ shared/       # @hikari/shared — DTO/zod, envelope, contract dùng chung FE ↔ BE
+│  ├─ shared/          # @hikari/shared — DTO/zod, envelope, contract dùng chung FE ↔ BE
+│  ├─ ui-kit/          # @hikari/ui-kit — component Vue dùng chung (fork từ ui-kit DMCL)
+│  └─ design-tokens/   # @hikari/design-tokens — tokens.css, nguồn chân lý giao diện
 └─ docs/
    ├─ specs/        # Tài liệu & quy trình (mỗi chức năng 1 spec)
    ├─ prototype/    # Prototype HTML chạy được cho từng chức năng (bảng kiểm thử trực quan)
    └─ assets/       # Logo, ảnh menu, dữ liệu menu (menu.json), brand tokens
 ```
 
-> ⚠️ Thư mục `apps/*` và `packages/*` **chưa được khởi tạo code** — hiện dự án đang ở giai đoạn
+> ⚠️ Thư mục `apps/*` và `packages/shared` **chưa được khởi tạo code** — hiện dự án đang ở giai đoạn
 > **specs + prototype** (xem `docs/`). README này mô tả quy trình deploy mục tiêu để chuẩn bị hạ tầng.
+>
+> `packages/ui-kit` và `packages/design-tokens` **đã có source** (fork từ UI kit DMCL, đổi tone theo
+> logo Hikari) nhưng **chưa cài dependency** — prototype dùng thẳng file CSS, không qua npm.
+> Xem [`packages/README.md`](packages/README.md).
 
 **Tích hợp ngoài:** Zalo (đăng nhập Mini App, ZaloPay, OA gửi thông báo) · đơn vị giao hàng (BE giao hàng) ·
 [Sapo](https://sapo.vn) (đẩy đơn quản lý bán hàng).

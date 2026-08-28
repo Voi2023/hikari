@@ -1,15 +1,19 @@
-# @dmcl/ui-kit
+# @hikari/ui-kit
 
-Thư viện component dùng chung (Vue 3 + TS) cho `apps/internal-web` & `apps/partner-web`.
-Component chỉ render **class từ `@dmcl/design-tokens`** (`tokens.css`) — đổi tone ở tokens là cả kit đổi theo.
+Thư viện component dùng chung (Vue 3 + TS) cho `apps/admin` (dashboard Next/Vite) & phần web của dự án.
+Component chỉ render **class từ `@hikari/design-tokens`** (`tokens.css`) — đổi tone ở tokens là cả kit đổi theo.
 
-> Rút ra từ prototype `docs/prototype`. Khi build FE thật: import và cắm vào, không copy-paste giữa 2 app (core.mdc §0, §4b).
+> **Fork từ DMCL `@dmcl/ui-kit`** (repo `dmcl-shared`). Cấu trúc, tên class, tên component giữ NGUYÊN;
+> chỉ đổi bảng màu (ANCHOR trong `tokens.css`) và bảng trạng thái (`status-meta.ts`) sang nghiệp vụ quán.
+> Quy tắc đồng bộ ngược: xem [`../README.md`](../README.md).
+
+> Prototype dựng sẵn bằng chính token này: [`docs/prototype/admin/`](../../docs/prototype/admin/).
 
 ## Cài đặt (monorepo)
 
 ```ts
 // entry app (main.ts): nạp design-tokens một lần
-import '@dmcl/ui-kit/tokens.css'
+import '@hikari/design-tokens/tokens.css'
 ```
 
 ## Component
@@ -20,7 +24,7 @@ import '@dmcl/ui-kit/tokens.css'
 | `TabBar` + `useTabs` | Đa-tab bền qua refresh (sessionStorage) | `tabs`, `active`; emit `activate/close` |
 | `BaseButton` | Nút | `variant` primary/outline/ghost/danger, `sm`, `icon` |
 | `BaseBadge` | Nhãn màu | `color` blue/green/amber/red/gray |
-| `StatusBadge` | Nhãn trạng thái đơn (nhãn từ `STATUS_META`) | `status`, `locale` |
+| `StatusBadge` | Nhãn trạng thái (nhãn từ `*_META`) | `status`, **`kind`** order/payment/shipment/sync/notify/fulfilment/tier/role, `locale` |
 | `BasePanel` | Khung `.panel` + tiêu đề | `title`; slots `title/actions` |
 | `StatCard` | Thẻ KPI | `label`, `value`; slot `foot` |
 | `Toolbar` | Thanh công cụ lọc/hành động | slot |
@@ -35,7 +39,9 @@ import '@dmcl/ui-kit/tokens.css'
 
 ## Helper
 
-- `statusLabel(status, locale)`, `statusColor(status)`, `actionLabel(action, locale)` — nguồn `STATUS_META` / `ACTION_META` (đồng bộ `docs/specs/02` + backend `transitions.ts`). **CẤM tự viết nhãn trạng thái trong view.**
+- `statusLabel(status, locale)`, `statusColor(status)`, `actionLabel(action, locale)` — nguồn `STATUS_META` / `ACTION_META` (vòng đời đơn: `NEW → CONFIRMED → PREPARING → READY → DELIVERING → COMPLETED`).
+- `meta(kind, code, locale)` → `{ label, color }` — tra **mọi** bảng nghĩa trong một hàm: `order`, `payment`, `shipment`, `sync`, `notify`, `fulfilment`, `tier`, `role`. Cùng mã `FAILED` mang nghĩa khác nhau giữa thanh toán / giao hàng / đồng bộ Sapo nên **luôn phải nói rõ `kind`**.
+- **CẤM tự viết nhãn trạng thái trong view** — nhãn đi ra cả 3 nơi (bảng đơn admin, màn theo dõi của khách, tin ZNS); viết tay mỗi chỗ một kiểu thì đối soát không biết bên nào đúng.
 - `useTabs({ storageKey, initial })` → `{ tabs, active, open, activate, close, reset }` — đa-tab bền qua refresh.
 
 ### `BaseModal` — `persistent`
@@ -101,7 +107,7 @@ Hai điểm đáng chú ý khi dùng:
 
 ```vue
 <script setup lang="ts">
-import { AppShell, TabBar, useTabs, BaseButton, StatusBadge } from '@dmcl/ui-kit'
+import { AppShell, TabBar, useTabs, BaseButton, StatusBadge } from '@hikari/ui-kit'
 const { tabs, active, open, activate, close } = useTabs({
   initial: [{ key: 'dashboard', title: 'Bảng điều khiển', icon: 'ti-layout-dashboard' }],
 })

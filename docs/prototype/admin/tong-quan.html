@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tổng quan — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+</head>
+<body>
+<main id="page">
+  <div class="stat-grid" id="kpis"></div>
+
+  <div class="grid-dispatch">
+    <div class="panel">
+      <h2>Đơn cần xử lý ngay
+        <button class="btn btn-outline btn-sm" onclick="simulate()"><i class="ti ti-broadcast"></i> Mô phỏng đơn mới</button>
+      </h2>
+      <div class="table-scroll"><table class="data" id="liveTable"></table></div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Doanh thu 7 ngày</h2>
+        <div class="bars" id="bars"></div>
+        <div class="row-flex" style="justify-content:space-between;font-size:12.8px;margin-top:6px">
+          <span class="muted">Trung bình ngày</span><b class="price" id="avgRev"></b>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Cần chú ý</h2>
+        <ul class="timeline" id="alerts"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Bán chạy hôm nay <a href="bao-cao.html" class="muted" style="font-size:12.5px;font-weight:600">Xem báo cáo đầy đủ →</a></h2>
+    <div id="topItems"></div>
+  </div>
+</main>
+
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:'tong-quan', title:'Tổng quan', sub: todayLabel(),
+  actions:`<a class="btn btn-outline btn-sm" href="don-hang.html"><i class="ti ti-receipt"></i> Xem tất cả đơn</a>` })
+
+// KPI ngày lấy từ REVENUE_7D (tổng cả ngày), KHÔNG cộng từ bảng ORDERS —
+// ORDERS chỉ là ~12 đơn gần nhất để hiện trong bảng, không phải toàn bộ đơn trong ngày.
+// Cộng từ bảng sẽ cho ra con số nhỏ hơn biểu đồ ngay bên cạnh, và người duyệt sẽ hỏi vì sao.
+const today = () => REVENUE_7D[REVENUE_7D.length - 1]
+
+function renderKpis(){
+  const pending = ORDERS.filter(o => ['NEW','CONFIRMED','PREPARING'].includes(o.status)).length
+  const syncFail = ORDERS.filter(o => o.sync === 'FAILED').length
+  const payIssue = ORDERS.filter(o => ['FAILED','PENDING'].includes(o.payment)).length
+  const yesterday = REVENUE_7D[5].revenue
+  const rev = today().revenue
+  const delta = pct(rev - yesterday, yesterday)
+  const dOrders = pct(today().orders - REVENUE_7D[5].orders, REVENUE_7D[5].orders)
+  const card = (label, value, foot, href) => `
+    <div class="stat-card" onclick="location.href='${href}'">
+      <div class="label">${label}</div><div class="value">${value}</div>
+      <div class="kpi-trend muted" style="margin-top:4px">${foot}</div></div>`
+  document.getElementById('kpis').innerHTML =
+    card('Đơn hôm nay', today().orders,
+         `${dOrders >= 0 ? `<span style="color:var(--ok)">▲ ${dOrders}%</span>` : `<span style="color:var(--danger)">▼ ${-dOrders}%</span>`} so với hôm qua`, 'don-hang.html') +
+    card('Doanh thu', `<span class="price">${vnd(rev)}</span>`,
+         `${delta >= 0 ? `<span style="color:var(--ok)">▲ ${delta}%</span>` : `<span style="color:var(--danger)">▼ ${-delta}%</span>`} so với hôm qua`, 'bao-cao.html') +
+    card('Đơn chờ xử lý', `<span style="color:var(--warn)">${pending}</span>`, 'mới / đã xác nhận / đang làm', 'don-hang.html') +
+    card('Cần can thiệp', `<span style="color:var(--danger)">${syncFail + payIssue}</span>`, `${syncFail} lỗi Sapo · ${payIssue} vướng thanh toán`, 'sapo.html')
+}
+
+function renderLive(){
+  const rows = ORDERS.filter(o => ['NEW','CONFIRMED','PREPARING','READY','DELIVERING'].includes(o.status))
+  // Bảng này nằm trong cột hẹp: bớt cột, dồn thông tin phụ xuống dòng nhỏ, để không phải
+  // cuộn ngang mới thấy trạng thái — thứ quan trọng nhất của màn tổng quan.
+  document.getElementById('liveTable').innerHTML = `
+    <thead><tr><th>Mã · giờ</th><th>Khách</th><th>Món</th><th class="right">Tiền</th><th>Trạng thái</th></tr></thead>
+    <tbody>${rows.map(o => `
+      <tr class="row-link" onclick="location.href='don-hang.html#${o.code}'">
+        <td><b>#${o.code}</b><div class="muted" style="font-size:11.5px">${hhmm(o.at)} · ${meta('fulfilment', o.fulfilment).label}</div></td>
+        <td>${o.customer}${o.tier ? `<div style="margin-top:2px">${badge('tier', o.tier)}</div>` : ''}</td>
+        <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+            title="${itemsText(o)}">${itemsText(o)}</td>
+        <td class="right">${money(orderTotal(o))}</td>
+        <td>${o.status === 'NEW'
+          ? `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();accept('${o.code}')">Xác nhận</button>`
+          : badge('order', o.status)}</td>
+      </tr>`).join('') || `<tr><td colspan="5"><div class="empty-state">Không còn đơn nào đang chờ.</div></td></tr>`}</tbody>`
+}
+
+function accept(code){
+  const o = ORDERS.find(x => x.code === code)
+  o.status = 'CONFIRMED'
+  renderAll()
+  toast(`<i class="ti ti-check"></i> Đã xác nhận đơn <b>#${code}</b> — khách nhận thông báo qua Zalo`)
+}
+
+function renderBars(){
+  const max = Math.max(...REVENUE_7D.map(d => d.revenue))
+  document.getElementById('bars').innerHTML = REVENUE_7D.map(d => `
+    <div class="bar" style="height:100%" title="${d.label}: ${vnd(d.revenue)}đ · ${d.orders} đơn">
+      <span style="height:${Math.round(d.revenue / max * 100)}%"></span><small>${d.label}</small></div>`).join('')
+  document.getElementById('avgRev').textContent =
+    vnd(Math.round(REVENUE_7D.reduce((s, d) => s + d.revenue, 0) / REVENUE_7D.length))
+}
+
+function renderAlerts(){
+  const syncFail = ORDERS.filter(o => o.sync === 'FAILED')
+  const payFail  = ORDERS.filter(o => o.payment === 'FAILED')
+  const shipFail = ORDERS.filter(o => o.shipment === 'FAILED')
+  const outStock = MENU.flatMap(c => c.items).filter(i => !i.available)
+  const li = (icon, text, href) => `<li><div class="t-status"><i class="ti ${icon}"></i> ${text}</div>
+      <div class="t-meta"><a href="${href}" style="color:var(--brand);font-weight:600">Mở để xử lý →</a></div></li>`
+  document.getElementById('alerts').innerHTML =
+    (syncFail.length ? li('ti-plug-off', `${syncFail.length} đơn chưa lên Sapo (${syncFail.map(o=>'#'+o.code).join(', ')})`, 'sapo.html') : '') +
+    (payFail.length  ? li('ti-credit-card-off', `${payFail.length} đơn vướng thanh toán — cần đối soát`, 'don-hang.html') : '') +
+    (shipFail.length ? li('ti-truck-off', `${shipFail.length} chuyến giao thất bại`, 'giao-hang.html') : '') +
+    (outStock.length ? li('ti-tools-off', `${outStock.length} món đang tắt vì hết hàng`, 'menu.html') : '') +
+    li('ti-bell', 'Chiến dịch "Khai trương góc detox" hẹn gửi ngày mai 09:00', 'thong-bao.html')
+}
+
+function renderTop(){
+  const top = MENU.flatMap(c => c.items).sort((a,b)=> b.sold - a.sold).slice(0,6)
+  const max = top[0].sold
+  document.getElementById('topItems').innerHTML = top.map(i => `
+    <div style="margin-bottom:12px">
+      <div class="row-flex" style="justify-content:space-between;font-size:13.2px">
+        <b>${i.name}</b><span class="muted">${i.sold} phần · ${money(i.sold * i.price)}</span></div>
+      <div class="progress-bar" style="margin-top:5px"><span style="width:${pct(i.sold, max)}%"></span></div>
+    </div>`).join('')
+}
+
+let seq = 1044
+function simulate(){
+  const pool = [
+    { items:[['Spicy Tomyum',1,53000]], f:'DELIVERY', ship:24000, m:'ZALOPAY' },
+    { items:[['Cà phê muối hồng',2,29000]], f:'DINE_IN', ship:0, m:'COD' },
+    { items:[['Miso Udon',1,55000],['Nước tía tô đẹp da',1,20000]], f:'TAKEAWAY', ship:0, m:'ZALOPAY' },
+  ]
+  const s = pool[(seq - 1044) % pool.length]
+  ORDERS.unshift({ code:'H'+(seq++), at:new Date().toISOString(), customer:'Khách mới', phone:'09xx xxx xxx',
+    tier:null, items:s.items, ship:s.ship, packaging: s.f === 'TAKEAWAY' ? PACKAGING_FEE : 0,
+    fulfilment:s.f, status:'NEW', payment:'PAID', method:s.m,
+    shipment: s.f === 'DELIVERY' ? 'PENDING' : null, driver:null, sync:'PENDING', note:'' })
+  const t = today()
+  t.orders += 1
+  t.revenue += s.items.reduce((x,[,q,p]) => x + q*p, 0) + s.ship
+  renderAll()
+  toast('<i class="ti ti-bell-ringing"></i> Đơn mới vừa vào qua Socket.IO')
+}
+
+function renderAll(){
+  renderKpis(); renderLive(); renderBars(); renderAlerts(); renderTop()
+  const n = ORDERS.filter(o => o.status === 'NEW').length
+  document.querySelectorAll('.app-nav a .badge.red').forEach(b => b.textContent = n)
+}
+renderAll()
+</script>
+</body>
+</html>
