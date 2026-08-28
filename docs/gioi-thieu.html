@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hikari Vegetarian Cafe — App đặt món Zalo</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#7d786f;--line:#E7E2D8;--radius:16px;--shadow:0 2px 10px rgba(28,27,25,.05),0 10px 30px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,sans-serif;--font-script:"Caveat",cursive;}
+  *{box-sizing:border-box;} body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:780px;margin:0 auto;padding:0 20px;}
+  /* hero */
+  .hero{text-align:center;padding:56px 20px 40px;background:radial-gradient(900px 380px at 50% -20%, #e7eede, transparent);}
+  .logo{font-family:var(--font-script);font-weight:700;font-size:4rem;line-height:.9;}
+  .logo .flame{color:var(--sun);}
+  .sub{color:var(--matcha);font-weight:600;letter-spacing:4px;text-transform:lowercase;font-size:.8rem;}
+  .tagline{font-size:1.35rem;font-weight:700;margin:22px auto 8px;max-width:520px;}
+  .lead{color:var(--muted);max-width:520px;margin:0 auto;}
+  .pill{display:inline-block;margin-top:18px;background:var(--matcha-soft);color:var(--matcha);font-weight:600;font-size:.82rem;padding:6px 14px;border-radius:999px;}
+  /* section */
+  section{padding:36px 0;border-top:1px solid var(--line);}
+  h2{font-size:1.35rem;margin:0 0 6px;} h2 .em{color:var(--matcha);}
+  .h2sub{color:var(--muted);margin:0 0 22px;font-size:.95rem;}
+  /* feature grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;}
+  .feat{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
+  .feat .ic{width:44px;height:44px;border-radius:12px;background:var(--matcha-soft);display:grid;place-items:center;font-size:1.4rem;margin-bottom:10px;}
+  .feat h3{margin:0 0 4px;font-size:1rem;} .feat p{margin:0;font-size:.88rem;color:var(--muted);}
+  /* steps */
+  .steps{counter-reset:s;display:grid;gap:12px;}
+  .step{position:relative;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 16px 62px;box-shadow:var(--shadow);}
+  .step::before{counter-increment:s;content:counter(s);position:absolute;left:14px;top:14px;width:34px;height:34px;border-radius:10px;background:var(--ink);color:#fff;font-weight:700;display:grid;place-items:center;}
+  .step h3{margin:0 0 2px;font-size:1rem;} .step p{margin:0;font-size:.88rem;color:var(--muted);}
+  /* callout */
+  .call{background:var(--paper-2);border:1px solid var(--line);border-left:4px solid var(--matcha);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);}
+  .call.ship{border-left-color:var(--sky);} .call.sapo{border-left-color:var(--sun);}
+  .call h3{margin:0 0 8px;} .call p{margin:0 0 8px;} .call p:last-child{margin:0;}
+  .call ul{margin:8px 0 0;padding-left:20px;} .call li{margin:4px 0;font-size:.92rem;}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;font-size:.86rem;font-weight:600;}
+  .flow span{background:var(--matcha-soft);color:var(--matcha);padding:5px 12px;border-radius:999px;}
+  .flow b{color:var(--muted);}
+  /* try links */
+  .try{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:6px;}
+  .try a{display:flex;align-items:center;gap:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:11px 14px;text-decoration:none;color:var(--ink);font-weight:600;font-size:.88rem;}
+  .try a:hover{border-color:var(--matcha);color:var(--matcha);}
+  footer{padding:30px 20px 50px;text-align:center;color:var(--muted);font-size:.82rem;border-top:1px solid var(--line);}
+  .note{background:#fff8e6;border:1px solid #f0e2b8;border-radius:12px;padding:12px 16px;font-size:.86rem;color:#6b5d2e;margin-top:16px;}
+  @media(max-width:520px){ .logo{font-size:3rem;} .tagline{font-size:1.15rem;} }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="logo">Hikar<span class="flame">i</span></div>
+  <div class="sub">vegetarian cafe</div>
+  <div class="tagline">Đặt món chay ngon, ngay trên Zalo — không cần cài thêm app</div>
+  <p class="lead">Mini App của Hikari giúp khách xem menu, đặt món, tích điểm và thanh toán chỉ trong vài chạm, ngay trong ứng dụng Zalo quen thuộc.</p>
+  <div class="pill">📍 Quận 10, TP.HCM · 🌱 100% món chay</div>
+</div>
+
+<div class="wrap">
+
+  <section>
+    <h2>App này <span class="em">làm gì?</span></h2>
+    <p class="h2sub">Một quán chay Nhật — trải nghiệm đặt món hiện đại, gọn nhẹ.</p>
+    <p>Hikari Mini App là kênh đặt món trực tuyến của quán, chạy bên trong Zalo. Khách mở app là thấy toàn bộ
+      thực đơn có hình, đặt món để <strong>ăn tại quán</strong>, <strong>mang về</strong> hoặc <strong>giao tận nơi</strong>,
+      thanh toán bằng <strong>ZaloPay</strong> và <strong>tích điểm đổi ưu đãi</strong> — tất cả ở một nơi.</p>
+  </section>
+
+  <section>
+    <h2>Khách hàng <span class="em">dùng được gì?</span></h2>
+    <p class="h2sub">6 nhóm chức năng chính</p>
+    <div class="grid">
+      <div class="feat"><div class="ic">🍜</div><h3>Xem &amp; đặt món</h3><p>Menu mì, cà phê, trà, nước detox. Có cả “Tô tự chọn” tự phối mì – topping – rau – nước dùng.</p></div>
+      <div class="feat"><div class="ic">⭐</div><h3>Tích điểm</h3><p>Mỗi lần mua được tích điểm, lên hạng thành viên và đổi điểm lấy ưu đãi.</p></div>
+      <div class="feat"><div class="ic">🛵</div><h3>Giao hàng</h3><p>Nhập địa chỉ là thấy ngay phí ship và thời gian dự kiến trước khi đặt.</p></div>
+      <div class="feat"><div class="ic">💳</div><h3>Thanh toán ZaloPay</h3><p>Trả tiền ngay trong app bằng ví ZaloPay, nhanh và an toàn.</p></div>
+      <div class="feat"><div class="ic">🔔</div><h3>Nhận thông báo</h3><p>Quán gửi khuyến mãi, món mới, nhắc điểm thưởng qua Zalo và trong app.</p></div>
+      <div class="feat"><div class="ic">📊</div><h3>Quán quản lý dễ</h3><p>Trang quản trị riêng để quán xem đơn, doanh thu, đồng bộ với phần mềm bán hàng.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cách <span class="em">đặt đơn</span></h2>
+    <p class="h2sub">Chỉ 5 bước, dưới 1 phút</p>
+    <div class="steps">
+      <div class="step"><h3>Mở app trong Zalo</h3><p>Bấm vào Mini App Hikari — tự đăng nhập bằng tài khoản Zalo, không cần đăng ký.</p></div>
+      <div class="step"><h3>Chọn món</h3><p>Duyệt menu, thêm món vào giỏ. Món đặc biệt có thể chọn topping, độ cay, sốt…</p></div>
+      <div class="step"><h3>Chọn hình thức nhận</h3><p>Ăn tại quán · Mang về (phụ phí đóng gói) · Giao hàng (nhập địa chỉ để tính phí ship).</p></div>
+      <div class="step"><h3>Thanh toán</h3><p>Trả bằng ZaloPay. Dùng điểm thưởng để được giảm giá nếu muốn.</p></div>
+      <div class="step"><h3>Theo dõi &amp; nhận món</h3><p>Xem trạng thái đơn theo thời gian thực; được cộng điểm sau khi hoàn tất.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Phí <span class="em">giao hàng</span></h2>
+    <p class="h2sub">Minh bạch, biết trước khi đặt</p>
+    <div class="call ship">
+      <p>Khi khách chọn <strong>Giao hàng</strong>, app tự tính phí dựa trên <strong>khoảng cách từ quán (Q10)
+        đến địa chỉ nhận</strong>, thông qua đối tác giao đồ ăn <strong>BE (be.com.vn)</strong>.</p>
+      <ul>
+        <li>Hiện <strong>phí ship + thời gian dự kiến</strong> ngay khi nhập địa chỉ.</li>
+        <li>Địa chỉ ngoài vùng phục vụ sẽ được báo rõ để khách chọn cách khác.</li>
+        <li>Sau khi đặt, khách theo dõi tài xế: đang tìm → đã lấy hàng → đang giao → đã giao.</li>
+      </ul>
+      <div class="note">Cần chốt với quán: vùng phục vụ, khung phí, có freeship theo giá trị đơn không, và xác nhận kết nối API với BE.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Thông tin món <span class="em">lấy từ Sapo</span></h2>
+    <p class="h2sub">Đề xuất: một nguồn duy nhất, quán cập nhật một nơi</p>
+    <div class="call sapo">
+      <p>Đề xuất kết nối app với phần mềm quản lý bán hàng <strong>Sapo (sapo.vn)</strong> mà quán đang dùng, để:</p>
+      <ul>
+        <li><strong>Lấy thông tin sản phẩm từ Sapo</strong> — tên món, giá, còn/hết cập nhật tự động. Quán chỉ cần
+          sửa trên Sapo, app hiển thị theo, không phải nhập 2 lần.</li>
+        <li><strong>Đẩy đơn từ app về Sapo</strong> — mọi đơn đặt qua Zalo được ghi nhận trên Sapo để quán quản lý
+          doanh thu, tồn kho tập trung.</li>
+      </ul>
+      <div class="flow"><span>Sapo (sản phẩm)</span><b>→</b><span>App hiển thị menu</span><b>· khách đặt →</b><span>Đơn về Sapo</span></div>
+      <div class="note">Quán đã có tài khoản Sapo; cần bật/đăng ký API key của Sapo để kết nối. Trước khi có, app dùng menu nhập sẵn.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Xem thử <span class="em">giao diện</span></h2>
+    <p class="h2sub">Bản mẫu (prototype) — mở bằng trình duyệt là dùng thử được ngay</p>
+    <div class="try">
+      <a href="prototype/menu.html">🍜 Menu &amp; đặt món</a>
+      <a href="prototype/tich-diem.html">⭐ Tích điểm</a>
+      <a href="prototype/phi-giao-hang.html">🛵 Phí giao hàng</a>
+      <a href="prototype/thanh-toan.html">💳 Thanh toán ZaloPay</a>
+      <a href="prototype/thong-bao.html">🔔 Thông báo</a>
+      <a href="prototype/dashboard.html">📊 Trang quản trị</a>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <strong>Hikari Vegetarian Cafe</strong> · Zalo Mini App · Quận 10, TP.HCM<br>
+  Tài liệu đang ở giai đoạn bản mẫu — hình ảnh &amp; con số minh hoạ, chờ quán xác nhận trước khi phát hành.
+</footer>
+</body>
+</html>
