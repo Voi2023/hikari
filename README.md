@@ -104,20 +104,49 @@ Ba phần deploy **ba đường khác nhau** — đừng gộp:
 
 ### 4.1. Mini App → Zalo
 
+Tự động qua [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+
+| Push nhánh | Environment | Mini App | Kết quả |
+|---|---|---|---|
+| `staging` | `uat` | Mini App UAT | bản **Testing** — tester quét QR dùng ngay |
+| `production` | `production` | Mini App chính | bản **Testing** trên app thật — **còn phải gửi duyệt tay** |
+
+> ⚠️ **CLI không đẩy được thẳng lên production.** `zmp-cli` chỉ có 2 bậc phiên bản
+> (`versionStatus = { DEVELOPMENT: 0, TESTING: 2 }`) và không có lệnh gửi duyệt.
+> Đây là chỗ hay hiểu nhầm nhất: CI xanh, cả nhóm tưởng đã lên, khách vẫn dùng bản tuần trước.
+
+Sau khi workflow của nhánh `production` chạy xong, **vẫn còn một bước người làm**:
+[mini.zalo.me](https://mini.zalo.me) → Quản lý phiên bản → chọn bản vừa đẩy → **Gửi duyệt** →
+Zalo review → **Publish**. Yêu cầu: liên kết **OA (Official Account)**, khai báo domain API vào
+whitelist, cấu hình quyền (`getPhoneNumber`, ZaloPay...).
+
+**Vì sao 2 Mini App:** trong một Mini App, bản Testing và bản chính thức nằm chung một danh sách
+phiên bản — đẩy UAT vào đó là trộn bản thử nghiệm với bản đang chờ duyệt.
+
+**Secret khai theo từng environment** (Settings → Environments → `uat` / `production`), **không**
+khai ở mức repo — khai mức repo là hai môi trường dùng chung `MINI_APP_ID` và bản UAT sẽ nằm nhầm
+trong Mini App của khách:
+
+| Secret | Lấy ở đâu |
+|---|---|
+| `ZALO_APP_ID`, `ZALO_APP_SECRET` | developers.zalo.me |
+| `ZALO_REFRESH_TOKEN` | developers.zalo.me → Công cụ → API Explorer — **workflow tự xoay** sau mỗi lần chạy |
+| `MINI_APP_ID` | mini.zalo.me — **khác** `ZALO_APP_ID`, rất hay khai nhầm |
+| `ZALO_SECRET_ROTATOR_PAT` *(mức repo)* | PAT ghi được secrets của repo, để xoay refresh token |
+
+Nên bật **Required reviewers** cho environment `production` — đó là chốt duyệt thật sự có tác dụng,
+vì bản thân lệnh deploy không có bậc nào để chặn.
+
+Chạy tay khi cần (`workflow_dispatch` cho phép chọn `uat`/`production`, nhưng deploy production
+bắt buộc đứng ở nhánh `production`):
+
 ```bash
 pnpm --filter @hikari/mini-app build
 cd apps/mini-app
 zmp login --app-id <MINI_APP_ID> --token <ACCESS_TOKEN>   # hoặc `zmp login` rồi quét QR
-zmp deploy --testing --desc "mô tả version"               # bản TESTING (đánh số, lưu lại)
-zmp deploy --desc "..."                                   # bản DEVELOPMENT (nháp, bị ghi đè)
+zmp deploy --passive --testing --desc "mô tả version"     # bản TESTING (đánh số, lưu lại)
+zmp deploy --passive --desc "..."                         # bản DEVELOPMENT (nháp, bị ghi đè)
 ```
-
-> ⚠️ **CLI không đẩy được thẳng lên production.** `zmp deploy` chỉ tạo bản *development* hoặc
-> *testing*. Đây là chỗ hay hiểu nhầm nhất: CI chạy xanh nhưng khách vẫn dùng bản cũ.
-
-Muốn lên chính thức: vào [Zalo Mini App portal](https://mini.zalo.me) → Quản lý phiên bản →
-chọn bản testing → **gửi duyệt (review)** → Zalo duyệt xong bấm **Publish**. Yêu cầu: liên kết **OA (Official Account)**, khai báo domain API vào whitelist, cấu hình
-quyền (`getPhoneNumber`, ZaloPay...).
 
 ### 4.2. Backend API → Docker (VPS)
 
@@ -158,6 +187,8 @@ pnpm --filter @hikari/api prisma migrate deploy   # chạy migration trên prod 
   **trước khi code**, và ghi vào [`docs/specs/FEATURES.html`](docs/specs/FEATURES.html). (Xem [`docs/specs/README.html`](docs/specs/README.html).)
 - Contract FE ↔ BE để ở `packages/shared` (một nguồn).
 - Git: làm trên nhánh **`dev`**, commit + push sau mỗi việc.
+- Luồng phát hành: **`dev`** (code hằng ngày, không deploy) → merge sang **`staging`** (tự deploy UAT)
+  → merge sang **`production`** (tự đẩy bản chờ duyệt lên Mini App chính). Xem [§4.1](#41-mini-app--zalo).
 
 ### 6.1. Khoá xem tài liệu (`docs/`)
 
@@ -190,4 +221,4 @@ mọi trang khác vẫn hỏi mật khẩu, và sẽ không ai phát hiện ra.
 
 ## 7. Trạng thái hiện tại
 
-Xem [`docs/specs/FEATURES.html`](docs/specs/FEATURES.html) — bảng theo dõi 6 chức năng + dashboard, kèm link spec & prototype.
+Xem [`docs/specs/FEATURES.html`](docs/specs/FEATURES.html) — bảng theo dõi 7 chức năng + dashboard, kèm link spec & prototype.

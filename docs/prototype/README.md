@@ -30,6 +30,7 @@ Vừa là bản demo UX để duyệt với chủ quán, vừa là **bảng ki�
 | [thanh-toan.html](thanh-toan.html) | 04 — Thanh toán ZaloPay |
 | [thong-bao.html](thong-bao.html) | 05 — Thông báo cho khách |
 | [sapo.html](sapo.html) | 06 — Đẩy đơn lên Sapo |
+| [menu.html](menu.html) → nút *Tiếp tục đặt hàng* | 08 — Đặt hàng: thông tin nhận hàng → phí giao → thanh toán → theo dõi đơn (dùng [`shared/checkout.js`](shared/checkout.js)) |
 
 ## Dashboard quản trị — [`admin/`](admin/)
 

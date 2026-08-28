@@ -87,6 +87,7 @@
      Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
 <style id="hikari-gate">html{visibility:hidden!important}</style>
 <script src="../assets/gate.js"></script>
+<script src="shared/checkout.js"></script>
 </head>
 <body>
 <div class="phone">
@@ -111,7 +112,7 @@
     </div>
   </div>
 </div>
-<p class="disclaimer">Prototype — dữ liệu từ <code>docs/assets/data/menu.json</code>. Không gọi API/thanh toán thật.</p>
+<p class="disclaimer">Prototype — dữ liệu từ <code>docs/assets/data/menu.json</code>. Bấm “Tiếp tục đặt hàng” trong giỏ để đi hết luồng đặt → phí giao → thanh toán → theo dõi đơn. Không gọi API/BE/ZaloPay thật.</p>
 
 <script>
 /* ==== Dữ liệu menu (rút từ assets/data/menu.json) ==== */
@@ -338,8 +339,8 @@ function openCart(){
     ${packaging()?`<div class="sumrow"><span>Phụ phí đóng gói (mang về)</span><span class="price">${vnd(packaging())}</span></div>`:""}
     ${mode==='delivery'?`<div class="sumrow muted"><span>Phí giao hàng</span><span>tính ở bước sau *</span></div>`:""}
     <div class="sumrow total"><span>Tổng tạm tính</span><span class="price">${vnd(subtotal()+packaging())}</span></div>
-    <button class="btn" style="width:100%;margin-top:12px" onclick="alert('Luồng đặt hàng / thanh toán / phí ship — ở các spec 03, 04. Đây là ranh giới của prototype Menu.')">Tiếp tục đặt hàng →</button>
-    ${mode==='delivery'?'<p class="disclaimer">* Phí giao hàng lấy từ BE giao hàng — xem spec 03.</p>':''}`;
+    <button class="btn" style="width:100%;margin-top:12px${cart.length?'':';opacity:.5'}" ${cart.length?'':'disabled'} onclick="startCheckout()">Tiếp tục đặt hàng →</button>
+    ${mode==='delivery'?'<p class="disclaimer">* Phí giao hàng do đơn vị giao cung cấp ở bước sau — xem spec 03.</p>':''}`;
   openSheet();
 }
 function cline(c){
@@ -354,6 +355,18 @@ function chQty(key,d){
   renderCartBar(); openCart();
 }
 function setMode(m){ mode=m; openCart(); }
+
+/* ==== Đặt hàng: bàn giao sang luồng checkout (shared/checkout.js) ==== */
+function startCheckout(){
+  if(!cart.length){ alert("Giỏ hàng đang trống."); return; }
+  closeSheet();
+  Checkout.start({
+    lines: cart.map(c=>({ name:c.name, opt:c.opt, price:c.price, qty:c.qty })),
+    mode,
+    subtotal: subtotal(),
+    onDone: placed => { if(placed){ cart = []; mode = "dine"; renderCartBar(); } }
+  });
+}
 
 /* ==== Sheet helpers ==== */
 function openSheet(){ document.getElementById("sheetBg").classList.add("open"); }
