@@ -22,13 +22,24 @@
   var EARN_PER = 1000;           // 1 điểm / 1.000đ chi tiêu thực (không tính phí ship)
   var HOLD_MINUTES = 15;         // đơn chưa thanh toán tự huỷ sau 15 phút (spec 04)
 
-  /* Địa chỉ mẫu — a3 ngoài vùng, a4 để xem cách app xử lý khi đối tác giao lỗi */
+  /* Sổ địa chỉ của khách. Ở prototype là dữ liệu mẫu trong bộ nhớ; thật thì là bảng `addresses`
+     của user (GET/POST /api/v1/me/addresses) — khách tự thêm, sửa, chọn mặc định.
+     a3 để xem ca ngoài vùng, a4 để xem ca đối tác giao lỗi. */
   var ADDRESSES = [
-    { id: 'a1', label: 'Nhà — 12 Nguyễn Tri Phương, Q10', km: 1.2, kind: 'ok' },
-    { id: 'a2', label: 'Công ty — 350 Lê Văn Sỹ, Q3', km: 3.8, kind: 'ok' },
-    { id: 'a3', label: 'Nhà bạn — Nhà Bè', km: 14.5, kind: 'out' },
-    { id: 'a4', label: 'Mô phỏng: đối tác giao lỗi/timeout', km: 2.0, kind: 'error' }
+    { id: 'a1', label: 'Nhà', detail: '12 Nguyễn Tri Phương', district: 'Quận 10', km: 1.2, kind: 'ok' },
+    { id: 'a2', label: 'Công ty', detail: '350 Lê Văn Sỹ', district: 'Quận 3', km: 3.8, kind: 'ok' },
+    { id: 'a3', label: 'Nhà bạn', detail: '90 Nguyễn Bình', district: 'Nhà Bè', km: 14.5, kind: 'out' },
+    { id: 'a4', label: 'Mô phỏng đối tác giao lỗi/timeout', detail: '1 Đường Test', district: 'Quận 10', km: 2.0, kind: 'error' }
   ];
+
+  /* Khoảng cách ước lượng theo quận (từ quán ở Q10) — CHỈ để prototype có số mà hiển thị.
+     Thật thì đơn vị giao tính từ toạ độ, app không tự đoán. */
+  var DISTRICTS = {
+    'Quận 10': 1.5, 'Quận 11': 2.5, 'Quận 5': 3.0, 'Quận 3': 3.5, 'Quận 1': 5.0,
+    'Phú Nhuận': 5.5, 'Tân Bình': 6.0, 'Quận 4': 6.5, 'Bình Thạnh': 7.0, 'Gò Vấp': 8.5,
+    'Quận 6': 5.5, 'Tân Phú': 7.5, 'Quận 8': 6.0, 'Quận 7': 11.0, 'TP Thủ Đức': 14.0, 'Nhà Bè': 15.0
+  };
+  var MAX_KM = 10;   // ❓ bán kính phục vụ — chờ chủ quán & đơn vị giao chốt
 
   var USER = { name: 'Minh Anh', points: 320, phone: '0903 *** 456' };
 
@@ -113,7 +124,7 @@
 
   function stepper() {
     var names = ['Thông tin', 'Thanh toán', 'Theo dõi'];
-    var cur = S.step === 'info' ? 0 : S.step === 'done' ? 2 : 1;   // gate/qr/fail vẫn thuộc bước thanh toán
+    var cur = (S.step === 'info' || S.step === 'addr') ? 0 : S.step === 'done' ? 2 : 1;   // gate/qr/fail vẫn thuộc bước thanh toán
     return '<div class="co-steps">' + names.map(function (n, i) {
       return '<span class="co-st ' + (i < cur ? 'done' : i === cur ? 'now' : '') + '">' +
              '<b>' + (i < cur ? '✓' : i + 1) + '</b>' + n + '</span>';
@@ -147,10 +158,13 @@
       body += '<div class="co-sec"><h4>Địa chỉ giao</h4>' +
         ADDRESSES.map(function (a) {
           return '<div class="co-addr ' + (a.id === S.addressId ? 'on' : '') + '" onclick="Checkout.pickAddr(\'' + a.id + '\')">' +
-            '<span class="pin">📍</span><div><div>' + esc(a.label) + '</div>' +
-            '<div class="co-sub">' + a.km + ' km từ quán</div></div></div>';
+            '<span class="pin">📍</span><div><div><strong>' + esc(a.label) + '</strong> — ' + esc(a.detail) + '</div>' +
+            '<div class="co-sub">' + esc(a.district) + ' · ~' + a.km + ' km từ quán' +
+            (a.note ? ' · ' + esc(a.note) : '') + '</div></div></div>';
         }).join('') +
-        '<div class="co-quote">' + quoteBox() + '</div>' + note('POST /api/v1/shipping/quote') + '</div>';
+        '<button class="co-addnew" onclick="Checkout.openAddr()">＋ Thêm địa chỉ mới</button>' +
+        '<div class="co-quote">' + quoteBox() + '</div>' +
+        note('GET /api/v1/me/addresses · POST /api/v1/shipping/quote') + '</div>';
     } else {
       body += '<div class="co-sec"><h4>' + (S.mode === 'dine' ? 'Tại quán' : 'Đến lấy') + '</h4>' +
         '<div class="co-card">📍 Hikari Vegetarian Cafe · Quận 10, TP.HCM' +
@@ -187,6 +201,54 @@
       (blocked || 'Tiếp tục · chọn thanh toán →') + '</button>';
 
     return shell('Xác nhận đơn', body, foot);
+  }
+
+  /* ==== Màn nhập địa chỉ mới ==== */
+  function viewAddr() {
+    var f = S.form;
+    var districts = Object.keys(DISTRICTS);
+    var body = '<div class="co-sec"><h4>Đặt tên cho địa chỉ</h4>' +
+      '<div class="co-modes sm">' + ['Nhà', 'Công ty', 'Khác'].map(function (l) {
+        return '<button class="' + (f.label === l ? 'on' : '') + '" onclick="Checkout.f(\'label\',\'' + l + '\',1)">' + l + '</button>';
+      }).join('') + '</div></div>';
+
+    body += '<div class="co-sec"><h4>Số nhà, tên đường <span class="co-req">*</span></h4>' +
+      '<input class="co-input" value="' + esc(f.detail) + '" placeholder="VD: 12 Nguyễn Tri Phương" ' +
+      'oninput="Checkout.f(\'detail\', this.value)">' +
+      (S.formErr === 'detail' ? '<div class="co-err">Chưa nhập số nhà và tên đường.</div>' : '') + '</div>';
+
+    body += '<div class="co-sec"><h4>Phường / Xã</h4>' +
+      '<input class="co-input" value="' + esc(f.ward) + '" placeholder="VD: Phường 12" oninput="Checkout.f(\'ward\', this.value)"></div>';
+
+    body += '<div class="co-sec"><h4>Quận / Huyện <span class="co-req">*</span></h4>' +
+      '<select class="co-input" onchange="Checkout.f(\'district\', this.value, 1)">' +
+      '<option value="">— Chọn quận/huyện —</option>' +
+      districts.map(function (d) {
+        return '<option value="' + d + '"' + (f.district === d ? ' selected' : '') + '>' + d + '</option>';
+      }).join('') + '</select>' +
+      (f.district
+        ? (DISTRICTS[f.district] > MAX_KM
+            ? '<div class="co-alert" style="margin-top:8px">😔 ' + f.district + ' cách quán ~' + DISTRICTS[f.district] +
+              ' km, ngoài bán kính giao ' + MAX_KM + ' km. Vẫn lưu được để dùng khi quán mở rộng vùng giao.</div>'
+            : '<div class="co-sub" style="margin-top:6px">~' + DISTRICTS[f.district] + ' km từ quán (ước lượng)</div>')
+        : '') +
+      (S.formErr === 'district' ? '<div class="co-err">Chưa chọn quận/huyện.</div>' : '') + '</div>';
+
+    body += '<div class="co-sec"><h4>Ghi chú cho tài xế</h4>' +
+      '<input class="co-input" value="' + esc(f.note) + '" placeholder="Toà B, tầng 3, gọi trước khi đến" oninput="Checkout.f(\'note\', this.value)"></div>';
+
+    body += '<div class="co-sec">' +
+      '<button class="co-btn ghost" onclick="Checkout.useLocation()">📍 ' +
+      (f.located ? 'Đã ghim vị trí hiện tại' : 'Dùng vị trí hiện tại') + '</button>' +
+      '<p class="co-fine">Toạ độ giúp tài xế tìm đúng nhà. Mini app xin quyền vị trí, khách bấm đồng ý mới lấy được — ' +
+      'app đổi token sang toạ độ ở server, không tự đọc vị trí ngầm.</p>' +
+      note('zmp-sdk getLocation → POST /api/v1/me/addresses') + '</div>';
+
+    var far = f.district && DISTRICTS[f.district] > MAX_KM;
+    var foot = '<button class="co-btn" onclick="Checkout.saveAddr()">' +
+      (far ? 'Lưu địa chỉ (ngoài vùng giao)' : 'Lưu &amp; giao đến địa chỉ này') + '</button>' +
+      '<button class="co-btn link" onclick="Checkout.backInfo()">Huỷ</button>';
+    return shell('Địa chỉ mới', body, foot, { back: 'backInfo' });
   }
 
   function quoteBox() {
@@ -333,6 +395,7 @@
   /* ==== Render ==== */
   function render() {
     var v = S.step === 'info' ? viewInfo()
+      : S.step === 'addr' ? viewAddr()
       : S.step === 'pay' ? viewPay()
       : S.step === 'gate' ? viewGate()
       : S.step === 'qr' ? viewQr()
@@ -367,6 +430,7 @@
         addressId: 'a1', quote: { state: 'idle' },
         time: 'now', at: '18:30', note: '', phoneShared: opts.mode === 'dine',
         usePoints: false, method: 'zalopay',
+        form: null, formErr: '',
         code: '#' + id, appTransId: yy + mm + dd + '_' + id,
         paying: false, paid: false, earned: 0, trackAt: 0,
         onDone: opts.onDone
@@ -385,6 +449,43 @@
       if (m === 'delivery') { requestQuote(); } else { S.quote = { state: 'idle' }; render(); }
     },
     pickAddr: function (id) { S.addressId = id; requestQuote(); },
+
+    /* --- thêm địa chỉ mới --- */
+    openAddr: function () {
+      S.form = { label: 'Nhà', detail: '', ward: '', district: '', note: '', located: false };
+      S.formErr = '';
+      S.step = 'addr';
+      render();
+    },
+    f: function (key, val, rerender) {          // rerender=1 cho các ô cần vẽ lại (tránh mất con trỏ khi gõ)
+      S.form[key] = val;
+      S.formErr = '';
+      if (rerender) render();
+    },
+    useLocation: function () {                  // mô phỏng zmp-sdk getLocation (thật: token → server đổi lấy toạ độ)
+      S.form.located = true;
+      if (!S.form.district) S.form.district = 'Quận 10';
+      render();
+    },
+    saveAddr: function () {
+      var f = S.form;
+      if (!f.detail.trim()) { S.formErr = 'detail'; render(); return; }
+      if (!f.district) { S.formErr = 'district'; render(); return; }
+      var km = DISTRICTS[f.district];
+      var a = {
+        id: 'a' + Date.now(),
+        label: f.label,
+        detail: f.detail.trim() + (f.ward.trim() ? ', ' + f.ward.trim() : ''),
+        district: f.district,
+        km: km,
+        note: f.note.trim(),
+        kind: km > MAX_KM ? 'out' : 'ok'        // thật thì đơn vị giao trả lời có phục vụ hay không
+      };
+      ADDRESSES.unshift(a);
+      S.addressId = a.id;
+      S.step = 'info';
+      requestQuote();
+    },
     retryQuote: function () { requestQuote(); },
     setTime: function (t) { S.time = t; render(); },
     setAt: function (v) { S.at = v; },
@@ -459,6 +560,10 @@
       '.co-addr{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line,#E7E2D8);border-radius:12px;padding:10px;margin-bottom:6px;cursor:pointer;}',
       '.co-addr.on{border-color:var(--matcha,#5F7A4A);background:var(--matcha-soft,#EAF0E3);}',
       '.co-quote{margin-top:8px;}',
+      '.co-addnew{width:100%;border:1px dashed var(--line,#E7E2D8);background:#fff;border-radius:12px;padding:10px;font:inherit;font-size:.82rem;font-weight:600;color:var(--matcha,#5F7A4A);cursor:pointer;}',
+      '.co-req{color:var(--chili,#D9534F);}',
+      '.co-err{color:var(--chili,#D9534F);font-size:.75rem;margin-top:6px;}',
+      'select.co-input{appearance:none;background-image:linear-gradient(45deg,transparent 50%,#8A857C 50%),linear-gradient(135deg,#8A857C 50%,transparent 50%);background-position:calc(100% - 16px) 55%,calc(100% - 11px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;}',
       '.co-fee .big{font-size:1.5rem;font-weight:700;} .co-fee .big .co-sub{font-size:.75rem;font-weight:400;}',
       '.co-meta{display:flex;gap:12px;margin-top:6px;font-size:.75rem;color:var(--muted,#8A857C);}',
       '.co-loading{display:flex;align-items:center;gap:10px;color:var(--muted,#8A857C);}',
