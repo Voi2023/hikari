@@ -6,7 +6,10 @@ Vừa là bản demo UX để duyệt với chủ quán, vừa là **bảng ki�
 ## Cách dùng
 
 - Mở [`index.html`](index.html) — trang tổng, liệt kê mọi prototype + trạng thái.
-- Dashboard quản trị: [`admin/dang-nhap.html`](admin/dang-nhap.html) — mã 2FA mô phỏng là **`123456`**.
+- **Mật khẩu mở tài liệu: `hikari@2026`** (hỏi một lần cho cả trình duyệt).
+  Đây chỉ là rào cản cho người xem tình cờ, không phải bảo mật — xem [README §6.1](../../README.md#61-khoá-xem-tài-liệu-docs).
+- Dashboard quản trị: [`admin/dang-nhap.html`](admin/dang-nhap.html) — mã 2FA mô phỏng là **`123456`**
+  (khác với mật khẩu mở tài liệu ở trên).
 
 ## Quy ước
 

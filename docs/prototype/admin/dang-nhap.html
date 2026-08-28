@@ -18,6 +18,10 @@
   .backup code{font-family:var(--font-mono);background:var(--bg);border:1px dashed var(--border);border-radius:7px;padding:7px 10px;text-align:center;font-size:13px;letter-spacing:1px}
   .lockbar{background:var(--danger-bg);color:var(--danger);border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;margin-bottom:14px}
 </style>
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../../assets/gate.js"></script>
 </head>
 <body>
 <div class="auth-shell">

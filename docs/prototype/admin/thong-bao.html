@@ -16,6 +16,10 @@
   .zhead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
   .zhead .av{width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-family:var(--font-script);font-size:17px;font-weight:700}
 </style>
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../../assets/gate.js"></script>
 </head>
 <body>
 <main id="page">

@@ -33,6 +33,10 @@
   .disabled { opacity: .6; pointer-events: none; }
   .note { background: #fff8e6; border: 1px solid #f0e2b8; border-radius: var(--radius); padding: 14px 16px; font-size: .9rem; margin-top: 24px; }
 </style>
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../assets/gate.js"></script>
 </head>
 <body>
 <div class="wrap">
