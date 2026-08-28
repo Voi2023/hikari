@@ -1,0 +1,81 @@
+name: Deploy Zalo Mini App
+
+on:
+  push:
+    branches:
+      - staging
+      - production
+    paths:
+      - "apps/mini-app/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Môi trường deploy"
+        required: true
+        default: uat
+        type: choice
+        options:
+          - uat
+          - production
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zalo-mini-app-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || (github.ref_name == 'production' && 'production' || 'uat') }}
+    defaults:
+      run:
+        working-directory: apps/mini-app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: .
+
+      - name: Build Mini App
+        run: pnpm build
+
+      - name: Login to Zalo and deploy
+        env:
+          ZALO_APP_ID: ${{ secrets.ZALO_APP_ID }}
+          ZALO_APP_SECRET: ${{ secrets.ZALO_APP_SECRET }}
+          ZALO_REFRESH_TOKEN: ${{ secrets.ZALO_REFRESH_TOKEN }}
+          MINI_APP_ID: ${{ secrets.MINI_APP_ID }}
+          DEPLOY_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_target || (github.ref_name == 'production' && 'production' || 'uat') }}
+        run: |
+          set -euo pipefail
+          : "${ZALO_APP_ID:?Missing secret ZALO_APP_ID}"
+          : "${ZALO_APP_SECRET:?Missing secret ZALO_APP_SECRET}"
+          : "${ZALO_REFRESH_TOKEN:?Missing secret ZALO_REFRESH_TOKEN}"
+          : "${MINI_APP_ID:?Missing secret MINI_APP_ID}"
+          npx --yes zmp-deploy-token login "$ZALO_APP_ID" "$ZALO_APP_SECRET" "$ZALO_REFRESH_TOKEN"
+          if [ "$DEPLOY_TARGET" = "uat" ]; then
+            npx --yes zmp-deploy-token deploy "$MINI_APP_ID" --testing
+          else
+            npx --yes zmp-deploy-token deploy "$MINI_APP_ID"
+          fi

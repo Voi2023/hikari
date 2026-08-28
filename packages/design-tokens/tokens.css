@@ -1,0 +1,407 @@
+/* ============================================================
+   HIKARI Design Tokens — nguồn build DUY NHẤT cho màu sắc/spacing.
+   Gốc: DMCL ui-kit (dmcl-shared/design-tokens/tokens.css) — GIỮ NGUYÊN cấu trúc & tên class,
+   chỉ đổi ANCHOR sang bảng màu logo Hikari (xem docs/assets/brand/brand.md).
+   KHÔNG hard-code màu trong app — luôn dùng var().
+
+   Kiến trúc token:
+     ANCHOR  — vài biến gốc, là "núm chỉnh tone". Đổi tone toàn hệ thống = sửa ở đây.
+     DERIVED — sắc độ brand suy TỰ ĐỘNG từ --brand bằng color-mix(); đổi --brand là mọi
+               chỗ dùng brand (sidebar, nút, timeline, focus, auth…) đổi theo, không sửa lẻ.
+     COMPONENT — class map ra token (--btn-bg, --badge-bg…) để tái skin không sửa component.
+   ============================================================ */
+:root{
+  /* ---- ANCHOR: núm chỉnh tone (sửa ở đây là cả hệ thống đổi) ----
+     Bảng màu Hikari rút từ logo + 2 menu in: giấy kem, xanh matcha, vàng sticky-note. */
+  --brand:#5F7A4A;              /* matcha — xanh chủ đạo "vegetarian" */
+  --accent:#F2C94C;             /* vàng sticky-note — điểm nhấn */
+
+  --ink:#1C1B19;                /* chữ chính (đen logo) */
+  --muted:#8A857C;              /* chữ phụ/label */
+  --bg:#FAF8F3;                 /* nền trang — giấy kem */
+  --surface:#FFFFFF;            /* panel/card */
+  --border:#E7E2D8;             /* viền */
+  --gray-bg:#F1EDE4;            /* nền trung tính (chip/progress) — ngả kem cho hợp nền giấy */
+
+  /* Trạng thái (base — độc lập với brand, chỉ đổi khi muốn đổi nghĩa màu) */
+  --ok:#4E7A3E;     --ok-bg:#EAF0E3;   /* xanh lá ngả matcha cho đồng bộ brand */
+  --warn:#A9791B;   --warn-bg:#FFF3D6;
+  --danger:#D9534F; --danger-bg:#FBE9E8;  /* chili — nhãn cay / lỗi */
+  --info:#4A90D9;   --info-bg:#E6F0FF;   /* sky — doodle xanh dương trên menu */
+
+  /* Hình khối / hiệu ứng / layout */
+  --radius-sm:9px;
+  --radius:14px;
+  --radius-full:999px;
+  --shadow:0 2px 10px rgba(28,27,25,.06), 0 8px 24px rgba(28,27,25,.05);
+  --sidebar-w:250px;
+  --font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --font-script:"Caveat","Segoe Script",cursive;   /* chữ viết tay của logo Hikari */
+
+  /* ---- DERIVED: họ brand suy từ --brand (đổi --brand là các biến này tự đổi) ----
+     Với matcha #5F7A4A: brand-dark≈#455936, brand-deeper≈#313F26, brand-tint≈#F0F3ED. */
+  --brand-dark:   color-mix(in srgb, #000 27%, var(--brand));
+  --brand-deeper: color-mix(in srgb, #000 48%, var(--brand));
+  --brand-tint:   color-mix(in srgb, var(--brand) 9%, #fff);
+  --accent-ink:   var(--brand-deeper); /* chữ tối trên nền vàng */
+
+  /* ---- COMPONENT: sidebar tách khỏi --brand để dùng tông matcha đậm (dễ đọc, sang hơn nền
+     matcha phẳng). Vẫn suy từ --brand nên đổi 1 núm là cả sidebar đổi theo. ---- */
+  --sidebar-bg:   var(--brand-deeper);
+  --sidebar-line: rgba(255,255,255,.14);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-family:var(--font-family);color:var(--ink);background:var(--bg);font-size:14.5px;line-height:1.55}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:14px}
+/* Kiểu mặc định cho ô nhập text (kể cả khi KHÔNG bọc trong .field/.toolbar) — tránh input "trần" mất CSS.
+   Loại trừ checkbox/radio/file (giữ giao diện gốc). .field/.toolbar/.input vẫn tinh chỉnh thêm bên dưới. */
+input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]),
+select,textarea{
+  padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--ink);outline:none;
+}
+input:not([type=checkbox]):not([type=radio]):not([type=file]):focus,
+select:focus,textarea:focus{border-color:var(--brand);background:#fff}
+
+/* ---- Base components (class-level, dùng chung 2 app) ---- */
+/* Nút dùng component-token (--btn-bg/--btn-fg): muốn tái skin cho một khu vực/app khác
+   → override --btn-bg tại scope đó, KHÔNG sửa .btn. */
+.btn{--btn-bg:transparent;--btn-fg:var(--ink);
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:9px;
+  padding:10px 18px;font-weight:700;font-size:13.6px;cursor:pointer;transition:transform .05s;
+  background:var(--btn-bg);color:var(--btn-fg)}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-primary{--btn-bg:var(--brand);--btn-fg:#fff}
+.btn-primary:hover{--btn-bg:var(--brand-dark)}
+.btn-outline{--btn-bg:#fff;--btn-fg:var(--ink);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--brand);--btn-fg:var(--brand-dark)}
+.btn-ghost{--btn-bg:transparent;--btn-fg:var(--muted)}
+.btn-danger{--btn-bg:var(--danger);--btn-fg:#fff}
+.btn-sm{padding:6px 12px;font-size:12.5px;border-radius:7px}
+
+.badge{--badge-bg:var(--gray-bg);--badge-fg:var(--muted);
+  display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--radius-full);
+  font-size:11.5px;font-weight:700;white-space:nowrap;background:var(--badge-bg);color:var(--badge-fg)}
+.badge.blue{--badge-bg:var(--info-bg);--badge-fg:var(--info)}
+.badge.green{--badge-bg:var(--ok-bg);--badge-fg:var(--ok)}
+.badge.amber{--badge-bg:var(--warn-bg);--badge-fg:var(--warn)}
+.badge.red{--badge-bg:var(--danger-bg);--badge-fg:var(--danger)}
+.badge.gray{--badge-bg:var(--gray-bg);--badge-fg:var(--muted)}
+/* 3PL: nền brand đặc + viền để nổi bật tên đối tác giao vận trong chi tiết đơn */
+.badge.carrier-3pl{--badge-bg:var(--brand);--badge-fg:#fff;box-shadow:0 0 0 2px var(--brand-tint);letter-spacing:.3px;text-transform:uppercase}
+
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:20px;overflow-x:auto}
+.panel h2{font-size:15.5px;margin:0 0 14px;display:flex;align-items:center;justify-content:space-between}
+
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg);outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand);background:#fff}
+
+/* Date/datetime picker — đồng bộ giao diện ở MỌI ngữ cảnh (kể cả trong toolbar) + tô nút lịch theo brand */
+input[type=date],input[type=datetime-local]{
+  font-family:inherit;font-size:14px;color:var(--ink);
+  padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface);
+  outline:none;min-height:40px;line-height:1.2;color-scheme:light;
+  transition:border-color .15s,box-shadow .15s;
+}
+input[type=date]:hover,input[type=datetime-local]:hover{border-color:var(--brand)}
+input[type=date]:focus,input[type=datetime-local]:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px var(--brand-tint)}
+input[type=date]::-webkit-calendar-picker-indicator,
+input[type=datetime-local]::-webkit-calendar-picker-indicator{
+  cursor:pointer;opacity:.55;padding:3px;margin-left:2px;border-radius:5px;transition:opacity .15s,background .15s;
+}
+input[type=date]::-webkit-calendar-picker-indicator:hover,
+input[type=datetime-local]::-webkit-calendar-picker-indicator:hover{opacity:1;background:var(--brand-tint)}
+input[type=date]:disabled,input[type=datetime-local]:disabled{background:var(--gray-bg);color:var(--muted)}
+
+/* Cụm lọc khoảng ngày (báo cáo / nhật ký) — gom thành thanh lọc gọn gàng */
+.date-range{display:inline-flex;align-items:flex-end;gap:10px;flex-wrap:wrap;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px}
+.date-range .field{margin:0}
+.date-range .field label{margin-bottom:4px}
+
+table.data{width:100%;border-collapse:collapse;font-size:13.3px}
+table.data.wide{min-width:640px}
+table.data th{text-align:left;padding:10px 12px;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--border)}
+table.data td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+table.data tr:last-child td{border-bottom:none}
+table.data tr.row-link{cursor:pointer}
+table.data tr.row-link:hover{background:var(--bg)}
+.mono{font-family:var(--font-mono);font-size:12.5px}
+/* Khối mã (curl/JSON) cho trang tài liệu — nền tối, cuộn ngang, có nút sao chép */
+.code-wrap{position:relative;margin:8px 0 14px}
+.code-block{background:var(--ink);color:#e6edf3;border-radius:10px;padding:14px 40px 14px 16px;
+  font-family:var(--font-mono);font-size:12.4px;line-height:1.6;overflow-x:auto;white-space:pre;margin:0}
+.code-copy{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.14);color:#fff;border:none;
+  border-radius:6px;padding:3px 10px;font-size:11.5px;cursor:pointer}
+.code-copy:hover{background:rgba(255,255,255,.26)}
+code.inline{background:var(--gray-bg);border-radius:5px;padding:1px 6px;font-family:var(--font-mono);font-size:12.3px}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);cursor:pointer}
+.stat-card:hover{border-color:var(--brand)}
+.stat-card .label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px}
+.stat-card .value{font-size:26px;font-weight:800}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:center}
+.toolbar input[type=search],.toolbar select{padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface)}
+.toolbar input[type=search]{flex:1;min-width:180px}
+/* Input/select đứng độc lập ngoài .field/.toolbar (vd topbar) */
+.input{padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);outline:none;font-size:13.3px;color:var(--ink)}
+.input:focus{border-color:var(--brand)}
+
+/* ===== Layout & tiện ích dùng chung với prototype (docs/prototype/assets/proto.css) ===== */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:1100px){.grid-2{grid-template-columns:1fr}}
+.grid-dispatch{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start}
+@media(max-width:1100px){.grid-dispatch{grid-template-columns:1fr}}
+.muted{color:var(--muted)}
+.right{text-align:right}
+.center{text-align:center}
+.row-flex{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+/* Biểu đồ cột mini (dashboard) */
+.bars{display:flex;align-items:flex-end;gap:8px;height:150px;padding-top:10px;margin-bottom:20px}
+.bars .bar{flex:1;background:var(--brand-tint);border-radius:6px 6px 0 0;position:relative;min-width:14px}
+.bars .bar>span{position:absolute;bottom:0;left:0;right:0;background:var(--brand);border-radius:6px 6px 0 0}
+.bars .bar small{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:10px;color:var(--muted)}
+.kpi-trend{font-size:11px}
+/* Danh sách chọn đơn (màn xếp tài) */
+.pick-list{max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:var(--radius);padding:6px}
+.pick-item{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:8px;cursor:pointer}
+.pick-item:hover{background:var(--bg)}
+.pick-item input{width:16px;height:16px;accent-color:var(--brand)}
+.pick-item .meta{font-size:11.5px;color:var(--muted)}
+/* Kiosk QR + hàng đợi */
+.qr-box{width:150px;height:150px;border:2px solid var(--brand);border-radius:12px;display:grid;place-items:center;margin:0 auto;background:repeating-conic-gradient(var(--ink) 0% 25%, #fff 0% 50%) 50%/22px 22px}
+.qr-box i{font-size:34px;color:#fff;background:var(--ink);padding:6px;border-radius:8px}
+.queue-num{width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:12.5px;flex:none}
+.blocked{opacity:.7}
+.stop-dot{font-weight:700;color:var(--brand)}
+.rating{color:var(--warn);font-weight:700;white-space:nowrap;font-size:12.8px}
+.rating i{font-size:13px;vertical-align:-1px}
+.rating .none{color:var(--muted);font-weight:400}
+/* Bảng con hàng trong dòng phiếu */
+table.items-sub{width:100%;border-collapse:collapse;font-size:12.6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+table.items-sub th{background:var(--gray-bg);color:var(--muted);text-transform:none;letter-spacing:0;font-size:11px;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border)}
+table.items-sub td{padding:6px 10px;border-top:1px solid var(--border)}
+
+.timeline{list-style:none;margin:0;padding:0}
+.timeline li{position:relative;padding:0 0 20px 26px;border-left:2px solid var(--border);margin-left:6px}
+.timeline li:last-child{border-color:transparent;padding-bottom:0}
+.timeline li::before{content:"";position:absolute;left:-7px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--brand);border:2px solid #fff;box-shadow:0 0 0 1px var(--brand)}
+.timeline .t-status{font-weight:700;font-size:13.4px}
+.timeline .t-meta{font-size:11.8px;color:var(--muted);margin:2px 0 4px}
+.timeline .t-note{font-size:13px;background:var(--bg);border-radius:8px;padding:8px 10px}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(20,20,25,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:#fff;border-radius:14px;max-width:440px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);
+  max-height:calc(100vh - 32px);overflow-y:auto}
+/* Modal rộng — dùng cho nội dung có bảng + form (vd quản lý tài khoản đối tác) */
+.modal.modal-lg{max-width:720px}
+.modal h3{margin:0 0 6px;font-size:16.5px}
+.modal p.sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+.modal .actions{display:flex;gap:10px;margin-top:18px}
+.modal .actions .btn{flex:1}
+/* Bọc bảng trong modal/panel hẹp để cuộn ngang thay vì tràn ra ngoài */
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px}
+
+.toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;
+  font-size:13.3px;box-shadow:var(--shadow);z-index:200}
+
+.detail-grid{display:grid;grid-template-columns:1.15fr 1.6fr;gap:20px;align-items:start}
+@media (max-width:1100px){.detail-grid{grid-template-columns:1fr}}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:13.2px;margin-bottom:4px}
+.kv b{color:var(--muted);font-weight:600}
+
+.empty-state{padding:40px 20px;text-align:center;color:var(--muted)}
+.chip-list{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--gray-bg);border-radius:var(--radius-full);padding:4px 10px;font-size:12px;font-weight:600}
+.progress-bar{height:6px;background:var(--gray-bg);border-radius:var(--radius-full);overflow:hidden}
+.progress-bar>div,.progress-bar>span{display:block;height:100%;background:var(--brand)}
+/* Tabs báo cáo (specs/14) */
+.tabs{display:inline-flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-full);padding:4px}
+.tabs button{border:none;background:transparent;padding:7px 16px;border-radius:var(--radius-full);font-size:13px;font-weight:700;cursor:pointer;color:var(--muted)}
+.tabs button.active{background:var(--brand);color:#fff}
+.report-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.schedule-banner{margin-top:12px;background:var(--warn-bg);border-radius:9px;padding:9px 13px;font-size:13px}
+.action-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* ---- Tài liệu hướng dẫn end-user (nhóm menu Tài liệu) ---- */
+.guide{max-width:900px}
+.guide-lead{font-size:14.5px;color:var(--muted);margin:2px 0 18px;line-height:1.6}
+.guide h2{font-size:19px;margin:28px 0 6px;padding-top:8px;border-top:2px solid var(--brand-tint,#e8f1fb);color:var(--brand-dark,#004a8f);display:flex;align-items:center;gap:8px}
+.guide h2 .num{flex:none;width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;font-weight:800}
+.guide h3{font-size:15px;margin:16px 0 6px;color:var(--ink)}
+.guide p{line-height:1.65;margin:6px 0}
+.guide .flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0}
+.guide .flow .st{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 11px;font-size:12.8px;font-weight:600}
+.guide .flow .ar{color:var(--muted)}
+.guide ol.steps{margin:8px 0 8px 0;padding-left:0;list-style:none;counter-reset:step}
+.guide ol.steps>li{position:relative;padding:8px 0 8px 40px;border-bottom:1px dashed var(--border);counter-increment:step;line-height:1.6}
+.guide ol.steps>li:last-child{border-bottom:none}
+.guide ol.steps>li::before{content:counter(step);position:absolute;left:0;top:7px;width:26px;height:26px;border-radius:50%;background:var(--brand-tint,#e8f1fb);color:var(--brand-dark,#004a8f);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+.guide .note{background:var(--warn-bg,#fff8e1);border:1px solid var(--amber-line,#f0e08a);border-radius:9px;padding:10px 14px;margin:12px 0;font-size:13.3px;line-height:1.6}
+.guide .note.tip{background:#eaf7ef;border-color:#bfe3cd}
+.guide .note.warn{background:var(--danger-bg,#fde8e8);border-color:#f3c2c2}
+.guide .note b{display:inline-block;margin-right:4px}
+.guide .who{display:inline-block;background:var(--brand-tint,#e8f1fb);color:var(--brand-dark,#004a8f);border-radius:999px;padding:2px 12px;font-size:12px;font-weight:700;margin:2px 0 6px}
+.guide kbd{background:var(--gray-bg,#f4f6f9);border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;padding:1px 7px;font-size:12.5px;font-family:inherit;font-weight:600}
+.guide-toc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:18px}
+.guide-toc b{display:block;margin-bottom:8px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.guide-toc a{display:inline-block;margin:3px 10px 3px 0;font-size:13.5px;font-weight:600}
+
+/* ---- App shell (sidebar xanh + portal pill, specs/12 §12.5-12.6) ---- */
+.app-shell{display:flex;min-height:100vh}
+.app-shell.portal-partner{border-top:4px solid var(--accent)}
+.app-sidebar{width:var(--sidebar-w);flex:0 0 var(--sidebar-w);background:var(--sidebar-bg);border-right:1px solid rgba(0,0,0,.25);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:30;color:#fff}
+.app-brand{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:18px}
+.app-brand img.logo-img{height:34px;width:auto;border-radius:7px;background:#fff;padding:3px 6px}
+.portal-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);
+  border-radius:var(--radius-full);padding:4px 11px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff}
+.portal-pill.partner{background:var(--accent);color:var(--accent-ink)}
+.portal-pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+/* Nút thu gọn sidebar (desktop) */
+.app-sidebar{transition:width .18s ease, flex-basis .18s ease}
+.brand-row{display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px}
+/* Ký hiệu brand "D" — chỉ hiện khi sidebar thu gọn (thay logo tràn) */
+.brand-mark{display:none;width:36px;height:36px;flex:none;align-items:center;justify-content:center;
+  background:#fff;color:var(--brand);font-family:var(--font-script);font-weight:700;font-size:24px;line-height:1;border-radius:9px}
+.rail-btn{border:none;background:rgba(255,255,255,.14);color:#fff;border-radius:7px;
+  width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;flex:none}
+.rail-btn:hover{background:rgba(255,255,255,.26)}
+@media (max-width:1024px){ .rail-btn{display:none} }
+/* Sidebar thu gọn = thanh icon (rail) */
+.app-sidebar.collapsed{width:64px;flex-basis:64px}
+.app-sidebar.collapsed .app-brand{padding:14px 0;align-items:center;gap:8px}
+.app-sidebar.collapsed .brand-row{flex-direction:column;align-items:center;gap:8px}
+.app-sidebar.collapsed .portal-pill{display:none}
+.app-sidebar.collapsed .logo-img{display:none}
+.app-sidebar.collapsed .brand-mark{display:inline-flex}
+.app-sidebar.collapsed .app-nav{padding:8px}
+.app-sidebar.collapsed .app-nav-group{justify-content:center;padding:7px 0;margin:8px 0 3px}
+.app-sidebar.collapsed .app-nav-group>span,.app-sidebar.collapsed .app-nav-group .nav-chev{display:none}
+.app-sidebar.collapsed .app-nav-group::after{content:"";width:16px;height:2px;border-radius:2px;background:var(--accent);opacity:.85}
+.app-sidebar.collapsed .app-nav a{justify-content:center;padding:10px 0}
+.app-sidebar.collapsed .app-nav a span{display:none}
+.app-sidebar.collapsed .app-nav a i{font-size:18px}
+.app-sidebar.collapsed .app-user{flex-direction:column;gap:8px;padding:12px 0}
+.app-sidebar.collapsed .app-user .who{display:none}
+.app-nav{flex:1;overflow-y:auto;padding:10px;border-top:1px solid rgba(255,255,255,.15)}
+/* Nhãn group đậm/nổi hơn mục con để phân tầng (.72 vs item .88 nhưng in đậm + uppercase) */
+/* Header nhóm: dải nền tối hơn (chìm vào brand) + bo góc → nhìn phát biết là group, tách hẳn mục con */
+.app-nav-group{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  color:rgba(255,255,255,.82);margin:10px 0 3px;padding:7px 12px;
+  background:rgba(0,0,0,.18);border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left}
+.app-nav-group:first-child{margin-top:0}
+.app-nav-group:hover{background:rgba(0,0,0,.28);color:#fff}
+/* vạch điểm nhấn vàng bên trái nhãn nhóm */
+.app-nav-group>span{position:relative;padding-left:10px}
+.app-nav-group>span::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:12px;border-radius:2px;background:var(--accent)}
+.app-nav-group .nav-chev{font-size:15px;transition:transform .18s ease;opacity:.7}
+.app-nav-group.collapsed .nav-chev{transform:rotate(-90deg)}
+.app-nav-items{display:flex;flex-direction:column;padding:2px 0 4px}
+.app-nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13.4px;font-weight:600;
+  color:rgba(255,255,255,.88);margin-bottom:2px}
+.app-nav a:hover{background:rgba(255,255,255,.1)}
+.app-nav a.router-link-active{background:var(--accent);color:var(--accent-ink)}
+/* Link Dashboard (href="/") khớp prefix nên "active" ở mọi route → chỉ sáng khi Ở ĐÚNG "/" */
+.app-nav a[href="/"].router-link-active:not(.router-link-exact-active){background:transparent;color:rgba(255,255,255,.88)}
+.app-user{padding:14px 16px;border-top:1px solid rgba(255,255,255,.15);display:flex;align-items:center;gap:10px}
+.app-user .avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.app-user .who{flex:1;min-width:0}
+.app-user .who b{display:block;font-size:12.8px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-user .who span{display:block;font-size:11px;color:rgba(255,255,255,.7)}
+/* Khối tên bấm được (mở trang tài khoản) — reset chrome mặc định của <button> */
+.app-user button.who-link{padding:4px 6px;margin:-4px -6px;text-align:left;font:inherit;border-radius:8px;transition:background .15s}
+.app-user button.who-link:hover{background:rgba(255,255,255,.1)}
+.app-user button{border:none;background:transparent;color:rgba(255,255,255,.75);cursor:pointer;font-size:15px}
+.app-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.app-topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 26px;background:color-mix(in srgb, var(--bg) 92%, transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
+.app-topbar h1{font-size:18px;margin:0}
+.app-content{padding:24px 26px 60px;max-width:1240px;width:100%;margin:0 auto}
+.lang-toggle{display:flex;gap:4px;border:1px solid var(--border);border-radius:var(--radius-full);padding:3px;width:max-content}
+.lang-toggle button{border:none;background:transparent;padding:5px 12px;border-radius:var(--radius-full);font-size:12px;font-weight:700;cursor:pointer;color:var(--muted)}
+.lang-toggle button.active{background:var(--brand);color:#fff}
+.menu-btn{display:none;border:1px solid var(--border);background:#fff;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:15px}
+@media (max-width:980px){
+  .app-sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .2s ease}
+  .app-sidebar.open{transform:translateX(0)}
+  .menu-btn{display:inline-block}
+  .app-content{padding:16px 14px 60px}
+}
+
+/* ---- Auth screens ---- */
+.auth-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(circle at 15% 10%, var(--brand-tint) 0%, var(--bg) 45%)}
+.auth-card{width:100%;max-width:920px;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);
+  display:flex;overflow:hidden;border:1px solid var(--border)}
+.auth-card.partner-variant{border-top:5px solid var(--accent)}
+.auth-side{flex:1;background:linear-gradient(160deg,var(--brand),var(--brand-dark));color:#fff;padding:40px 34px;
+  display:flex;flex-direction:column;justify-content:space-between;min-width:260px}
+.auth-side img.logo-img{height:40px;width:auto;margin-bottom:22px;border-radius:8px;background:#fff;padding:4px 8px}
+.auth-side .auth-logo{height:46px;width:auto;margin-bottom:22px;border-radius:9px;background:#fff;padding:5px 11px}
+.auth-side .portal-pill{background:rgba(255,255,255,.16);font-size:11.5px;letter-spacing:.04em;margin-bottom:14px}
+.auth-side .portal-pill.partner{background:var(--accent);color:var(--accent-ink)}
+.auth-side .copyright{font-size:11.5px;opacity:.85}
+.auth-side h2{font-size:22px;margin:0 0 10px;line-height:1.35}
+.auth-side p{opacity:.92;font-size:13.5px;margin:0}
+.auth-side .chips{margin-top:26px;display:flex;flex-wrap:wrap;gap:8px}
+.auth-side .chips span{background:rgba(255,255,255,.18);border-radius:var(--radius-full);padding:4px 11px;font-size:12px}
+.auth-form{flex:1.15;padding:40px 38px;min-width:300px}
+.auth-form h1{font-size:21px;margin:0 0 4px}
+.auth-form .sub{color:var(--muted);font-size:13.5px;margin:0 0 22px}
+@media (max-width:900px){.auth-card{flex-direction:column}.auth-side{padding:26px}}
+
+/* ---- Skeleton (trạng thái tải) & Error state ---- */
+@keyframes sk-shimmer{0%{background-position:-450px 0}100%{background-position:450px 0}}
+.skeleton{background:linear-gradient(90deg,var(--gray-bg) 25%,var(--border) 37%,var(--gray-bg) 63%);
+  background-size:900px 100%;animation:sk-shimmer 1.3s infinite linear;border-radius:6px}
+@media (prefers-reduced-motion:reduce){.skeleton{animation:none}}
+.sk-line{height:12px;margin:9px 0}
+.sk-line.sm{height:10px}
+.sk-line.lg{height:24px}
+.sk-stat{height:78px;border-radius:var(--radius)}
+.sk-panel{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:18px;margin-bottom:18px}
+.state-error{text-align:center;padding:34px 20px;color:var(--muted)}
+.state-error .ic{font-size:30px;margin-bottom:8px}
+.state-error p{margin:0 0 14px;font-size:14px}
+
+/* ============================================================
+   HIKARI — bổ sung riêng cho quán (ADDITIVE: không sửa class có sẵn của kit DMCL).
+   Gộp từ docs/prototype/shared/brand.css để prototype mini-app & admin dùng CHUNG 1 file token.
+   ============================================================ */
+
+/* Chữ ký thương hiệu — logo viết tay + dòng phụ */
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;line-height:1}
+.brand-sub{color:var(--brand);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:11.5px}
+/* Trên nền tối (sidebar/auth-side) đổi dòng phụ sang vàng cho đọc được */
+.app-sidebar .brand-sub,.auth-side .brand-sub{color:var(--accent)}
+.app-sidebar .brand-logo,.auth-side .brand-logo{color:#fff}
+
+/* Tiền tệ — tự gắn hậu tố đ, không lặp chuỗi "đ" ở từng view */
+.price{font-weight:700;white-space:nowrap}
+.price::after{content:"đ";font-weight:600;font-size:.78em;margin-left:1px}
+
+/* Nhãn món (thuộc tính món ăn — khác .badge trạng thái đơn) */
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 9px;border-radius:var(--radius-full)}
+.tag-veg{background:var(--ok-bg);color:var(--ok)}
+.tag-spicy{background:var(--danger-bg);color:var(--danger)}
+.tag-out{background:var(--gray-bg);color:var(--muted)}
+.tag-new{background:#FFF3D6;color:var(--warn)}
+
+/* Khung điện thoại — xem trước màn Mini App ngay trong trang admin/prototype */
+.phone{width:390px;max-width:100%;margin:0 auto;background:var(--bg);border:10px solid #171614;
+  border-radius:40px;overflow:hidden;box-shadow:var(--shadow);position:relative}
+.phone-notch{height:26px;background:#171614}
+.phone-screen{height:720px;max-height:76vh;overflow-y:auto}
