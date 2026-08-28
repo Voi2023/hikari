@@ -1,21 +1,44 @@
 name: Deploy Zalo Mini App
 #
-# QUAN TRỌNG — mô hình phiên bản của Zalo Mini App (khác hẳn deploy web thường):
+# ĐƯỜNG ĐI CỦA MỘT BẢN PHÁT HÀNH
 #
-#   zmp deploy            → bản DEVELOPMENT: không hiện trong "Quản lý phiên bản",
-#                           bị bản development kế tiếp GHI ĐÈ.
-#   zmp deploy --testing  → bản TESTING: được đánh số và lưu lại, dùng để nghiệm thu.
-#   PRODUCTION            → KHÔNG có lệnh CLI nào. Phải vào https://mini.zalo.me,
-#                           chọn một bản testing rồi GỬI DUYỆT; Zalo review xong mới lên chính thức.
+#   push nhánh `staging`     → environment `uat`        → Mini App UAT   → bản Testing
+#   push nhánh `production`  → environment `production`  → Mini App chính → bản Testing
+#                                                        → NGƯỜI vào mini.zalo.me GỬI DUYỆT
+#                                                        → Zalo review → Publish → tới tay khách
 #
-# Nên workflow này chỉ đẩy được tới development/testing. Đừng đặt tên job/branch là
-# "deploy production" — nó tạo kỳ vọng sai: nhìn thấy workflow xanh nhưng khách vẫn đang
-# dùng bản cũ, vì bản mới còn nằm chờ duyệt.
+# VÌ SAO NHÁNH PRODUCTION VẪN CHỈ ĐẨY "TESTING"
+# zmp-cli chỉ có hai bậc phiên bản — kiểm trong source: versionStatus = { DEVELOPMENT: 0, TESTING: 2 }.
+# Không có bậc production, cũng không có lệnh gửi duyệt. Đưa bản mới tới khách bắt buộc phải có
+# người bấm "Gửi duyệt" trên portal rồi chờ Zalo review.
+#
+# Nên workflow này KHÔNG phải "deploy xong khách thấy ngay". Nó dừng ở chỗ xa nhất mà máy đi được:
+# đặt sẵn một bản đánh số trên Mini App chính, chờ người gửi duyệt. Hiểu nhầm chỗ này thì sẽ có ngày
+# CI xanh, cả nhóm tưởng đã lên, còn khách vẫn đang dùng bản của tuần trước.
+#
+# HAI MINI APP, HAI ENVIRONMENT
+# Trong một Mini App, bản Testing và bản chính thức nằm chung một danh sách phiên bản — đẩy UAT vào
+# đó là trộn bản thử nghiệm với bản đang chờ duyệt. Nên UAT dùng Mini App riêng.
+# Khai secret theo TỪNG environment (Settings → Environments → uat / production), đừng khai ở mức repo:
+# khai ở mức repo là hai môi trường dùng chung một MINI_APP_ID, và bản UAT sẽ nằm nhầm trong Mini App
+# của khách — hỏng kiểu không ai để ý cho tới lúc khách hỏi "sao app lạ vậy".
+#
+# Secret trong MỖI environment:
+#   ZALO_APP_ID         App ID ở developers.zalo.me
+#   ZALO_APP_SECRET     App Secret tương ứng
+#   ZALO_REFRESH_TOKEN  developers.zalo.me → Công cụ → API Explorer (workflow tự xoay sau mỗi lần chạy)
+#   MINI_APP_ID         ID Mini App ở mini.zalo.me — KHÁC ZALO_APP_ID, rất hay khai nhầm
+# Secret mức repo (dùng chung):
+#   ZALO_SECRET_ROTATOR_PAT   PAT ghi được secrets của repo, để xoay ZALO_REFRESH_TOKEN
+#
+# Nên bật "Required reviewers" cho environment `production`: đó là chốt người-duyệt-người thật sự có
+# tác dụng ở đây, vì bản thân lệnh deploy không có bậc nào để chặn.
 
 on:
   push:
     branches:
-      - dev
+      - staging       # → uat
+      - production    # → production
     paths:
       - "apps/mini-app/**"
       - "packages/**"
@@ -24,31 +47,85 @@ on:
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
     inputs:
+      environment:
+        description: "Môi trường"
+        required: true
+        default: uat
+        type: choice
+        options:
+          - uat
+          - production
       version_status:
-        description: "Loại bản đẩy lên Zalo"
+        description: "Loại bản (production luôn phải là testing)"
         required: true
         default: testing
         type: choice
         options:
-          - testing       # đánh số, lưu lại — dùng để nghiệm thu & gửi duyệt
-          - development   # bản nháp, bị ghi đè bởi lần đẩy sau
+          - testing       # đánh số, lưu lại — nghiệm thu & gửi duyệt
+          - development   # bản nháp, bị lần đẩy sau ghi đè
 
 permissions:
   contents: read
 
-# Mỗi loại bản một hàng đợi riêng: đẩy bản development không nên chặn đường một bản
-# testing đang cần cho buổi nghiệm thu.
-concurrency:
-  group: zalo-mini-app-${{ github.event.inputs.version_status || 'testing' }}
-  cancel-in-progress: false
-
 jobs:
-  deploy:
-    name: Build & deploy (${{ github.event.inputs.version_status || 'testing' }})
+  # Gom mọi quyết định "chạy vào đâu, đẩy bản gì" vào một chỗ, thay vì rải biểu thức
+  # ${{ a && b || c }} ra năm nơi rồi có ngày sửa bốn nơi, quên nơi thứ năm.
+  resolve:
+    name: Xác định môi trường
     runs-on: ubuntu-latest
-    environment: zalo-mini-app
+    outputs:
+      environment: ${{ steps.map.outputs.environment }}
+      version_status: ${{ steps.map.outputs.version_status }}
+    steps:
+      - id: map
+        env:
+          EVENT: ${{ github.event_name }}
+          BRANCH: ${{ github.ref_name }}
+          IN_ENV: ${{ inputs.environment }}
+          IN_STATUS: ${{ inputs.version_status }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            env_name="$IN_ENV"
+            status="$IN_STATUS"
+            # Chạy tay lên production thì phải đứng ở nhánh production. Bỏ chốt này là sớm muộn có
+            # người dispatch nhầm từ nhánh feature, đẩy code chưa review lên Mini App của khách.
+            if [ "$env_name" = "production" ] && [ "$BRANCH" != "production" ]; then
+              echo "::error::Đang ở nhánh '$BRANCH'. Chỉ deploy production từ nhánh 'production'."
+              exit 1
+            fi
+          elif [ "$BRANCH" = "production" ]; then
+            env_name=production; status=testing
+          else
+            env_name=uat; status=testing
+          fi
+
+          # Bản development không hiện trong Quản lý phiên bản và bị ghi đè → không gửi duyệt được.
+          # Đẩy nó lên Mini App chính là thao tác vô nghĩa; chặn luôn cho khỏi mất một buổi đi tìm
+          # xem "bản vừa deploy biến đâu mất rồi".
+          if [ "$env_name" = "production" ] && [ "$status" != "testing" ]; then
+            echo "::error::Production chỉ nhận bản 'testing' — bản 'development' không gửi duyệt được."
+            exit 1
+          fi
+
+          echo "environment=$env_name" >> "$GITHUB_OUTPUT"
+          echo "version_status=$status" >> "$GITHUB_OUTPUT"
+          echo "→ environment=\`$env_name\` · bản \`$status\`" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: ${{ needs.resolve.outputs.environment }} · bản ${{ needs.resolve.outputs.version_status }}
+    needs: resolve
+    runs-on: ubuntu-latest
+    environment: ${{ needs.resolve.outputs.environment }}
+    # Mỗi môi trường một hàng đợi: deploy UAT không nên chặn một bản production đang gấp.
+    # LƯU Ý: nếu hai environment dùng CHUNG một Zalo App (chung ZALO_REFRESH_TOKEN) thì phải đổi
+    # group thành cố định — refresh token dùng một lần, hai job song song sẽ giành nhau và một bên hỏng.
+    concurrency:
+      group: zalo-mini-app-${{ needs.resolve.outputs.environment }}
+      cancel-in-progress: false
     env:
-      VERSION_STATUS: ${{ github.event.inputs.version_status || 'testing' }}
+      DEPLOY_ENV: ${{ needs.resolve.outputs.environment }}
+      VERSION_STATUS: ${{ needs.resolve.outputs.version_status }}
 
     steps:
       - name: Checkout
@@ -70,20 +147,21 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck & lint
-        run: pnpm --filter @hikari/mini-app run typecheck && pnpm --filter @hikari/mini-app run lint
+        run: |
+          pnpm --filter @hikari/mini-app run typecheck
+          pnpm --filter @hikari/mini-app run lint
 
       - name: Build Mini App
         run: pnpm --filter @hikari/mini-app run build
 
-      # zmp-cli là gói RIÊNG, không đi kèm gói nào khác. Ghim version: `zmp deploy` lái một
-      # phiên bản đã publish lên Zalo — không phải chỗ để nhận bản CLI mới vào lúc 2 giờ sáng.
+      # zmp-cli là gói riêng, không đi kèm gói nào khác. Ghim version: đây là công cụ đẩy bản lên
+      # Zalo, không phải chỗ để tự nhận bản CLI mới vào 2 giờ sáng.
       - name: Install Zalo Mini App CLI
         run: npm install -g zmp-cli@4.0.3
 
-      # Access token của Zalo sống ~1 giờ nên CI phải tự đổi từ refresh token.
-      # Refresh token là LOẠI DÙNG MỘT LẦN: mỗi lần đổi, Zalo trả về refresh token mới và
-      # token cũ chết ngay → bắt buộc ghi ngược lại secret ở bước cuối, nếu không lần chạy
-      # sau sẽ hỏng và phải vào portal lấy token bằng tay.
+      # Access token Zalo sống ~1 giờ nên CI phải tự đổi từ refresh token.
+      # Refresh token DÙNG MỘT LẦN: đổi xong là token cũ chết ngay, phải ghi bản mới trở lại secret ở
+      # bước cuối — nếu không, lần chạy sau hỏng, và hỏng ở chỗ rất khó đoán nguyên nhân.
       - name: Đổi refresh token lấy access token
         env:
           ZALO_APP_ID: ${{ secrets.ZALO_APP_ID }}
@@ -91,9 +169,9 @@ jobs:
           ZALO_REFRESH_TOKEN: ${{ secrets.ZALO_REFRESH_TOKEN }}
         run: |
           set -euo pipefail
-          : "${ZALO_APP_ID:?Thiếu secret ZALO_APP_ID (App ID ở developers.zalo.me)}"
-          : "${ZALO_APP_SECRET:?Thiếu secret ZALO_APP_SECRET}"
-          : "${ZALO_REFRESH_TOKEN:?Thiếu secret ZALO_REFRESH_TOKEN (lấy ở developers.zalo.me → Công cụ → API Explorer)}"
+          : "${ZALO_APP_ID:?Thiếu ZALO_APP_ID trong environment $DEPLOY_ENV}"
+          : "${ZALO_APP_SECRET:?Thiếu ZALO_APP_SECRET trong environment $DEPLOY_ENV}"
+          : "${ZALO_REFRESH_TOKEN:?Thiếu ZALO_REFRESH_TOKEN trong environment $DEPLOY_ENV}"
 
           res=$(curl -sS -X POST "https://oauth.zaloapp.com/v4/access_token" \
             -H "Content-Type: application/x-www-form-urlencoded" \
@@ -105,8 +183,8 @@ jobs:
           err=$(echo "$res" | jq -r '.error // empty')
           if [ -n "$err" ]; then
             # KHÔNG in "$res" — nó có thể chứa token. Chỉ in phần mô tả lỗi.
-            echo "::error::Zalo từ chối refresh token (error=$err): $(echo "$res" | jq -r '.error_description // "không rõ"')"
-            echo "::error::Refresh token nhiều khả năng đã bị dùng ở lần chạy trước mà không được lưu lại. Lấy token mới ở developers.zalo.me → Công cụ → API Explorer rồi cập nhật secret ZALO_REFRESH_TOKEN."
+            echo "::error::Zalo từ chối refresh token của '$DEPLOY_ENV' (error=$err): $(echo "$res" | jq -r '.error_description // "không rõ"')"
+            echo "::error::Nhiều khả năng token đã dùng ở lần chạy trước mà không lưu lại được. Lấy token mới ở developers.zalo.me → Công cụ → API Explorer rồi cập nhật ZALO_REFRESH_TOKEN của environment '$DEPLOY_ENV'."
             exit 1
           fi
 
@@ -117,56 +195,66 @@ jobs:
           echo "ZALO_ACCESS_TOKEN=$access" >> "$GITHUB_ENV"
           echo "ZALO_NEW_REFRESH_TOKEN=$refresh" >> "$GITHUB_ENV"
 
-      # zmp-cli hỗ trợ đăng nhập bằng token, không cần quét QR:
-      #   zmp login --app-id <MINI_APP_ID> --token <ACCESS_TOKEN>
+      # zmp-cli đăng nhập được bằng token, không cần quét QR.
       - name: Đăng nhập Zalo Mini App
         env:
           MINI_APP_ID: ${{ secrets.MINI_APP_ID }}
         run: |
           set -euo pipefail
-          : "${MINI_APP_ID:?Thiếu secret MINI_APP_ID (ID của Mini App ở mini.zalo.me — KHÁC ZALO_APP_ID)}"
+          : "${MINI_APP_ID:?Thiếu MINI_APP_ID trong environment $DEPLOY_ENV (ID Mini App ở mini.zalo.me — KHÁC ZALO_APP_ID)}"
+          # 4 số cuối để đối chiếu đã bắn đúng app — hai môi trường trông giống hệt nhau trong log.
+          echo "MINI_APP_TAIL=…${MINI_APP_ID: -4}" >> "$GITHUB_ENV"
           zmp login --app-id "$MINI_APP_ID" --token "$ZALO_ACCESS_TOKEN"
 
-      # --passive = chế độ không hỏi đáp (bắt buộc trên CI, nếu không zmp sẽ treo chờ nhập).
-      # --desc lấy DÒNG ĐẦU commit (%s) chứ không lấy cả body (%B): mô tả version là một dòng.
+      # --passive = không hỏi đáp (bắt buộc trên CI; thiếu là zmp treo chờ nhập tới lúc hết giờ).
+      # --desc lấy DÒNG ĐẦU commit (%s), không lấy cả body (%B): mô tả version là một dòng.
       - name: Deploy lên Zalo
         working-directory: apps/mini-app
         run: |
           set -euo pipefail
-          desc=$(git log -1 --pretty=%s)
+          desc="[$DEPLOY_ENV] $(git log -1 --pretty=%s)"
           if [ "$VERSION_STATUS" = "testing" ]; then
             zmp deploy --passive --testing --desc "$desc"
           else
             zmp deploy --passive --desc "$desc"
           fi
 
-      # Ghi refresh token mới trở lại secret. Bước này KHÔNG được phép âm thầm bỏ qua:
-      # bỏ qua = lần chạy kế tiếp chắc chắn hỏng, và hỏng ở chỗ khó đoán ra nguyên nhân.
-      - name: Lưu refresh token mới vào secret
+      # Ghi refresh token mới trở lại secret CỦA CHÍNH environment vừa dùng.
+      # Không được phép âm thầm bỏ qua: bỏ qua = lần chạy sau chắc chắn hỏng.
+      - name: Xoay refresh token của environment
         if: always() && env.ZALO_NEW_REFRESH_TOKEN != ''
         env:
           GH_TOKEN: ${{ secrets.ZALO_SECRET_ROTATOR_PAT }}
         run: |
           set -euo pipefail
           if [ -z "${GH_TOKEN:-}" ]; then
-            echo "::error::Thiếu secret ZALO_SECRET_ROTATOR_PAT (PAT có quyền ghi secrets của repo)."
-            echo "::error::Refresh token vừa dùng đã hết hiệu lực. Cập nhật TAY secret ZALO_REFRESH_TOKEN trước khi chạy lần sau."
+            echo "::error::Thiếu secret ZALO_SECRET_ROTATOR_PAT (PAT ghi được secrets của repo)."
+            echo "::error::Refresh token vừa dùng ĐÃ hết hiệu lực. Cập nhật TAY ZALO_REFRESH_TOKEN của environment '$DEPLOY_ENV' trước lần chạy sau."
             exit 1
           fi
-          gh secret set ZALO_REFRESH_TOKEN --repo "$GITHUB_REPOSITORY" --body "$ZALO_NEW_REFRESH_TOKEN"
-          echo "Đã xoay ZALO_REFRESH_TOKEN."
+          gh secret set ZALO_REFRESH_TOKEN \
+            --repo "$GITHUB_REPOSITORY" \
+            --env "$DEPLOY_ENV" \
+            --body "$ZALO_NEW_REFRESH_TOKEN"
+          echo "Đã xoay ZALO_REFRESH_TOKEN cho environment '$DEPLOY_ENV'."
 
-      - name: Nhắc bước gửi duyệt
+      - name: Việc còn lại phải làm tay
         if: success()
         run: |
           {
-            echo "### Đã đẩy bản **$VERSION_STATUS** lên Zalo"
+            echo "### Đã đẩy bản **$VERSION_STATUS** vào Mini App của **$DEPLOY_ENV** ($MINI_APP_TAIL)"
             echo ""
-            echo "- Mô tả version: \`$(git log -1 --pretty=%s)\`"
-            if [ "$VERSION_STATUS" = "testing" ]; then
-              echo "- Bản này **chưa tới tay khách**. Để lên chính thức: vào [mini.zalo.me](https://mini.zalo.me)"
-              echo "  → Quản lý phiên bản → chọn bản vừa đẩy → **Gửi duyệt**. Zalo review xong mới publish."
+            echo "- Mô tả version: \`[$DEPLOY_ENV] $(git log -1 --pretty=%s)\`"
+            echo ""
+            if [ "$DEPLOY_ENV" = "production" ]; then
+              echo "> ⚠️ **Khách CHƯA thấy bản này.** Còn một bước người làm:"
+              echo ">"
+              echo "> [mini.zalo.me](https://mini.zalo.me) → Quản lý phiên bản → chọn bản vừa đẩy →"
+              echo "> **Gửi duyệt** → chờ Zalo review → **Publish**."
+            elif [ "$VERSION_STATUS" = "testing" ]; then
+              echo "Bản UAT đã sẵn sàng cho tester quét QR trong Mini App UAT."
             else
-              echo "- Bản development **không lưu lại** và sẽ bị lần đẩy sau ghi đè. Muốn nghiệm thu thì chạy lại với \`testing\`."
+              echo "Bản development **không lưu lại** và sẽ bị lần đẩy sau ghi đè."
+              echo "Cần bản để nghiệm thu thì chạy lại với \`testing\`."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
