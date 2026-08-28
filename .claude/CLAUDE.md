@@ -8,3 +8,9 @@ In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the re
 
 If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
 <!-- CODEGRAPH_END -->
+
+## Tài liệu specs
+
+`docs/specs/` **chỉ dùng HTML** (`.html`) — không tạo file Markdown trong thư mục này.
+Spec mới: copy khung của một spec sẵn có (brand tokens inline + topbar điều hướng), đặt tên `NN-ten.html`,
+rồi cập nhật `docs/specs/FEATURES.html`.

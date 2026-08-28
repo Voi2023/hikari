@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 — Tích điểm khách hàng (Loyalty) — Hikari Vegetarian Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+.brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+.muted{color:var(--muted);}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;}
+.topbar .brand-logo{font-size:1.5rem;line-height:1;}
+.topbar nav{margin-left:auto;display:flex;gap:14px;font-size:.85rem;}
+.topbar nav a{color:var(--muted);text-decoration:none;font-weight:600;}
+.topbar nav a:hover{color:var(--matcha);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 72px;}
+h1{font-size:1.9rem;line-height:1.25;margin:8px 0 18px;}
+h2{font-size:1.2rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+h3{font-size:1rem;margin:24px 0 8px;color:var(--matcha);}
+h4{font-size:.92rem;margin:18px 0 6px;}
+p{margin:10px 0;}
+a{color:var(--matcha);}
+hr{border:none;border-top:1px solid var(--line);margin:32px 0;}
+code{font-family:var(--mono);font-size:.86em;background:#f1ede3;border:1px solid var(--line);border-radius:6px;padding:1px 5px;}
+figure.code{margin:14px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+figure.code figcaption{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f4f1ea;border-bottom:1px solid var(--line);padding:6px 14px;}
+figure.code pre{margin:0;padding:14px 16px;overflow-x:auto;}
+figure.code code{background:none;border:none;padding:0;font-size:.82rem;line-height:1.55;}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-left:3px solid var(--sun);border-radius:var(--radius);}
+blockquote p:first-child{margin-top:0;}
+blockquote p:last-child{margin-bottom:0;}
+ul,ol{margin:10px 0;padding-left:22px;}
+li{margin:5px 0;}
+li>ul,li>ol{margin:5px 0;}
+ul.tasks{list-style:none;padding-left:2px;}
+ul.tasks .box{color:var(--matcha);font-size:1rem;margin-right:8px;}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);box-shadow:var(--shadow);}
+table{border-collapse:collapse;width:100%;font-size:.92rem;}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{background:var(--matcha-soft);color:var(--matcha);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#faf9f5;}
+.q{color:var(--chili);font-weight:700;}
+footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted);font-size:.8rem;}
+@media(max-width:640px){h1{font-size:1.5rem;}.topbar nav{gap:10px;font-size:.78rem;}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <span class="brand-logo">Hikari</span><span class="brand-sub">vegetarian cafe</span>
+  <nav>
+    <a href="README.html">Specs</a>
+    <a href="FEATURES.html">Chức năng</a>
+    <a href="00-tong-quan.html">Tổng quan</a>
+    <a href="../prototype/index.html">Prototype</a>
+  </nav>
+</div></div>
+<div class="wrap">
+<h1>02 — Tích điểm khách hàng (Loyalty)</h1><p>Trạng thái: 🎨 Prototype · Prototype: <a href="../prototype/tich-diem.html"><code>../prototype/tich-diem.html</code></a></p><h2>1. Mục tiêu &amp; phạm vi</h2><p><strong>Làm:</strong> khách tích điểm theo chi tiêu, xem thẻ thành viên + hạng + lịch sử điểm, đổi điểm lấy ưu đãi/giảm giá. <strong>Không làm (spec này):</strong> cộng điểm tự động lúc thanh toán — chỉ định nghĩa quy tắc; việc gọi cộng điểm nằm ở luồng hoàn tất đơn (spec 04). Ưu đãi cụ thể do dashboard quản lý (spec 07).</p><h2>2. Quy tắc điểm (<span class="q">❓</span> CẦN CHỦ QUÁN CHỐT)</h2><div class="table-wrap"><table><thead><tr><th>Quy tắc</th><th>Giá trị đề xuất (giả định)</th></tr></thead><tbody><tr><td>Tỷ lệ tích</td><td><strong>1 điểm / 1.000đ</strong> chi tiêu thực (sau giảm giá, không tính phí ship)</td></tr><tr><td>Thời điểm cộng</td><td>Khi đơn <strong>hoàn tất</strong> (đã thanh toán / đã nhận), KHÔNG cộng lúc đặt</td></tr><tr><td>Hoàn điểm khi huỷ</td><td>Đơn huỷ/hoàn tiền → trừ lại điểm đã cộng</td></tr><tr><td>Hạn dùng điểm</td><td><span class="q">❓</span> (đề xuất: điểm hết hạn sau 12 tháng không phát sinh giao dịch)</td></tr><tr><td>Đổi điểm</td><td><strong>100 điểm = giảm 10.000đ</strong> (tỷ lệ 1 điểm = 100đ) hoặc đổi món/ưu đãi cố định</td></tr><tr><td>Hạng thành viên</td><td>Đồng (0đ) · Bạc (≥ 1.000.000đ tích luỹ) · Vàng (≥ 3.000.000đ) — <span class="q">❓</span> mốc &amp; quyền lợi</td></tr></tbody></table></div><blockquote><p>Toàn bộ con số trên là <strong>đề xuất để chủ quán duyệt</strong>, chưa phải chốt.</p></blockquote><h2>3. Personas &amp; user story</h2><ul><li><strong>US-1</strong> — <em>Là khách đã đăng nhập</em>, tôi thấy <strong>thẻ thành viên</strong> (tên, hạng, số điểm hiện có) ngay khi mở mục Tích điểm.</li><li><strong>US-2</strong> — <em>Là khách</em>, sau khi đơn hoàn tất tôi được <strong>cộng điểm</strong> và thấy trong lịch sử (+ số điểm, tên đơn, thời gian).</li><li><strong>US-3</strong> — <em>Là khách</em>, tôi <strong>đổi 100 điểm lấy voucher giảm 10.000đ</strong> để dùng cho đơn kế tiếp.<ul><li>Given tôi có ≥ 100 điểm, When bấm đổi, Then trừ 100 điểm + tạo voucher; nếu không đủ điểm → chặn + báo thiếu.</li></ul></li><li><strong>US-4</strong> — <em>Là khách</em>, tôi thấy <strong>tiến trình lên hạng</strong> (còn bao nhiêu chi tiêu nữa lên Bạc/Vàng).</li></ul><h2>4. Màn hình / UI</h2><p>Prototype <a href="../prototype/tich-diem.html"><code>tich-diem.html</code></a>: thẻ thành viên (điểm lớn + hạng + mã QR định danh), thanh tiến trình lên hạng, danh sách <strong>ưu đãi đổi điểm</strong>, <strong>lịch sử điểm</strong> (cộng/trừ).</p><h2>5. API &amp; dữ liệu</h2><h3>REST (envelope chuẩn, đều cần JWT)</h3><div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead><tbody><tr><td><code>GET</code></td><td><code>/api/v1/loyalty/me</code></td><td>Thẻ thành viên của tôi: điểm, hạng, tổng tích luỹ</td></tr><tr><td><code>GET</code></td><td><code>/api/v1/loyalty/me/transactions</code></td><td>Lịch sử điểm (phân trang)</td></tr><tr><td><code>GET</code></td><td><code>/api/v1/loyalty/rewards</code></td><td>Danh sách ưu đãi đổi điểm đang mở</td></tr><tr><td><code>POST</code></td><td><code>/api/v1/loyalty/redeem</code></td><td>Đổi điểm lấy ưu đãi <code>{ rewardId }</code> → trả voucher</td></tr><tr><td><code>POST</code></td><td><code>/api/v1/loyalty/earn</code> <em>(nội bộ)</em></td><td>Cộng điểm cho đơn <code>{ orderId }</code> — <strong>chỉ gọi từ server</strong> (luồng hoàn tất đơn), không mở ra client</td></tr></tbody></table></div><h3>Model Prisma (dự kiến)</h3><figure class="code"><figcaption>prisma</figcaption><pre><code>model LoyaltyAccount {
+  userId String @id
+  points Int @default(0)          // điểm khả dụng
+  lifetimePoints Int @default(0)  // tổng tích luỹ (xét hạng)
+  tier String @default("bronze")  // bronze | silver | gold
+  updatedAt DateTime @updatedAt
+  @@map("loyalty_accounts")
+}
+model LoyaltyTransaction {
+  id String @id @default(cuid())
+  userId String
+  type String        // earn | redeem | revoke | expire
+  points Int         // + cộng, − trừ
+  orderId String?
+  note String?
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt])
+  @@map("loyalty_transactions")
+}</code></pre></figure><h3>DTO (<code>@hikari/shared</code>)</h3><p><code>LoyaltyAccountDto</code>, <code>LoyaltyTransactionDto</code>, <code>RewardDto</code>, <code>RedeemRequestDto</code>.</p><h2>6. Edge case &amp; bảo mật</h2><ul><li><strong>Định danh từ JWT</strong> (<code>req.user.id</code>) — KHÔNG nhận <code>userId</code> từ client; khách chỉ xem/đổi điểm của <strong>chính mình</strong>.</li><li>Cộng/trừ điểm phải <strong>idempotent theo <code>orderId</code></strong> (một đơn chỉ cộng 1 lần — chống double-earn khi callback lặp).</li><li>Đổi điểm: kiểm tra đủ điểm <strong>ở server</strong> trong transaction (khoá tránh race khi bấm nhiều lần).</li><li>Điểm là <strong>integer</strong>, không âm; mọi thay đổi ghi 1 dòng <code>loyalty_transactions</code> (audit).</li><li>Realtime (tuỳ chọn): cộng điểm xong → emit <code>loyalty:updated</code> tới room <code>user:{id}</code> để cập nhật thẻ.</li></ul><h2>7. Tiêu chí hoàn thành</h2><ul class="tasks"><li><span class="box">☐</span>Thẻ thành viên hiển thị đúng điểm/hạng/tổng tích luỹ.</li><li><span class="box">☐</span>Cộng điểm idempotent theo đơn; huỷ đơn → trừ lại.</li><li><span class="box">☐</span>Đổi điểm trừ đúng, tạo voucher, chặn khi thiếu điểm; an toàn khi bấm nhiều lần.</li><li><span class="box">☐</span>Mọi biến động điểm có dòng lịch sử.</li></ul><h2>8. Câu hỏi mở (<span class="q">❓</span>)</h2><ol><li>Tỷ lệ tích &amp; tỷ lệ đổi điểm cuối cùng? Có hạn dùng điểm không?</li><li>Mốc &amp; quyền lợi từng hạng (Bạc/Vàng được gì: giảm giá, ưu tiên, quà sinh nhật...)?</li><li>Đổi điểm ra <strong>voucher giảm giá</strong> hay ra <strong>món tặng</strong> (hay cả hai)?</li><li>Có tích điểm cho đơn tại quán (không qua app) bằng cách quét QR thành viên không?</li></ol>
+</div>
+<footer class="foot">Hikari Vegetarian Cafe · tài liệu nội bộ · specs dùng định dạng HTML</footer>
+</body>
+</html>

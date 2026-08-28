@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 — Phí giao hàng (liên kết BE — be.com.vn) — Hikari Vegetarian Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+.brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+.muted{color:var(--muted);}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;}
+.topbar .brand-logo{font-size:1.5rem;line-height:1;}
+.topbar nav{margin-left:auto;display:flex;gap:14px;font-size:.85rem;}
+.topbar nav a{color:var(--muted);text-decoration:none;font-weight:600;}
+.topbar nav a:hover{color:var(--matcha);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 72px;}
+h1{font-size:1.9rem;line-height:1.25;margin:8px 0 18px;}
+h2{font-size:1.2rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+h3{font-size:1rem;margin:24px 0 8px;color:var(--matcha);}
+h4{font-size:.92rem;margin:18px 0 6px;}
+p{margin:10px 0;}
+a{color:var(--matcha);}
+hr{border:none;border-top:1px solid var(--line);margin:32px 0;}
+code{font-family:var(--mono);font-size:.86em;background:#f1ede3;border:1px solid var(--line);border-radius:6px;padding:1px 5px;}
+figure.code{margin:14px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+figure.code figcaption{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f4f1ea;border-bottom:1px solid var(--line);padding:6px 14px;}
+figure.code pre{margin:0;padding:14px 16px;overflow-x:auto;}
+figure.code code{background:none;border:none;padding:0;font-size:.82rem;line-height:1.55;}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-left:3px solid var(--sun);border-radius:var(--radius);}
+blockquote p:first-child{margin-top:0;}
+blockquote p:last-child{margin-bottom:0;}
+ul,ol{margin:10px 0;padding-left:22px;}
+li{margin:5px 0;}
+li>ul,li>ol{margin:5px 0;}
+ul.tasks{list-style:none;padding-left:2px;}
+ul.tasks .box{color:var(--matcha);font-size:1rem;margin-right:8px;}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);box-shadow:var(--shadow);}
+table{border-collapse:collapse;width:100%;font-size:.92rem;}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{background:var(--matcha-soft);color:var(--matcha);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#faf9f5;}
+.q{color:var(--chili);font-weight:700;}
+footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted);font-size:.8rem;}
+@media(max-width:640px){h1{font-size:1.5rem;}.topbar nav{gap:10px;font-size:.78rem;}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <span class="brand-logo">Hikari</span><span class="brand-sub">vegetarian cafe</span>
+  <nav>
+    <a href="README.html">Specs</a>
+    <a href="FEATURES.html">Chức năng</a>
+    <a href="00-tong-quan.html">Tổng quan</a>
+    <a href="../prototype/index.html">Prototype</a>
+  </nav>
+</div></div>
+<div class="wrap">
+<h1>03 — Phí giao hàng (liên kết BE — be.com.vn)</h1><p>Trạng thái: 🎨 Prototype · Prototype: <a href="../prototype/phi-giao-hang.html"><code>../prototype/phi-giao-hang.html</code></a></p><h2>1. Mục tiêu &amp; phạm vi</h2><p><strong>Làm:</strong> khi khách chọn hình thức <strong>Giao hàng</strong>, app lấy <strong>phí ship</strong> và <strong>thời gian dự kiến</strong> dựa trên địa chỉ giao, hiển thị vào giỏ; khi đặt, tạo yêu cầu giao với <strong>BE (be.com.vn)</strong> và theo dõi trạng thái tài xế. <strong>Không làm (spec này):</strong> thanh toán (spec 04), điểm (spec 02).</p><h2>2. ❗ Lưu ý tích hợp BE (<span class="q">❓</span> CẦN XÁC NHẬN — CHƯA CHẮC)</h2><p>BE (beGroup — beDelivery/beFood) <strong>không công bố rộng rãi Open API tự phục vụ</strong> như một số hãng khác. Việc gọi API đặt giao/tính phí thường cần <strong>hợp đồng đối tác B2B + tài liệu API riêng + API key do BE cấp</strong>. Vì vậy spec thiết kế theo <strong>interface trừu tượng <code>ShippingProvider</code></strong> — adapter BE cắm vào khi có tài liệu thật; nếu BE không hỗ trợ API, có thể chuyển sang phương án dự phòng (Ahamove/GrabExpress hoặc bảng phí tự quản) <strong>mà không đổi phần còn lại</strong>.</p><blockquote><p>👉 Cần chủ quán cung cấp: hợp đồng/đầu mối đối tác BE, tài liệu API (endpoint tính phí + tạo đơn + webhook trạng thái), <code>BE_API_KEY</code>. Trước khi có, dùng <strong>mock</strong> theo bán kính từ quán.</p></blockquote><h2>3. Personas &amp; user story</h2><ul><li><strong>US-1</strong> — <em>Là khách chọn Giao hàng</em>, tôi nhập/chọn địa chỉ và thấy ngay <strong>phí ship + thời gian dự kiến</strong>.<ul><li>Given địa chỉ nằm trong vùng phục vụ, When chọn xong, Then hiện phí + ETA; ngoài vùng → báo "ngoài vùng giao".</li></ul></li><li><strong>US-2</strong> — <em>Là khách</em>, tổng tiền cuối = tạm tính món + <strong>phí ship</strong> (đóng gói nếu có), rõ ràng từng dòng.</li><li><strong>US-3</strong> — <em>Là khách sau khi đặt</em>, tôi theo dõi <strong>trạng thái giao</strong> (đang tìm tài xế → đã lấy hàng → đang giao → đã giao).</li></ul><h2>4. Màn hình / UI</h2><p>Prototype <a href="../prototype/phi-giao-hang.html"><code>phi-giao-hang.html</code></a>: chọn địa chỉ (gợi ý), thẻ <strong>phí ship + ETA + khoảng cách</strong>, dòng tổng tiền, và <strong>timeline trạng thái tài xế</strong> (mô phỏng).</p><h2>5. API &amp; dữ liệu</h2><h3>REST (envelope chuẩn, cần JWT)</h3><div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead><tbody><tr><td><code>POST</code></td><td><code>/api/v1/shipping/quote</code></td><td>Báo giá ship <code>{ address, lat, lng }</code> → <code>{ fee, etaMinutes, distanceKm, serviceable }</code></td></tr><tr><td><code>POST</code></td><td><code>/api/v1/shipping/shipments</code> <em>(nội bộ, sau khi đặt+thanh toán)</em></td><td>Tạo yêu cầu giao cho đơn → gọi BE</td></tr><tr><td><code>GET</code></td><td><code>/api/v1/shipping/shipments/:orderId</code></td><td>Trạng thái giao hiện tại</td></tr><tr><td><code>POST</code></td><td><code>/api/v1/webhooks/be</code> <em>(public, verify chữ ký)</em></td><td>BE gọi lại khi trạng thái đổi</td></tr></tbody></table></div><h3>Interface backend (<code>src/external/shipping</code>)</h3><figure class="code"><figcaption>ts</figcaption><pre><code>interface ShippingProvider {
+  quote(input: { lat: number; lng: number; address: string }): Promise&lt;{ fee: number; etaMinutes: number; distanceKm: number; serviceable: boolean }&gt;;
+  createShipment(order: OrderForShipping): Promise&lt;{ providerRef: string; status: string }&gt;;
+  parseWebhook(payload: unknown, signature: string): { orderId: string; status: ShipStatus };
+}
+// Adapter: BeShippingProvider (thật) · MockShippingProvider (dev: phí theo bán kính từ 10.7751709,106.664583)</code></pre></figure><ul><li>Trạng thái chuẩn hoá: <code>finding_driver | picked_up | delivering | delivered | canceled</code>.</li><li>Quán gốc toạ độ <strong>10.7751709, 106.664583</strong> (Q10) — dùng tính khoảng cách ở mock.</li></ul><h3>Model Prisma (dự kiến)</h3><figure class="code"><figcaption>prisma</figcaption><pre><code>model Shipment {
+  orderId String @id
+  provider String            // "be"
+  providerRef String?
+  fee Int
+  etaMinutes Int?
+  status String @default("finding_driver")
+  updatedAt DateTime @updatedAt
+  @@map("shipments")
+}</code></pre></figure><h2>6. Edge case &amp; bảo mật</h2><ul><li><strong>Không tin phí ship client gửi</strong> — luôn báo giá lại ở server khi đặt (giá client chỉ để hiển thị).</li><li>Ngoài vùng phục vụ / BE trả lỗi → báo rõ cho khách, <strong>không</strong> để đặt giao; phân biệt "ngoài vùng" (nghiệp vụ) vs "BE timeout/5xx" (lỗi hệ thống → 502 + alert).</li><li>Webhook BE: <strong>verify chữ ký</strong> + idempotent theo <code>providerRef</code>/<code>orderId</code> (BE có thể gọi lại nhiều lần).</li><li>Timeout gọi BE (mặc định 5s); lỗi liên kết → log + Telegram.</li><li>Realtime: đổi trạng thái → emit <code>shipment:updated</code> tới room <code>user:{id}</code>.</li></ul><h2>7. Tiêu chí hoàn thành</h2><ul class="tasks"><li><span class="box">☐</span>Báo giá đúng theo địa chỉ; ngoài vùng báo rõ.</li><li><span class="box">☐</span>Tổng tiền = món + ship (+ đóng gói), tính lại ở server khi đặt.</li><li><span class="box">☐</span>Tạo shipment + nhận webhook cập nhật trạng thái (idempotent, verify chữ ký).</li><li><span class="box">☐</span>Provider thay được (BE ↔ mock ↔ hãng khác) không đổi code nghiệp vụ.</li></ul><h2>8. Câu hỏi mở (<span class="q">❓</span>)</h2><ol><li>BE có API đối tác cho quán không? Nếu chưa, dùng hãng dự phòng nào (Ahamove/Grab) hay bảng phí tự quản?</li><li>Vùng phục vụ (bán kính tối đa, các quận) &amp; khung phí (theo km? phụ phí giờ cao điểm)?</li><li>Ai chịu phí ship (khách trả toàn bộ / quán trợ giá theo giá trị đơn)?</li><li>Có freeship theo ngưỡng đơn (vd ≥ 200.000đ) không?</li></ol>
+</div>
+<footer class="foot">Hikari Vegetarian Cafe · tài liệu nội bộ · specs dùng định dạng HTML</footer>
+</body>
+</html>

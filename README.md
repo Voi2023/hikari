@@ -5,7 +5,7 @@
 
 - 📍 Vị trí: 10.7751709, 106.664583 — [Google Maps](https://maps.google.com/?q=10.7751709,106.664583) · Quận 10, TP.HCM
 - 🎯 Định vị: đặt món tại quán / mang về / giao hàng · tích điểm · thanh toán ZaloPay/chuyển khoản · thông báo khuyến mãi
-- 📄 Tài liệu: [`docs/specs/`](docs/specs/) · Prototype: [`docs/prototype/`](docs/prototype/) · Chức năng: [`docs/specs/FEATURES.md`](docs/specs/FEATURES.md)
+- 📄 Tài liệu: [`docs/specs/`](docs/specs/) · Prototype: [`docs/prototype/`](docs/prototype/) · Chức năng: [`docs/specs/FEATURES.html`](docs/specs/FEATURES.html)
 
 ---
 
@@ -141,11 +141,11 @@ pnpm --filter @hikari/api prisma migrate deploy   # chạy migration trên prod 
 
 ## 6. Quy trình phát triển
 
-- **Mỗi chức năng mới**: viết **spec** (`docs/specs/NN-ten.md`) + **prototype HTML** (`docs/prototype/ten.html`)
-  **trước khi code**, và ghi vào [`docs/specs/FEATURES.md`](docs/specs/FEATURES.md). (Xem [`docs/specs/README.md`](docs/specs/README.md).)
+- **Mỗi chức năng mới**: viết **spec HTML** (`docs/specs/NN-ten.html`) + **prototype HTML** (`docs/prototype/ten.html`)
+  **trước khi code**, và ghi vào [`docs/specs/FEATURES.html`](docs/specs/FEATURES.html). (Xem [`docs/specs/README.html`](docs/specs/README.html).)
 - Contract FE ↔ BE để ở `packages/shared` (một nguồn).
 - Git: làm trên nhánh **`dev`**, commit + push sau mỗi việc.
 
 ## 7. Trạng thái hiện tại
 
-Xem [`docs/specs/FEATURES.md`](docs/specs/FEATURES.md) — bảng theo dõi 6 chức năng + dashboard, kèm link spec & prototype.
+Xem [`docs/specs/FEATURES.html`](docs/specs/FEATURES.html) — bảng theo dõi 6 chức năng + dashboard, kèm link spec & prototype.

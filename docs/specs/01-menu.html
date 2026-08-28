@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 — Menu đồ ăn &amp; nước — Hikari Vegetarian Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+.brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+.muted{color:var(--muted);}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;}
+.topbar .brand-logo{font-size:1.5rem;line-height:1;}
+.topbar nav{margin-left:auto;display:flex;gap:14px;font-size:.85rem;}
+.topbar nav a{color:var(--muted);text-decoration:none;font-weight:600;}
+.topbar nav a:hover{color:var(--matcha);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 72px;}
+h1{font-size:1.9rem;line-height:1.25;margin:8px 0 18px;}
+h2{font-size:1.2rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+h3{font-size:1rem;margin:24px 0 8px;color:var(--matcha);}
+h4{font-size:.92rem;margin:18px 0 6px;}
+p{margin:10px 0;}
+a{color:var(--matcha);}
+hr{border:none;border-top:1px solid var(--line);margin:32px 0;}
+code{font-family:var(--mono);font-size:.86em;background:#f1ede3;border:1px solid var(--line);border-radius:6px;padding:1px 5px;}
+figure.code{margin:14px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+figure.code figcaption{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f4f1ea;border-bottom:1px solid var(--line);padding:6px 14px;}
+figure.code pre{margin:0;padding:14px 16px;overflow-x:auto;}
+figure.code code{background:none;border:none;padding:0;font-size:.82rem;line-height:1.55;}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-left:3px solid var(--sun);border-radius:var(--radius);}
+blockquote p:first-child{margin-top:0;}
+blockquote p:last-child{margin-bottom:0;}
+ul,ol{margin:10px 0;padding-left:22px;}
+li{margin:5px 0;}
+li>ul,li>ol{margin:5px 0;}
+ul.tasks{list-style:none;padding-left:2px;}
+ul.tasks .box{color:var(--matcha);font-size:1rem;margin-right:8px;}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);box-shadow:var(--shadow);}
+table{border-collapse:collapse;width:100%;font-size:.92rem;}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{background:var(--matcha-soft);color:var(--matcha);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#faf9f5;}
+.q{color:var(--chili);font-weight:700;}
+footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted);font-size:.8rem;}
+@media(max-width:640px){h1{font-size:1.5rem;}.topbar nav{gap:10px;font-size:.78rem;}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <span class="brand-logo">Hikari</span><span class="brand-sub">vegetarian cafe</span>
+  <nav>
+    <a href="README.html">Specs</a>
+    <a href="FEATURES.html">Chức năng</a>
+    <a href="00-tong-quan.html">Tổng quan</a>
+    <a href="../prototype/index.html">Prototype</a>
+  </nav>
+</div></div>
+<div class="wrap">
+<h1>01 — Menu đồ ăn &amp; nước</h1><p>Trạng thái: 🎨 Prototype · Prototype: <a href="../prototype/menu.html"><code>../prototype/menu.html</code></a> · Dữ liệu: <a href="../assets/data/menu.json"><code>../assets/data/menu.json</code></a></p><h2>1. Mục tiêu &amp; phạm vi</h2><p><strong>Làm:</strong> hiển thị menu (mì signature, tô tự chọn 4 bước, cà phê, latte/trà sữa, món nước nhà làm), cho khách chọn món + topping/tuỳ chọn, thêm vào giỏ, xem tạm tính. <strong>Nguồn dữ liệu</strong>: <code>assets/data/menu.json</code> (giai đoạn prototype) → về sau là bảng <code>menu_items</code> do dashboard quản lý.</p><p><strong>Không làm (ở spec này):</strong> thanh toán, phí ship, tích điểm, đẩy Sapo — thuộc spec 02–06. Menu chỉ dừng ở "chọn món → giỏ hàng → tạm tính".</p><h2>2. Personas &amp; user story</h2><ul><li><strong>US-1</strong> — <em>Là khách</em>, tôi muốn xem menu theo nhóm (đồ ăn/đồ uống) để chọn món nhanh.<ul><li>Given menu có món còn/hết, When mở app, Then thấy danh sách nhóm, món hết hiển thị mờ + nhãn "Tạm hết", không thêm được.</li></ul></li><li><strong>US-2</strong> — <em>Là khách</em>, tôi muốn đặt <strong>Yaki Udon</strong> và chọn sốt (Shoyu/Tomyum) vì món này bắt buộc chọn sốt.<ul><li>Given món có nhóm tuỳ chọn bắt buộc, When bấm thêm mà chưa chọn, Then chặn + nhắc chọn.</li></ul></li><li><strong>US-3</strong> — <em>Là khách</em>, tôi muốn <strong>tự tạo tô</strong> theo 4 bước (mì → topping → rau → nước dùng) và thấy giá cộng dồn.<ul><li>Given chọn Mì Udon (19k) + Nước Miso 1 phần (17k) + Đậu hủ (5k), When xem, Then tạm tính = 41.000đ.</li></ul></li><li><strong>US-4</strong> — <em>Là khách mang về</em>, tôi muốn biết có <strong>phụ phí đóng gói +5.000đ</strong> khi chọn "mang về".</li></ul><h2>3. Luồng nghiệp vụ</h2><figure class="code"><figcaption>text</figcaption><pre><code>Mở app → tải menu (JSON/API) → chọn nhóm → chọn món
+   ├─ món thường: + vào giỏ
+   ├─ món có tuỳ chọn (Yaki Udon: sốt): mở sheet chọn → + vào giỏ
+   └─ tô tự chọn: wizard 4 bước → tính giá → + vào giỏ
+→ Giỏ hàng: sửa số lượng / xoá → tạm tính (+ phụ phí đóng gói nếu mang về)
+→ (chuyển tiếp sang luồng đặt hàng — spec sau)</code></pre></figure><h2>4. Màn hình / UI</h2><p>Xem prototype <a href="../prototype/menu.html"><code>menu.html</code></a>. Gồm:</p><ul><li>Tab nhóm: <strong>Mì</strong> · <strong>Tô tự chọn</strong> · <strong>Cà phê</strong> · <strong>Latte &amp; trà sữa</strong> · <strong>Nước nhà làm</strong>.</li><li>Thẻ món: tên (VI + EN), giá, mô tả, topping kèm theo, nhãn 🌶️ cay / "Tạm hết".</li><li>Sheet tuỳ chọn (Yaki Udon: chọn sốt).</li><li>Wizard "Tô tự chọn" 4 bước, tính giá realtime.</li><li>Giỏ hàng nổi + tạm tính, chọn hình thức: <strong>Tại quán / Mang về / Giao hàng</strong> (mang về +5.000đ).</li></ul><h2>5. API &amp; dữ liệu</h2><h3>REST (envelope chuẩn)</h3><div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead><tbody><tr><td><code>GET</code></td><td><code>/api/v1/menu</code></td><td>Toàn bộ menu (nhóm + món + tuỳ chọn). Public (không cần login).</td></tr><tr><td><code>GET</code></td><td><code>/api/v1/menu/:itemId</code></td><td>Chi tiết 1 món.</td></tr></tbody></table></div><p><code>data</code> của <code>GET /menu</code> theo shape <code>assets/data/menu.json</code> (categories → items/steps). List rỗng → <code>[]</code>.</p><h3>Model Prisma (dự kiến)</h3><figure class="code"><figcaption>prisma</figcaption><pre><code>model MenuCategory { id String @id; name String; nameEn String?; sortOrder Int; items MenuItem[] }
+model MenuItem {
+  id String @id            // slug: "tamago-ramen"
+  categoryId String
+  name String; nameEn String?
+  price Int                // VND, integer — KHÔNG float
+  description String?
+  toppingsIncluded String[] // topping kèm sẵn
+  spicy Boolean @default(false)
+  available Boolean @default(true)
+  options Json?            // nhóm tuỳ chọn (vd chọn sốt)
+  category MenuCategory @relation(fields: [categoryId], references: [id])
+  @@map("menu_items")
+}</code></pre></figure><blockquote><p>"Tô tự chọn" (build-your-own) mô hình hoá bằng các <code>MenuItem</code> thành phần + nhóm <code>step</code> — hoặc bảng riêng <code>menu_build_steps</code>. <span class="q">❓</span> chốt khi dashboard quản lý menu.</p></blockquote><h3>DTO / contract (<code>@hikari/shared</code>)</h3><p><code>MenuCategoryDto</code>, <code>MenuItemDto</code>, <code>MenuOptionGroupDto</code>, <code>CartLineDto</code> — dùng zod, FE &amp; BE cùng import.</p><h3>Giá tiền</h3><ul><li><strong>Integer VND</strong> (không dùng float). Tạm tính = Σ(giá món + tuỳ chọn) + phụ phí đóng gói (nếu mang về).</li><li>Nước dùng ở "tô tự chọn" có 2 mức: <strong>1 phần</strong> vs <strong>1 chén</strong> — UI phải cho chọn rõ.</li></ul><h2>6. Tích hợp ngoài</h2><p>Không có ở spec này (menu là dữ liệu nội bộ). Về sau menu do <strong>dashboard</strong> quản lý (bật/tắt món, đổi giá).</p><h2>7. Edge case &amp; bảo mật</h2><ul><li>Món <strong>hết</strong> (<code>available: false</code>): hiển thị mờ + "Tạm hết", <strong>không</strong> thêm được vào giỏ.</li><li>Tuỳ chọn <strong>bắt buộc</strong> chưa chọn → chặn thêm.</li><li>Giá đổi giữa lúc khách xem: khi đặt hàng phải <strong>tính lại giá ở server</strong> (không tin giá client gửi).</li><li>Menu là <strong>public</strong> (không cần đăng nhập để xem); giỏ hàng lưu local đến khi đặt.</li><li>Diacritics tiếng Việt (NFC) hiển thị đúng: "Cà phê muối hồng", "Ngưu bàng chiên"...</li></ul><h2>8. Tiêu chí hoàn thành (Acceptance)</h2><ul class="tasks"><li><span class="box">☐</span>Hiển thị đủ 5 nhóm với dữ liệu khớp <code>menu.json</code>.</li><li><span class="box">☐</span>Món hết không thêm được; món bắt buộc tuỳ chọn phải chọn mới thêm.</li><li><span class="box">☐</span>Tô tự chọn tính đúng giá cộng dồn (kiểm bằng ca US-3 = 41.000đ).</li><li><span class="box">☐</span>Mang về cộng +5.000đ vào tạm tính.</li><li><span class="box">☐</span>Server tính lại giá khi đặt (chống sửa giá phía client).</li></ul><h2>9. Câu hỏi mở (<span class="q">❓</span> cần chủ quán xác nhận)</h2><ol><li><strong>Giá &amp; còn/hết</strong>: dữ liệu lấy từ 2 ảnh (mì bản 3/2025, đồ uống bản 10/2024). Giá hiện tại có đúng không? Các món đánh dấu ✗ (Kombucha, Ginger Ale, Nước bổ huyết) còn bán không?</li><li>Có ảnh chụp <strong>từng món</strong> để hiển thị đẹp không? (hiện chỉ có ảnh menu in)</li><li>"Tô tự chọn" — nước dùng chọn <strong>1 phần</strong> hay <strong>1 chén</strong> là mặc định? Có bắt buộc chọn nước không?</li><li>Có phân biệt <strong>size</strong> hay <strong>ghi chú món</strong> (ít cay, không hành...) không?</li></ol>
+</div>
+<footer class="foot">Hikari Vegetarian Cafe · tài liệu nội bộ · specs dùng định dạng HTML</footer>
+</body>
+</html>

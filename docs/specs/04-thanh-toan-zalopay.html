@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 — Thanh toán ZaloPay — Hikari Vegetarian Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+.brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+.muted{color:var(--muted);}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;}
+.topbar .brand-logo{font-size:1.5rem;line-height:1;}
+.topbar nav{margin-left:auto;display:flex;gap:14px;font-size:.85rem;}
+.topbar nav a{color:var(--muted);text-decoration:none;font-weight:600;}
+.topbar nav a:hover{color:var(--matcha);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 72px;}
+h1{font-size:1.9rem;line-height:1.25;margin:8px 0 18px;}
+h2{font-size:1.2rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+h3{font-size:1rem;margin:24px 0 8px;color:var(--matcha);}
+h4{font-size:.92rem;margin:18px 0 6px;}
+p{margin:10px 0;}
+a{color:var(--matcha);}
+hr{border:none;border-top:1px solid var(--line);margin:32px 0;}
+code{font-family:var(--mono);font-size:.86em;background:#f1ede3;border:1px solid var(--line);border-radius:6px;padding:1px 5px;}
+figure.code{margin:14px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+figure.code figcaption{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f4f1ea;border-bottom:1px solid var(--line);padding:6px 14px;}
+figure.code pre{margin:0;padding:14px 16px;overflow-x:auto;}
+figure.code code{background:none;border:none;padding:0;font-size:.82rem;line-height:1.55;}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-left:3px solid var(--sun);border-radius:var(--radius);}
+blockquote p:first-child{margin-top:0;}
+blockquote p:last-child{margin-bottom:0;}
+ul,ol{margin:10px 0;padding-left:22px;}
+li{margin:5px 0;}
+li>ul,li>ol{margin:5px 0;}
+ul.tasks{list-style:none;padding-left:2px;}
+ul.tasks .box{color:var(--matcha);font-size:1rem;margin-right:8px;}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);box-shadow:var(--shadow);}
+table{border-collapse:collapse;width:100%;font-size:.92rem;}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{background:var(--matcha-soft);color:var(--matcha);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#faf9f5;}
+.q{color:var(--chili);font-weight:700;}
+footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted);font-size:.8rem;}
+@media(max-width:640px){h1{font-size:1.5rem;}.topbar nav{gap:10px;font-size:.78rem;}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <span class="brand-logo">Hikari</span><span class="brand-sub">vegetarian cafe</span>
+  <nav>
+    <a href="README.html">Specs</a>
+    <a href="FEATURES.html">Chức năng</a>
+    <a href="00-tong-quan.html">Tổng quan</a>
+    <a href="../prototype/index.html">Prototype</a>
+  </nav>
+</div></div>
+<div class="wrap">
+<h1>04 — Thanh toán ZaloPay</h1><p>Trạng thái: 🎨 Prototype · Prototype: <a href="../prototype/thanh-toan.html"><code>../prototype/thanh-toan.html</code></a></p><h2>1. Mục tiêu &amp; phạm vi</h2><p><strong>Làm:</strong> khách thanh toán đơn bằng <strong>ZaloPay</strong> (đã có merchant) ngay trong mini app; server xác nhận qua callback và cập nhật đơn "đã thanh toán". <strong>Không làm (spec này):</strong> cộng điểm/đẩy Sapo/tạo shipment — chỉ <strong>kích hoạt</strong> chúng sau khi thanh toán thành công (các spec 02, 06, 03).</p><h2>2. Luồng thanh toán</h2><figure class="code"><figcaption>text</figcaption><pre><code>Khách bấm "Thanh toán" (giỏ đã có món + ship)
+ → BE POST ZaloPay Create Order (app_id + app_trans_id + amount + mac HMAC-SHA256 key1)
+ → nhận zp_trans_token / order_url
+ → Mini app mở cổng ZaloPay (zmp-sdk Payment.createOrder / order_url)
+ → Khách thanh toán trong ZaloPay
+ → ZaloPay gọi CALLBACK về BE (verify mac key2) → BE set đơn = "paid"  ← nguồn sự thật
+ → BE kích hoạt: cộng điểm (02) + tạo shipment (03) + đẩy Sapo (06)
+ → Mini app poll GET /payments/:orderId/status → hiện kết quả</code></pre></figure><blockquote><p>⚠️ <strong>Callback ZaloPay là nguồn xác nhận thanh toán</strong>, KHÔNG dựa vào kết quả trả về phía client (client có thể giả).</p></blockquote><h2>3. Personas &amp; user story</h2><ul><li><strong>US-1</strong> — <em>Là khách</em>, tôi chọn ZaloPay và hoàn tất thanh toán mà không rời mini app.</li><li><strong>US-2</strong> — <em>Là khách</em>, thanh toán xong tôi thấy màn <strong>thành công</strong> + mã đơn; nếu thất bại/huỷ, đơn giữ trạng thái "chờ thanh toán" và tôi thử lại được.</li><li><strong>US-3</strong> — <em>Là hệ thống</em>, đơn chỉ chuyển "paid" khi <strong>callback ZaloPay hợp lệ</strong> (đúng mac + đúng số tiền).</li></ul><h2>4. Màn hình / UI</h2><p>Prototype <a href="../prototype/thanh-toan.html"><code>thanh-toan.html</code></a>: tóm tắt đơn + chọn phương thức (ZaloPay) → mô phỏng cổng ZaloPay → màn kết quả (thành công/thất bại + thử lại).</p><h2>5. API &amp; dữ liệu</h2><h3>REST (envelope chuẩn)</h3><div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead><tbody><tr><td><code>POST</code></td><td><code>/api/v1/payments/zalopay/create</code></td><td>Tạo giao dịch cho đơn <code>{ orderId }</code> → <code>{ zpTransToken, orderUrl, appTransId }</code> (JWT)</td></tr><tr><td><code>POST</code></td><td><code>/api/v1/webhooks/zalopay</code></td><td>Callback ZaloPay (public, <strong>verify mac key2</strong>, idempotent)</td></tr><tr><td><code>GET</code></td><td><code>/api/v1/payments/:orderId/status</code></td><td>Trạng thái thanh toán (JWT) — client poll</td></tr></tbody></table></div><h3>Model Prisma (dự kiến)</h3><figure class="code"><figcaption>prisma</figcaption><pre><code>model Payment {
+  id String @id @default(cuid())
+  orderId String @unique
+  provider String @default("zalopay")
+  appTransId String @unique      // yymmdd_&lt;orderId&gt; theo chuẩn ZaloPay
+  amount Int                       // VND, integer — số tiền server tính, KHÔNG tin client
+  status String @default("pending") // pending | paid | failed | canceled
+  zpTransId String?                // mã giao dịch ZaloPay khi thành công
+  paidAt DateTime?
+  createdAt DateTime @default(now())
+  @@map("payments")
+}</code></pre></figure><h3>Env (backend, secret)</h3><p><code>ZALOPAY_APP_ID</code>, <code>ZALOPAY_KEY1</code>, <code>ZALOPAY_KEY2</code>, <code>ZALOPAY_CALLBACK_URL</code>, <code>ZALOPAY_ENDPOINT</code> (sandbox/prod).</p><h2>6. Edge case &amp; bảo mật</h2><ul><li><strong>Số tiền tính ở server</strong> từ đơn (món + ship + đóng gói − giảm giá) — KHÔNG nhận <code>amount</code> từ client.</li><li>Callback: <strong>verify <code>mac</code> bằng key2</strong> + kiểm <code>app_trans_id</code> khớp Payment; <strong>idempotent</strong> (ZaloPay có thể gọi lại) — đã <code>paid</code> thì trả OK, không cộng điểm/đẩy Sapo lần 2.</li><li>Trả về ZaloPay đúng format <code>{ return_code, return_message }</code> để nó ngừng retry khi đã nhận.</li><li>Đơn "pending" quá hạn (vd 15 phút) → tự huỷ giao dịch, cho đặt lại.</li><li>KHÔNG log <code>key1/key2</code>, token; log <code>appTransId</code> để trace là đủ.</li><li>Realtime: <code>paid</code> → emit <code>order:updated</code> tới room <code>user:{id}</code>.</li></ul><h2>7. Tiêu chí hoàn thành</h2><ul class="tasks"><li><span class="box">☐</span>Tạo giao dịch với số tiền server, mở cổng ZaloPay trong mini app.</li><li><span class="box">☐</span>Chỉ set "paid" khi callback đúng mac + đúng tiền; idempotent.</li><li><span class="box">☐</span>Thất bại/huỷ → đơn giữ "chờ thanh toán", thử lại được.</li><li><span class="box">☐</span>Thanh toán thành công kích hoạt đúng 1 lần: cộng điểm + shipment + đẩy Sapo.</li></ul><h2>8. Câu hỏi mở (<span class="q">❓</span>)</h2><ol><li>Có cho phép <strong>thanh toán tại quán / COD</strong> song song ZaloPay không?</li><li>Có cần <strong>VietQR/chuyển khoản thủ công</strong> làm phương án dự phòng (khi ZaloPay lỗi) không?</li><li>Chính sách hoàn tiền khi huỷ đơn đã thanh toán (tự động qua ZaloPay Refund API hay xử lý tay)?</li><li>Ngưỡng tự huỷ đơn chưa thanh toán (15 phút? 30 phút?).</li></ol>
+</div>
+<footer class="foot">Hikari Vegetarian Cafe · tài liệu nội bộ · specs dùng định dạng HTML</footer>
+</body>
+</html>

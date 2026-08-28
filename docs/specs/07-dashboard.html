@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07 — Dashboard quản trị (đăng nhập 2FA + quản lý) — Hikari Vegetarian Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+.brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+.muted{color:var(--muted);}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;}
+.topbar .brand-logo{font-size:1.5rem;line-height:1;}
+.topbar nav{margin-left:auto;display:flex;gap:14px;font-size:.85rem;}
+.topbar nav a{color:var(--muted);text-decoration:none;font-weight:600;}
+.topbar nav a:hover{color:var(--matcha);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 72px;}
+h1{font-size:1.9rem;line-height:1.25;margin:8px 0 18px;}
+h2{font-size:1.2rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+h3{font-size:1rem;margin:24px 0 8px;color:var(--matcha);}
+h4{font-size:.92rem;margin:18px 0 6px;}
+p{margin:10px 0;}
+a{color:var(--matcha);}
+hr{border:none;border-top:1px solid var(--line);margin:32px 0;}
+code{font-family:var(--mono);font-size:.86em;background:#f1ede3;border:1px solid var(--line);border-radius:6px;padding:1px 5px;}
+figure.code{margin:14px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+figure.code figcaption{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f4f1ea;border-bottom:1px solid var(--line);padding:6px 14px;}
+figure.code pre{margin:0;padding:14px 16px;overflow-x:auto;}
+figure.code code{background:none;border:none;padding:0;font-size:.82rem;line-height:1.55;}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-left:3px solid var(--sun);border-radius:var(--radius);}
+blockquote p:first-child{margin-top:0;}
+blockquote p:last-child{margin-bottom:0;}
+ul,ol{margin:10px 0;padding-left:22px;}
+li{margin:5px 0;}
+li>ul,li>ol{margin:5px 0;}
+ul.tasks{list-style:none;padding-left:2px;}
+ul.tasks .box{color:var(--matcha);font-size:1rem;margin-right:8px;}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);box-shadow:var(--shadow);}
+table{border-collapse:collapse;width:100%;font-size:.92rem;}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{background:var(--matcha-soft);color:var(--matcha);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#faf9f5;}
+.q{color:var(--chili);font-weight:700;}
+footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted);font-size:.8rem;}
+@media(max-width:640px){h1{font-size:1.5rem;}.topbar nav{gap:10px;font-size:.78rem;}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <span class="brand-logo">Hikari</span><span class="brand-sub">vegetarian cafe</span>
+  <nav>
+    <a href="README.html">Specs</a>
+    <a href="FEATURES.html">Chức năng</a>
+    <a href="00-tong-quan.html">Tổng quan</a>
+    <a href="../prototype/index.html">Prototype</a>
+  </nav>
+</div></div>
+<div class="wrap">
+<h1>07 — Dashboard quản trị (đăng nhập 2FA + quản lý)</h1><p>Trạng thái: 🎨 Prototype · Prototype: <a href="../prototype/dashboard.html"><code>../prototype/dashboard.html</code></a> Gộp các mục #07 (đăng nhập 2FA) và #08 (quản lý) trong FEATURES.</p><h2>1. Mục tiêu &amp; phạm vi</h2><p><strong>Làm:</strong> web admin (Next.js) để nhân viên/quản lý vận hành: <strong>đăng nhập có 2FA (TOTP)</strong>, quản lý menu, đơn hàng, tích điểm/khách, thông báo, giao hàng, đồng bộ Sapo, báo cáo. <strong>Không làm (spec này):</strong> logic nghiệp vụ chi tiết của từng module (đã ở spec 01–06) — đây là <strong>lớp quản trị</strong> trên các nghiệp vụ đó.</p><h2>2. Đăng nhập &amp; 2FA (TOTP)</h2><figure class="code"><figcaption>text</figcaption><pre><code>Bước 1: email + mật khẩu  → BE verify (Argon2id/bcrypt), rate-limit theo IP+email
+Bước 2: nhập mã TOTP 6 số → BE verify bằng otplib (cửa sổ ±1)
+      → cấp JWT admin (chứa role) + refresh; ghi audit "login"
+Thiết lập lần đầu: BE tạo secret → hiện QR (otpauth://) để quét bằng Google Authenticator/Authy
+      → xác nhận 1 mã đúng → bật 2FA + phát 8 mã dự phòng (backup codes, hash lưu DB)</code></pre></figure><ul><li><strong>2FA bắt buộc</strong> cho mọi tài khoản admin (không cho bỏ qua).</li><li>Mất thiết bị → dùng <strong>backup code</strong>; hết backup → owner reset (audit).</li><li>Mật khẩu hash <strong>Argon2id</strong>; secret TOTP mã hoá khi lưu.</li></ul><h2>3. RBAC (phân quyền)</h2><div class="table-wrap"><table><thead><tr><th>Role</th><th>Quyền</th></tr></thead><tbody><tr><td><code>owner</code></td><td>Toàn quyền + quản lý tài khoản admin + reset 2FA</td></tr><tr><td><code>manager</code></td><td>Menu, đơn, điểm, thông báo, giao hàng, Sapo, báo cáo</td></tr><tr><td><code>staff</code></td><td>Xem &amp; xử lý đơn, cập nhật trạng thái; không đổi giá/menu, không gửi thông báo hàng loạt</td></tr></tbody></table></div><h2>4. Các module quản lý</h2><div class="table-wrap"><table><thead><tr><th>Module</th><th>Chức năng</th><th>Liên quan spec</th></tr></thead><tbody><tr><td><strong>Tổng quan</strong></td><td>KPI: đơn hôm nay, doanh thu, đơn chờ xử lý, đồng bộ Sapo lỗi</td><td>—</td></tr><tr><td><strong>Đơn hàng</strong></td><td>Danh sách + chi tiết, đổi trạng thái, xem realtime đơn mới</td><td>03, 04</td></tr><tr><td><strong>Menu</strong></td><td>Bật/tắt món (còn/hết), sửa giá/mô tả, sắp xếp nhóm</td><td>01</td></tr><tr><td><strong>Khách &amp; điểm</strong></td><td>Tra cứu khách, xem/điều chỉnh điểm (có audit), hạng</td><td>02</td></tr><tr><td><strong>Thông báo</strong></td><td>Soạn &amp; gửi (đối tượng + kênh), xem lịch sử</td><td>05</td></tr><tr><td><strong>Giao hàng</strong></td><td>Theo dõi shipment, xử lý đơn lỗi giao</td><td>03</td></tr><tr><td><strong>Sapo</strong></td><td>Trạng thái đồng bộ, thử lại đơn lỗi</td><td>06</td></tr><tr><td><strong>Báo cáo</strong></td><td>Doanh thu theo ngày/món, top khách</td><td>—</td></tr></tbody></table></div><h2>5. Màn hình / UI</h2><p>Prototype <a href="../prototype/dashboard.html"><code>dashboard.html</code></a>: màn <strong>đăng nhập 2 bước</strong> (mật khẩu → TOTP 6 số) rồi <strong>dashboard tổng quan</strong> (sidebar module + KPI + bảng đơn realtime).</p><h2>6. API &amp; dữ liệu</h2><h3>REST (admin, envelope chuẩn)</h3><div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead><tbody><tr><td><code>POST</code></td><td><code>/api/v1/admin/auth/login</code></td><td>Bước 1: email+password → <code>{ mfaRequired: true, mfaToken }</code></td></tr><tr><td><code>POST</code></td><td><code>/api/v1/admin/auth/2fa</code></td><td>Bước 2: <code>{ mfaToken, code }</code> → JWT admin + refresh</td></tr><tr><td><code>POST</code></td><td><code>/api/v1/admin/auth/2fa/setup</code></td><td>Tạo secret + QR (lần đầu)</td></tr><tr><td><code>GET</code></td><td><code>/api/v1/admin/overview</code></td><td>KPI tổng quan</td></tr><tr><td>…</td><td>(mỗi module map tới API spec tương ứng, đều qua AdminGuard + RolesGuard)</td><td></td></tr></tbody></table></div><h3>Model Prisma (dự kiến)</h3><figure class="code"><figcaption>prisma</figcaption><pre><code>model AdminUser {
+  id String @id @default(cuid())
+  email String @unique
+  passwordHash String        // Argon2id
+  role String @default("staff")
+  totpSecret String?         // mã hoá; null = chưa bật 2FA
+  totpEnabled Boolean @default(false)
+  backupCodes String[]       // hash
+  createdAt DateTime @default(now())
+  @@map("admin_users")
+}
+model AdminAudit {
+  id String @id @default(cuid())
+  adminId String; action String; meta Json?
+  ip String?; createdAt DateTime @default(now())
+  @@index([adminId, createdAt])
+  @@map("admin_audits")
+}</code></pre></figure><h2>7. Edge case &amp; bảo mật</h2><ul><li><strong>HTTPS bắt buộc</strong>; cookie/refresh <code>HttpOnly</code> + <code>Secure</code> + <code>SameSite</code>.</li><li><strong>Rate-limit</strong> đăng nhập + xác thực 2FA (chống brute-force mã 6 số); khoá tạm sau N lần sai.</li><li>JWT admin ngắn hạn + refresh; <strong>RolesGuard</strong> cho từng route; <code>staff</code> không chạm route quản lý cao.</li><li><strong>Audit</strong> mọi hành động nhạy cảm (login, đổi giá, chỉnh điểm, gửi thông báo, reset 2FA).</li><li>Verify TOTP chống <strong>replay</strong> (từ chối mã vừa dùng); so sánh mã bằng hằng thời gian.</li><li>KHÔNG log secret TOTP, mật khẩu, JWT.</li></ul><h2>8. Tiêu chí hoàn thành</h2><ul class="tasks"><li><span class="box">☐</span>Đăng nhập 2 bước (password + TOTP) hoạt động; thiết lập QR + backup codes.</li><li><span class="box">☐</span>RolesGuard chặn đúng theo role; audit ghi hành động nhạy cảm.</li><li><span class="box">☐</span>Rate-limit + khoá tạm khi sai nhiều; TOTP chống replay.</li><li><span class="box">☐</span>Các module đọc/ghi qua API spec tương ứng, không truy cập DB service khác.</li></ul><h2>9. Câu hỏi mở (<span class="q">❓</span>)</h2><ol><li>Có mấy tài khoản admin &amp; vai trò cụ thể (chủ, quản lý ca, thu ngân)?</li><li>Ngoài TOTP, có cần OTP dự phòng qua Zalo/email khi mất thiết bị không?</li><li>Báo cáo cần chỉ số gì (doanh thu ngày/tháng, món bán chạy, tỉ lệ giao/tại quán, khách quay lại)?</li><li>Dashboard tự host hay Vercel? Có giới hạn IP nội bộ khi truy cập không?</li></ol>
+</div>
+<footer class="foot">Hikari Vegetarian Cafe · tài liệu nội bộ · specs dùng định dạng HTML</footer>
+</body>
+</html>

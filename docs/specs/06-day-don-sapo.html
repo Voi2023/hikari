@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 — Đẩy đơn lên Sapo (quản lý bán hàng) — Hikari Vegetarian Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+.brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+.muted{color:var(--muted);}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;}
+.topbar .brand-logo{font-size:1.5rem;line-height:1;}
+.topbar nav{margin-left:auto;display:flex;gap:14px;font-size:.85rem;}
+.topbar nav a{color:var(--muted);text-decoration:none;font-weight:600;}
+.topbar nav a:hover{color:var(--matcha);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 72px;}
+h1{font-size:1.9rem;line-height:1.25;margin:8px 0 18px;}
+h2{font-size:1.2rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+h3{font-size:1rem;margin:24px 0 8px;color:var(--matcha);}
+h4{font-size:.92rem;margin:18px 0 6px;}
+p{margin:10px 0;}
+a{color:var(--matcha);}
+hr{border:none;border-top:1px solid var(--line);margin:32px 0;}
+code{font-family:var(--mono);font-size:.86em;background:#f1ede3;border:1px solid var(--line);border-radius:6px;padding:1px 5px;}
+figure.code{margin:14px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+figure.code figcaption{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f4f1ea;border-bottom:1px solid var(--line);padding:6px 14px;}
+figure.code pre{margin:0;padding:14px 16px;overflow-x:auto;}
+figure.code code{background:none;border:none;padding:0;font-size:.82rem;line-height:1.55;}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-left:3px solid var(--sun);border-radius:var(--radius);}
+blockquote p:first-child{margin-top:0;}
+blockquote p:last-child{margin-bottom:0;}
+ul,ol{margin:10px 0;padding-left:22px;}
+li{margin:5px 0;}
+li>ul,li>ol{margin:5px 0;}
+ul.tasks{list-style:none;padding-left:2px;}
+ul.tasks .box{color:var(--matcha);font-size:1rem;margin-right:8px;}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);box-shadow:var(--shadow);}
+table{border-collapse:collapse;width:100%;font-size:.92rem;}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{background:var(--matcha-soft);color:var(--matcha);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#faf9f5;}
+.q{color:var(--chili);font-weight:700;}
+footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted);font-size:.8rem;}
+@media(max-width:640px){h1{font-size:1.5rem;}.topbar nav{gap:10px;font-size:.78rem;}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <span class="brand-logo">Hikari</span><span class="brand-sub">vegetarian cafe</span>
+  <nav>
+    <a href="README.html">Specs</a>
+    <a href="FEATURES.html">Chức năng</a>
+    <a href="00-tong-quan.html">Tổng quan</a>
+    <a href="../prototype/index.html">Prototype</a>
+  </nav>
+</div></div>
+<div class="wrap">
+<h1>06 — Đẩy đơn lên Sapo (quản lý bán hàng)</h1><p>Trạng thái: 🎨 Prototype · Prototype: <a href="../prototype/sapo.html"><code>../prototype/sapo.html</code></a></p><h2>1. Mục tiêu &amp; phạm vi</h2><p><strong>Làm:</strong> khi đơn trong hikari được <strong>xác nhận/thanh toán</strong>, tạo đơn tương ứng trên <strong>Sapo</strong> (Sapo Open API) để quán quản lý bán hàng, tồn kho, doanh thu tại một nơi. Theo dõi trạng thái đồng bộ + thử lại khi lỗi. <strong>Không làm (spec này):</strong> đồng bộ ngược tồn kho/menu từ Sapo (<span class="q">❓</span> để cân nhắc sau — xem câu hỏi mở).</p><h2>2. ❗ Trạng thái tích hợp (<span class="q">❓</span> CẦN LÀM TRƯỚC)</h2><p>Quán <strong>đã có tài khoản Sapo</strong> nhưng <strong>chưa có Open API key</strong>. Cần:</p><ol><li>Đăng ký ứng dụng trên <strong>Sapo Developer</strong> (apps.sapo.vn) → lấy <code>client_id</code>/<code>client_secret</code> (OAuth) hoặc <strong>API key</strong> của cửa hàng.</li><li>Xác định <code>SAPO_STORE</code> (subdomain <code>*.mysapo.net</code>) + quyền (scope) cho <strong>đơn hàng, sản phẩm, khách hàng</strong>.</li><li>Lấy <code>access_token</code> (OAuth) và cơ chế refresh.</li></ol><blockquote><p>Trước khi có key: dùng <strong>mock SapoClient</strong> để chạy luồng &amp; prototype; adapter thật cắm vào sau.</p></blockquote><h2>3. Personas &amp; user story</h2><ul><li><strong>US-1</strong> — <em>Là hệ thống</em>, khi đơn <code>paid</code>, tôi <strong>đẩy đơn sang Sapo</strong> kèm món/số lượng/giá/khách/hình thức nhận.</li><li><strong>US-2</strong> — <em>Là quản lý (dashboard)</em>, tôi xem <strong>trạng thái đồng bộ</strong> từng đơn (đã đẩy / đang chờ / lỗi) và <strong>thử lại</strong> đơn lỗi.</li><li><strong>US-3</strong> — <em>Là hệ thống</em>, nếu Sapo lỗi tạm thời, tôi <strong>tự thử lại</strong> (backoff) và cảnh báo nếu vẫn thất bại.</li></ul><h2>4. Màn hình / UI</h2><p>Prototype <a href="../prototype/sapo.html"><code>sapo.html</code></a>: bảng <strong>hàng đợi đồng bộ Sapo</strong> (mã đơn, thời gian, tiền, trạng thái đồng bộ, nút thử lại), thẻ tổng quan (đã đồng bộ / đang chờ / lỗi). <em>(Đây là màn hình trong dashboard admin.)</em></p><h2>5. API &amp; dữ liệu</h2><h3>Kích hoạt</h3><ul><li>Không phải endpoint mở ra client. Được gọi <strong>nội bộ</strong> trong luồng "đơn paid" (spec 04) → <code>SapoSyncService.push(orderId)</code>.</li><li>Chạy nền qua <strong>hàng đợi</strong> (job) để không chặn phản hồi thanh toán.</li></ul><h3>REST (admin, envelope chuẩn)</h3><div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead><tbody><tr><td><code>GET</code></td><td><code>/api/v1/admin/sapo/sync</code></td><td>Danh sách trạng thái đồng bộ (phân trang, lọc theo trạng thái)</td></tr><tr><td><code>POST</code></td><td><code>/api/v1/admin/sapo/sync/:orderId/retry</code></td><td>Thử đẩy lại 1 đơn lỗi</td></tr></tbody></table></div><h3>Interface backend (<code>src/external/sapo</code>)</h3><figure class="code"><figcaption>ts</figcaption><pre><code>interface SapoClient {
+  createOrder(order: SapoOrderInput): Promise&lt;{ sapoOrderId: string }&gt;;
+}
+// Adapter: SapoHttpClient (Open API, OAuth) · MockSapoClient (dev)</code></pre></figure><h3>Model Prisma (dự kiến)</h3><figure class="code"><figcaption>prisma</figcaption><pre><code>model SapoSync {
+  orderId String @id
+  sapoOrderId String?
+  status String @default("pending")  // pending | synced | failed
+  attempts Int @default(0)
+  lastError String?
+  syncedAt DateTime?
+  updatedAt DateTime @updatedAt
+  @@map("sapo_syncs")
+}</code></pre></figure><h3>Env (backend, secret)</h3><p><code>SAPO_STORE</code>, <code>SAPO_CLIENT_ID</code>, <code>SAPO_CLIENT_SECRET</code> (hoặc <code>SAPO_API_KEY</code>), <code>SAPO_ACCESS_TOKEN</code>.</p><h2>6. Edge case &amp; bảo mật</h2><ul><li><strong>Idempotent theo <code>orderId</code></strong>: đơn đã <code>synced</code> không đẩy lại (tránh nhân đôi đơn/ doanh thu trên Sapo).</li><li>Retry có <strong>giới hạn + backoff</strong>; quá số lần → <code>failed</code> + Telegram để người xử lý tay (nút retry ở dashboard).</li><li>Map dữ liệu cẩn thận: <strong>giá integer VND</strong>, đúng số lượng, đúng khách (SĐT nếu có), ghi rõ kênh "Zalo Mini App".</li><li>Token Sapo hết hạn → refresh tự động; lỗi auth → cảnh báo (không nuốt).</li><li>KHÔNG log <code>client_secret</code>/token.</li></ul><h2>7. Tiêu chí hoàn thành</h2><ul class="tasks"><li><span class="box">☐</span>Đơn <code>paid</code> tạo đúng 1 đơn Sapo (idempotent), lưu <code>sapoOrderId</code>.</li><li><span class="box">☐</span>Lỗi tạm thời tự retry; lỗi bền → <code>failed</code> + alert + retry tay ở dashboard.</li><li><span class="box">☐</span>Map đúng món/giá/số lượng/khách/kênh.</li><li><span class="box">☐</span>Adapter Sapo thay bằng mock được (chạy khi chưa có API key).</li></ul><h2>8. Câu hỏi mở (<span class="q">❓</span>)</h2><ol><li><strong>Menu là nguồn nào</strong>: quản lý trong hikari (dashboard) hay đồng bộ từ <strong>sản phẩm Sapo</strong>? (ảnh hưởng cách map món → sản phẩm Sapo)</li><li>Đẩy đơn ở thời điểm nào: khi <strong>đặt</strong> hay khi <strong>thanh toán thành công</strong>? (đề xuất: khi paid)</li><li>Có cần đồng bộ <strong>tồn kho/hết món</strong> từ Sapo về app không?</li><li>Khách trên Sapo định danh theo SĐT — với khách chưa cấp SĐT thì map thế nào (khách vãng lai)?</li></ol>
+</div>
+<footer class="foot">Hikari Vegetarian Cafe · tài liệu nội bộ · specs dùng định dạng HTML</footer>
+</body>
+</html>
