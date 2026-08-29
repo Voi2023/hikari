@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 — Hai chế độ giao hàng (tự động / thủ công) — Hikari Vegetarian Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+.brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+.muted{color:var(--muted);}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;}
+.topbar .brand-logo{font-size:1.5rem;line-height:1;}
+.topbar nav{margin-left:auto;display:flex;gap:14px;font-size:.85rem;}
+.topbar nav a{color:var(--muted);text-decoration:none;font-weight:600;}
+.topbar nav a:hover{color:var(--matcha);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 72px;}
+h1{font-size:1.9rem;line-height:1.25;margin:8px 0 18px;}
+h2{font-size:1.2rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+h3{font-size:1rem;margin:24px 0 8px;color:var(--matcha);}
+h4{font-size:.92rem;margin:18px 0 6px;}
+p{margin:10px 0;}
+a{color:var(--matcha);}
+hr{border:none;border-top:1px solid var(--line);margin:32px 0;}
+code{font-family:var(--mono);font-size:.86em;background:#f1ede3;border:1px solid var(--line);border-radius:6px;padding:1px 5px;}
+figure.code{margin:14px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+figure.code figcaption{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f4f1ea;border-bottom:1px solid var(--line);padding:6px 14px;}
+figure.code pre{margin:0;padding:14px 16px;overflow-x:auto;}
+figure.code code{background:none;border:none;padding:0;font-size:.82rem;line-height:1.55;}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-left:3px solid var(--sun);border-radius:var(--radius);}
+blockquote p:first-child{margin-top:0;}
+blockquote p:last-child{margin-bottom:0;}
+ul,ol{margin:10px 0;padding-left:22px;}
+li{margin:5px 0;}
+li>ul,li>ol{margin:5px 0;}
+ul.tasks{list-style:none;padding-left:2px;}
+ul.tasks .box{color:var(--matcha);font-size:1rem;margin-right:8px;}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);box-shadow:var(--shadow);}
+table{border-collapse:collapse;width:100%;font-size:.92rem;}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{background:var(--matcha-soft);color:var(--matcha);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#faf9f5;}
+.q{color:var(--chili);font-weight:700;}
+.swatch{display:inline-block;width:13px;height:13px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px;margin-right:5px;}
+footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted);font-size:.8rem;}
+@media(max-width:640px){h1{font-size:1.5rem;}.topbar nav{gap:10px;font-size:.78rem;}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <span class="brand-logo">Hikari</span><span class="brand-sub">vegetarian cafe</span>
+  <nav>
+    <a href="README.html">Specs</a>
+    <a href="FEATURES.html">Chức năng</a>
+    <a href="00-tong-quan.html">Tổng quan</a>
+    <a href="../prototype/index.html">Prototype</a>
+  </nav>
+</div></div>
+<div class="wrap">
+
+<h1>10 — Hai chế độ giao hàng (tự động / thủ công)</h1>
+<p>Trạng thái: 🎨 Prototype · Prototype: <a href="../prototype/admin/cai-dat-giao-hang.html"><code>admin/cai-dat-giao-hang.html</code></a>
+· Nguồn dùng chung: <code>docs/prototype/shared/shipping-mode.js</code></p>
+
+<h2>1. Mục tiêu &amp; phạm vi</h2>
+<p><strong>Làm:</strong> cho quán chạy được ở <strong>một trong hai chế độ giao hàng</strong>, đổi bằng một cờ trong dashboard:
+gọi API đối tác (Grab/Ahamove/BE…) để tự tính phí và đặt tài xế, <em>hoặc</em> tự giao theo bảng phí phường quán khai.
+Kèm cấu hình khoá đối tác, bảng phí phường, và <strong>đổi màu nền dashboard</strong> theo chế độ đang chạy.</p>
+<p><strong>Không làm (spec này):</strong> hợp đồng/đăng ký với từng đối tác, và luồng thanh toán (<a href="04-thanh-toan-zalopay.html">spec 04</a>).
+Spec này thay phần "chọn một đối tác duy nhất" của <a href="03-phi-giao-hang.html">spec 03</a> bằng cơ chế hai chế độ.</p>
+
+<blockquote><p><strong>Vì sao phải là cờ có chủ ý, không phải "gọi API, lỗi thì tự rơi về thủ công":</strong>
+hai chế độ khác nhau ở chỗ <strong>ai chịu trách nhiệm đi giao</strong>, không chỉ khác cách tính tiền.
+Tự động âm thầm rơi sang thủ công giữa giờ cao điểm nghĩa là đơn nằm chờ mà <em>không ai biết mình phải đi giao</em>.
+Vì vậy đổi chế độ là hành động có xác nhận, có lý do, có ghi nhật ký.</p></blockquote>
+
+<h2>2. Hai chế độ</h2>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>1 · Tự động qua đối tác</th><th>2 · Thủ công (bảng phí phường)</th></tr></thead>
+<tbody>
+<tr><td>Phí giao tính từ</td><td>Đối tác trả về theo địa chỉ thật (không tự đặt giá)</td><td>Bảng phí theo <strong>phường</strong> quán tự khai</td></tr>
+<tr><td>Ai đi giao</td><td>Tài xế của đối tác</td><td>Người của quán</td></tr>
+<tr><td>Đặt tài xế</td><td>Tự động (khi thanh toán xong hoặc khi bếp xong)</td><td>Quán tự sắp người</td></tr>
+<tr><td>Trạng thái đơn</td><td>Đối tác đẩy về qua <strong>webhook</strong></td><td>Người ở quán <strong>bấm tay</strong> trong màn Đơn hàng</td></tr>
+<tr><td>Ngoài vùng</td><td>Đối tác báo không phục vụ</td><td>Phường chưa có trong bảng phí</td></tr>
+<tr><td>Cần cấu hình</td><td>API key + secret của đối tác</td><td>Danh sách phường + mức phí</td></tr>
+<tr><td>Hợp khi nào</td><td>Đông đơn, giao xa, không muốn nuôi shipper</td><td>Đơn quanh quán, có người nhà giao, hoặc đối tác chưa nối được API</td></tr>
+</tbody></table></div>
+
+<h2>3. Cờ chuyển chế độ &amp; màu dashboard</h2>
+<p>Cờ nằm ở <strong>Hệ thống → Cài đặt giao hàng</strong>. Người trực quán phải <em>nhìn lướt là biết</em> đang ở chế độ nào,
+vì thao tác khác hẳn nhau — nên nền dashboard đổi theo chế độ:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Chế độ</th><th>Nền dashboard</th><th>Dấu hiệu khác</th></tr></thead>
+<tbody>
+<tr><td>Tự động</td><td><span class="swatch" style="background:#FAF8F3"></span><code>#FAF8F3</code> — giấy kem (màu hiện tại)</td><td>Băng xanh dương ở đầu màn + chip "Tự động" ở topbar</td></tr>
+<tr><td>Thủ công</td><td><span class="swatch" style="background:#EAE3D3"></span><code>#EAE3D3</code> — <strong>đậm hơn một tông</strong></td><td>Băng vàng cảnh báo "không có tài xế nào tự đến lấy hàng" + chip "Thủ công"</td></tr>
+</tbody></table></div>
+<p>Vẫn cùng tông giấy kem, chỉ đậm hơn — đủ để nhận ra ngay, không biến thành hai bộ giao diện khác nhau
+làm nhân viên phải học lại. Kỹ thuật: đặt <code>data-ship-mode</code> ở thẻ <code>&lt;html&gt;</code> rồi ghi đè
+token <code>--bg</code> / <code>--gray-bg</code> / <code>--border</code>, không sửa từng màn.</p>
+<figure class="code"><figcaption>css</figcaption><pre><code>html[data-ship-mode="MANUAL"]{--bg:#EAE3D3;--gray-bg:#DFD7C4;--border:#DAD2C0}</code></pre></figure>
+
+<h2>4. Chế độ 1 — Tự động qua đối tác</h2>
+<h3>Cấu hình đối tác (mở rộng được)</h3>
+<ul>
+<li>Danh sách đối tác là <strong>dữ liệu</strong>, không phải code: thêm đối tác mới = thêm một dòng trong bảng
+  <code>shipping_providers</code>. Chỗ gọi chỉ biết interface <code>quote()</code> / <code>createShipment()</code> của
+  <a href="03-phi-giao-hang.html">spec 03</a>, nên đổi Grab ↔ Ahamove ↔ BE không đụng code nghiệp vụ.</li>
+<li>Mỗi đối tác có: <strong>API key</strong>, <strong>secret</strong>, môi trường <em>thử nghiệm / thật</em>, nút <strong>Kiểm tra kết nối</strong>
+  (gọi thử một báo giá), và cờ <em>đang dùng</em>.</li>
+<li><strong>Secret chỉ nhập, không đọc lại</strong> — màn hình chỉ hiện 4 ký tự cuối, kể cả với chủ quán. Muốn đổi thì nhập cái mới.</li>
+</ul>
+<h3>Thời điểm đặt tài xế</h3>
+<p>Chọn được: <code>PAID</code> (ngay khi khách trả tiền) hoặc <code>READY</code> (khi bếp báo món xong — <strong>khuyến nghị</strong>).
+Gọi sớm quá thì tài xế đứng chờ món và có thể huỷ chuyến; gọi muộn quá thì khách chờ tài xế.</p>
+<h3>Luồng</h3>
+<figure class="code"><figcaption>text</figcaption><pre><code>Khách chọn chi nhánh (spec 09) + nhập địa chỉ
+ → POST /api/v1/shipping/quote { branchId, address, lat, lng }
+ → server gọi provider đang bật → { fee, etaMinutes, serviceable }   ← phí THẬT của đối tác
+ → khách thấy phí, đặt đơn, thanh toán (spec 04)
+ → tới mốc PAID|READY → createShipment() → đối tác cử tài xế đến chi nhánh lấy hàng
+ → webhook đối tác → cập nhật trạng thái → Socket.IO shipment:updated → khách thấy</code></pre></figure>
+
+<h2>5. Chế độ 2 — Thủ công theo bảng phí phường</h2>
+<ul>
+<li>Quán khai bảng: <strong>phường → phí giao → thời gian dự kiến</strong>. Khi nhập địa chỉ, khách <strong>chọn phường</strong>,
+  hệ thống tra bảng ra phí.</li>
+<li><strong>Phường không có trong bảng ⇒ báo ngoài vùng</strong>, không đoán giá. Đoán giá rồi báo rẻ hơn thực tế thì quán
+  phải bù, mà báo đắt thì mất đơn — cả hai đều tệ hơn là nói thẳng "khu vực này chưa giao".</li>
+<li>Tuỳ chọn: <strong>miễn phí giao cho đơn từ X đồng</strong>; câu báo khi ngoài vùng sửa được.</li>
+<li><strong>Trạng thái đơn do người ở quán bấm</strong> trong màn <a href="../prototype/admin/don-hang.html">Đơn hàng</a>:
+  <code>Đã nhận → Đang chế biến → Đang giao → Hoàn tất</code>. Khách thấy đúng các mốc đó trong Mini App —
+  đây chính là cách khách biết đơn tới đâu khi không có webhook của đối tác.</li>
+</ul>
+<blockquote><p><span class="q">❓</span> <strong>Tên phường</strong> trong bảng mẫu theo địa giới TP.HCM sau sáp nhập 2025
+(Hòa Hưng, Vườn Lài, Diên Hồng, Bàn Cờ…) — <strong>cần chủ quán đối chiếu với danh sách hành chính chính thức</strong>
+trước khi dùng thật. Mức phí trong prototype là giả định.</p></blockquote>
+
+<h2>6. API &amp; dữ liệu</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>GET</code></td><td><code>/api/v1/admin/shipping/settings</code></td><td>Chế độ hiện tại + cấu hình (secret <strong>không</strong> trả về)</td></tr>
+<tr><td><code>PUT</code></td><td><code>/api/v1/admin/shipping/mode</code></td><td>Đổi chế độ <code>{ mode, reason }</code> — bắt buộc có lý do, ghi nhật ký</td></tr>
+<tr><td><code>PUT</code></td><td><code>/api/v1/admin/shipping/providers/:id</code></td><td>Lưu key/secret, môi trường, chọn đối tác đang dùng</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/v1/admin/shipping/providers/:id/test</code></td><td>Gọi thử báo giá để xác nhận khoá đúng</td></tr>
+<tr><td><code>GET·POST·PUT·DELETE</code></td><td><code>/api/v1/admin/shipping/wards</code></td><td>Bảng phí theo phường (chế độ thủ công)</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/v1/shipping/quote</code></td><td>Báo giá cho khách — <strong>server tự chọn nguồn theo chế độ đang bật</strong></td></tr>
+</tbody></table></div>
+<p>Mini App <strong>không biết</strong> quán đang ở chế độ nào — nó chỉ gọi <code>/shipping/quote</code> và nhận về
+<code>{ fee, etaMinutes, serviceable, source }</code>. Nhờ vậy đổi chế độ không cần cập nhật Mini App.</p>
+
+<figure class="code"><figcaption>prisma</figcaption><pre><code>model ShippingSetting {
+  branchId      String  @id            // cấu hình theo từng chi nhánh (spec 09)
+  mode          String  @default("AUTO")   // AUTO | MANUAL
+  activeProvider String?
+  autoBookAt    String  @default("READY")  // PAID | READY
+  freeFrom      Int     @default(0)        // 0 = không miễn phí ship
+  outOfAreaText String
+  updatedAt     DateTime @updatedAt
+  @@map("shipping_settings")
+}
+
+model ShippingProvider {
+  id           String  @id                 // grab | ahamove | be | ...
+  name         String
+  env          String  @default("sandbox") // sandbox | production
+  apiKey       String?
+  apiSecretEnc String?                     // MÃ HOÁ khi lưu, không bao giờ trả ra API
+  connected    Boolean @default(false)
+  @@map("shipping_providers")
+}
+
+model WardFee {
+  id       String @id @default(cuid())
+  branchId String
+  ward     String                          // tên phường
+  area     String?                         // ghi chú khu vực
+  fee      Int                             // VND, integer
+  etaMin   Int
+  @@unique([branchId, ward])
+  @@map("ward_fees")
+}</code></pre></figure>
+
+<h2>7. Edge case &amp; bảo mật</h2>
+<ul>
+<li><strong>Secret đối tác không bao giờ xuống client</strong> — kể cả dashboard. API trả về tối đa 4 ký tự cuối.
+  Mọi lời gọi đối tác đi từ server.</li>
+<li><strong>Không tin phí client gửi</strong>: lúc tạo đơn, server <em>báo giá lại</em> theo chế độ đang bật; phí phía khách chỉ để hiển thị.</li>
+<li><strong>Đổi chế độ không ảnh hưởng đơn đang chạy</strong> — chuyến đã đặt qua đối tác vẫn chạy tiếp tới khi xong.</li>
+<li>Chuyển sang <code>AUTO</code> mà đối tác <strong>chưa kết nối thành công</strong> → cảnh báo trước, vì khách sẽ không nhận được báo giá.</li>
+<li>Chế độ <code>MANUAL</code> mà <strong>bảng phường rỗng</strong> → không ai đặt giao được: dashboard phải cảnh báo rõ.</li>
+<li><strong>RBAC</strong>: chỉ vai trò có quyền <code>ship</code> mới đổi được chế độ và sửa khoá; nhân viên chỉ bấm trạng thái đơn.</li>
+<li><strong>Ghi nhật ký</strong> (<code>AdminAudit</code>): đổi chế độ, sửa khoá đối tác, sửa/xoá phí phường — đều là thao tác ảnh hưởng tiền.</li>
+<li>Đối tác lỗi/timeout → <strong>502 + cảnh báo</strong>, <em>không</em> tự chuyển chế độ (xem lý do ở §1).</li>
+</ul>
+
+<h2>8. Ảnh hưởng sang spec khác</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Spec</th><th>Thay đổi</th></tr></thead>
+<tbody>
+<tr><td><a href="03-phi-giao-hang.html">03 — Phí giao hàng</a></td><td>Interface <code>ShippingProvider</code> giữ nguyên; thêm nguồn phí thứ hai là bảng phường. Không còn phụ thuộc việc BE có API hay không.</td></tr>
+<tr><td><a href="08-dat-hang.html">08 — Đặt hàng</a></td><td>Bước nhập địa chỉ: chế độ thủ công phải cho <strong>chọn phường</strong> (bắt buộc) thay vì chỉ gõ tự do.</td></tr>
+<tr><td><a href="09-chi-nhanh.html">09 — Chi nhánh</a></td><td>Cấu hình giao hàng theo <strong>từng chi nhánh</strong> — hai chi nhánh có thể chạy hai chế độ khác nhau.</td></tr>
+<tr><td><a href="07-dashboard.html">07 — Dashboard</a></td><td>Thêm màn <em>Cài đặt giao hàng</em>; màn Đơn hàng phải cho bấm trạng thái giao khi ở chế độ thủ công.</td></tr>
+</tbody></table></div>
+
+<h2>9. Tiêu chí hoàn thành (Acceptance)</h2>
+<ul class="tasks">
+<li><span class="box">☐</span>Đổi được chế độ trong dashboard, có xác nhận + lý do + ghi nhật ký.</li>
+<li><span class="box">☐</span>Nền dashboard đổi màu theo chế độ ở <strong>mọi màn</strong>, kèm băng nhắc và chip ở topbar.</li>
+<li><span class="box">☐</span>Chế độ tự động: thêm/sửa đối tác, lưu key–secret (chỉ hiện 4 ký tự cuối), kiểm tra kết nối, chọn đối tác dùng.</li>
+<li><span class="box">☐</span>Chế độ tự động: khách nhập địa chỉ ra phí của đối tác; tới mốc đã chọn thì tự đặt tài xế.</li>
+<li><span class="box">☐</span>Chế độ thủ công: thêm/sửa/xoá phí theo phường; phường chưa khai → báo ngoài vùng.</li>
+<li><span class="box">☐</span>Chế độ thủ công: trạng thái giao bấm tay trong dashboard hiện đúng bên Mini App.</li>
+<li><span class="box">☐</span>Mini App không cần biết chế độ — chỉ gọi <code>/shipping/quote</code>.</li>
+<li><span class="box">☐</span>Server tính lại phí khi tạo đơn; không tin phí client gửi.</li>
+</ul>
+
+<h2>10. Câu hỏi mở (<span class="q">❓</span> cần chủ quán xác nhận)</h2>
+<ol>
+<li>Chế độ <strong>mặc định lúc khai trương</strong> app là gì — tự động hay thủ công?</li>
+<li>Đối tác tự động ưu tiên: <strong>Grab</strong> (đã có key trong prototype) hay Ahamove? Đã có hợp đồng đối tác chưa?</li>
+<li><strong>Danh sách phường</strong> quán nhận giao và mức phí từng phường (theo địa giới mới 2025)?</li>
+<li>Có <strong>miễn phí giao</strong> theo giá trị đơn không (vd đơn ≥ 200.000đ)?</li>
+<li>Hai chi nhánh chạy <strong>chung một chế độ</strong> hay mỗi nơi một kiểu?</li>
+<li>Ở chế độ thủ công, ai là người bấm trạng thái — thu ngân hay người đi giao (ảnh hưởng quyền RBAC)?</li>
+<li>Có cần chế độ <strong>hỗn hợp</strong> (gần thì tự giao, xa thì gọi đối tác) không? — hiện <strong>chưa làm</strong>, vì phức tạp gấp đôi phần vận hành.</li>
+</ol>
+
+</div>
+<footer class="foot">Hikari Vegetarian Cafe · tài liệu nội bộ · specs dùng định dạng HTML</footer>
+</body>
+</html>
