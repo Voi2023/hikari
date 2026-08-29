@@ -78,6 +78,7 @@
   var el = function (id) { return document.getElementById(id); };
 
   /* ==== Tính tiền (prototype tính ở client; thật thì SERVER tính lại — spec 08 §6) ==== */
+  function branchName() { return S.branch ? S.branch.name : 'Hikari Vegetarian Cafe'; }
   function packaging() { return S.mode === 'takeaway' ? PACKAGING_FEE : 0; }
   function ship() { return S.mode === 'delivery' && S.quote.state === 'ok' ? S.quote.fee : 0; }
   function maxPointsUsable() {
@@ -164,10 +165,13 @@
         }).join('') +
         '<button class="co-addnew" onclick="Checkout.openAddr()">＋ Thêm địa chỉ mới</button>' +
         '<div class="co-quote">' + quoteBox() + '</div>' +
-        note('GET /api/v1/me/addresses · POST /api/v1/shipping/quote') + '</div>';
+        (S.branch ? '<p class="co-fine">Tài xế lấy hàng ở <strong>' + esc(S.branch.name) + '</strong> — ' +
+          esc(S.branch.address) + '. Phí giao tính từ chi nhánh này.</p>' : '') +
+        note('GET /api/v1/me/addresses · POST /api/v1/shipping/quote { branchId }') + '</div>';
     } else {
       body += '<div class="co-sec"><h4>' + (S.mode === 'dine' ? 'Tại quán' : 'Đến lấy') + '</h4>' +
-        '<div class="co-card">📍 Hikari Vegetarian Cafe · Quận 10, TP.HCM' +
+        '<div class="co-card">📍 <strong>' + esc(branchName()) + '</strong>' +
+        (S.branch ? '<div class="co-sub">' + esc(S.branch.address) + ' · mở ' + S.branch.open + '–' + S.branch.close + '</div>' : '') +
         '<div class="co-sub">' + (S.mode === 'dine' ? 'Nhân viên phục vụ tại bàn khi món xong.' : 'Quán báo khi món sẵn sàng, bạn ghé lấy.') + '</div></div></div>';
     }
 
@@ -271,6 +275,7 @@
   /* ==== Bước 2 — thanh toán ==== */
   function viewPay() {
     var body = '<div class="co-sec"><h4>Đơn ' + S.code + '</h4><div class="co-card">' +
+      '<div class="co-row"><span>Chi nhánh</span><b>' + esc(branchName()) + '</b></div>' +
       '<div class="co-row"><span>' + MODE_LABEL[S.mode] + '</span><b>' +
       (S.time === 'now' ? 'sớm nhất' : S.at) + '</b></div>' + sumRows(true) + '</div>' +
       '<p class="co-fine">Số tiền cuối do <strong>server tính lại</strong> từ đơn — app không tin giá client gửi.</p></div>';
@@ -290,7 +295,7 @@
           '<span class="co-logo ' + m.id + '">' + m.badge + '</span>' +
           '<div class="co-pmb"><div>' + m.name + '</div><div class="co-sub">' + m.sub + '</div></div>' +
           '<span class="co-tick">' + (S.method === m.id ? '✓' : '') + '</span></div>';
-      }).join('') + note('POST /api/v1/orders → POST /api/v1/payments/zalopay/create') + '</div>';
+      }).join('') + note('POST /api/v1/orders { branchId, items[] } → POST /api/v1/payments/zalopay/create') + '</div>';
 
     var foot = '<div class="co-total"><span>Cần thanh toán</span><b>' + vnd(total()) + '</b></div>' +
       '<button class="co-btn pay-' + S.method + '" onclick="Checkout.pay()">' + payLabel() + '</button>';
@@ -358,7 +363,7 @@
     var body = '<div class="co-sec center">' +
       '<div class="co-ic ok">✅</div><h3>' + (S.paid ? 'Thanh toán thành công' : 'Đơn đã được ghi nhận') + '</h3>' +
       '<div class="co-badge ' + (S.paid ? 'paid' : 'pending') + '">' + (S.paid ? PAYMENT_VI.PAID : PAYMENT_VI.PENDING) + '</div>' +
-      '<div class="co-sub">Đơn ' + S.code + ' · ' + MODE_LABEL[S.mode] + '</div></div>';
+      '<div class="co-sub">Đơn ' + S.code + ' · ' + MODE_LABEL[S.mode] + ' · ' + esc(branchName()) + '</div></div>';
 
     body += '<div class="co-sec"><div class="co-card">' + sumRows(true) +
       '<div class="co-row earn"><span>Điểm được cộng</span><b>+' + S.earned + ' điểm</b></div></div>' +
@@ -427,6 +432,7 @@
       S = {
         step: 'info',
         lines: opts.lines, mode: opts.mode || 'dine', subtotal: opts.subtotal,
+        branch: opts.branch || null,
         addressId: 'a1', quote: { state: 'idle' },
         time: 'now', at: '18:30', note: '', phoneShared: opts.mode === 'dine',
         usePoints: false, method: 'zalopay',

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09 — Chi nhánh &amp; chế độ nghỉ quán — Hikari Vegetarian Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+.brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+.muted{color:var(--muted);}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;}
+.topbar .brand-logo{font-size:1.5rem;line-height:1;}
+.topbar nav{margin-left:auto;display:flex;gap:14px;font-size:.85rem;}
+.topbar nav a{color:var(--muted);text-decoration:none;font-weight:600;}
+.topbar nav a:hover{color:var(--matcha);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 72px;}
+h1{font-size:1.9rem;line-height:1.25;margin:8px 0 18px;}
+h2{font-size:1.2rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+h3{font-size:1rem;margin:24px 0 8px;color:var(--matcha);}
+h4{font-size:.92rem;margin:18px 0 6px;}
+p{margin:10px 0;}
+a{color:var(--matcha);}
+hr{border:none;border-top:1px solid var(--line);margin:32px 0;}
+code{font-family:var(--mono);font-size:.86em;background:#f1ede3;border:1px solid var(--line);border-radius:6px;padding:1px 5px;}
+figure.code{margin:14px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+figure.code figcaption{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f4f1ea;border-bottom:1px solid var(--line);padding:6px 14px;}
+figure.code pre{margin:0;padding:14px 16px;overflow-x:auto;}
+figure.code code{background:none;border:none;padding:0;font-size:.82rem;line-height:1.55;}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-left:3px solid var(--sun);border-radius:var(--radius);}
+blockquote p:first-child{margin-top:0;}
+blockquote p:last-child{margin-bottom:0;}
+ul,ol{margin:10px 0;padding-left:22px;}
+li{margin:5px 0;}
+li>ul,li>ol{margin:5px 0;}
+ul.tasks{list-style:none;padding-left:2px;}
+ul.tasks .box{color:var(--matcha);font-size:1rem;margin-right:8px;}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);box-shadow:var(--shadow);}
+table{border-collapse:collapse;width:100%;font-size:.92rem;}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{background:var(--matcha-soft);color:var(--matcha);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#faf9f5;}
+.q{color:var(--chili);font-weight:700;}
+footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted);font-size:.8rem;}
+@media(max-width:640px){h1{font-size:1.5rem;}.topbar nav{gap:10px;font-size:.78rem;}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <span class="brand-logo">Hikari</span><span class="brand-sub">vegetarian cafe</span>
+  <nav>
+    <a href="README.html">Specs</a>
+    <a href="FEATURES.html">Chức năng</a>
+    <a href="00-tong-quan.html">Tổng quan</a>
+    <a href="../prototype/index.html">Prototype</a>
+  </nav>
+</div></div>
+<div class="wrap">
+<h1>09 — Chi nhánh &amp; chế độ nghỉ quán</h1><p>Trạng thái: 🎨 Prototype · Mini App: <a href="../prototype/menu.html"><code>../prototype/menu.html</code></a> (màn chọn chi nhánh khi mở app) · Dashboard: <a href="../prototype/admin/chi-nhanh.html"><code>../prototype/admin/chi-nhanh.html</code></a> · Mã dùng chung: <a href="../prototype/shared/branches.js"><code>../prototype/shared/branches.js</code></a> · <a href="../prototype/shared/branch-picker.js"><code>../prototype/shared/branch-picker.js</code></a></p><h2>1. Mục tiêu &amp; phạm vi</h2><p><strong>Làm:</strong> quán có <strong>nhiều chi nhánh</strong>. Khách <strong>chọn chi nhánh trước khi dùng app</strong>; quán quản lý danh sách chi nhánh ở dashboard và có <strong>cờ tạm nghỉ</strong> — bật lên thì chi nhánh biến mất khỏi Mini App, không nhận đơn mới.</p><p><strong>Không làm (ở spec này):</strong> phân quyền nhân viên theo chi nhánh (<span class="q">❓</span> chưa chốt, xem §8), tồn kho theo chi nhánh, menu/giá riêng từng chi nhánh (hiện dùng chung — <span class="q">❓</span>).</p><h2>2. Chi nhánh hiện có</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>Tên</th><th>Địa chỉ</th><th>Giờ mở cửa (<span class="q">❓</span>)</th><th>Bán kính giao (<span class="q">❓</span>)</th></tr></thead><tbody><tr><td>CN01</td><td>Hikari Thành Thái</td><td>134/1 Đ. Thành Thái, Hòa Hưng, Hồ Chí Minh</td><td>07:00 – 22:00</td><td>10 km</td></tr><tr><td>CN02</td><td>Hikari Nguyễn Trung Ngạn</td><td>5/47 Nguyễn Trung Ngạn, Quận 1, Hồ Chí Minh</td><td>08:00 – 21:30</td><td>8 km</td></tr></tbody></table></div><blockquote><p>Toạ độ, hotline, giờ mở cửa và bán kính giao trong prototype là <strong>số tạm</strong> — cần chủ quán xác nhận từng chi nhánh.</p></blockquote><h2>3. Ba trạng thái, đừng gộp làm một</h2><div class="table-wrap"><table><thead><tr><th>Trạng thái</th><th>Do đâu</th><th>Khách thấy gì</th></tr></thead><tbody><tr><td><strong>Đang nhận đơn</strong> (<code>OPEN</code>)</td><td>Trong giờ mở cửa và không bật cờ nghỉ</td><td>Chọn được, đặt món bình thường</td></tr><tr><td><strong>Tạm nghỉ</strong> (<code>PAUSED</code>)</td><td><strong>Người ở quán chủ động tắt</strong> — hết nguyên liệu, cúp điện, nghỉ lễ, quá tải</td><td>Chi nhánh <strong>không chọn được</strong>, kèm <strong>lý do quán ghi</strong> và giờ dự kiến mở lại</td></tr><tr><td><strong>Ngoài giờ mở cửa</strong></td><td>Tự động theo <code>open</code>/<code>close</code>, không ai bấm gì</td><td>Chi nhánh hiện nhưng không chọn được, kèm "mở cửa lúc 07:00"</td></tr></tbody></table></div><blockquote><p>Gộp hai kiểu đóng làm một thì khách không biết nên <strong>chờ</strong> hay <strong>chọn chi nhánh khác</strong> — đó là khác biệt đáng giá một cuộc gọi vào hotline.</p></blockquote><h2>4. Personas &amp; user story</h2><ul><li><strong>US-1</strong> — <em>Là khách mở app lần đầu</em>, tôi thấy màn <strong>chọn chi nhánh</strong> trước khi vào menu, có địa chỉ và giờ mở cửa.<ul><li>Given có chi nhánh đang tạm nghỉ, When mở màn chọn, Then chi nhánh đó <strong>không bấm được</strong> và hiện lý do.</li><li>Given <strong>mọi</strong> chi nhánh đều nghỉ, When mở app, Then hiện màn "Quán đang tạm nghỉ" kèm lý do từng chi nhánh.</li></ul></li><li><strong>US-2</strong> — <em>Là khách</em>, tôi <strong>đổi chi nhánh</strong> ở đầu màn menu; giỏ hàng được làm mới vì giỏ thuộc về một quán.</li><li><strong>US-3</strong> — <em>Là khách giao hàng</em>, tôi muốn app <strong>gợi ý chi nhánh gần tôi nhất</strong> để phí giao rẻ hơn.</li><li><strong>US-4</strong> — <em>Là quản lý ca</em>, khi hết nguyên liệu tôi bật <strong>tạm nghỉ</strong> cho chi nhánh mình trong vài giây, có ghi lý do.<ul><li>Given đây là chi nhánh cuối cùng đang mở, When tôi tắt, Then hệ thống <strong>cảnh báo rõ</strong> là app sẽ không nhận được đơn nào.</li></ul></li><li><strong>US-5</strong> — <em>Là chủ quán</em>, tôi <strong>thêm chi nhánh mới</strong> với địa chỉ, toạ độ, giờ mở cửa, hình thức phục vụ và bán kính giao.</li><li><strong>US-6</strong> — <em>Là quán</em>, khi tôi tắt một chi nhánh thì <strong>đơn đang chế biến / đang giao vẫn chạy tiếp</strong>, chỉ chặn đơn mới.</li></ul><h2>5. Luồng</h2><figure class="code"><figcaption>text</figcaption><pre><code>Mở Mini App
+  → GET /api/v1/branches            (server CHỈ trả chi nhánh đang nhận đơn)
+  → chưa chọn chi nhánh? → màn CHỌN CHI NHÁNH (bắt buộc, không bỏ qua được)
+       ├─ có chi nhánh mở  → khách chọn → lưu branchId (client) → vào menu
+       └─ không còn chi nhánh nào → màn "Quán đang tạm nghỉ" + lý do từng chi nhánh
+  → mọi lời gọi sau đó kèm branchId: GET /menu?branchId · POST /shipping/quote { branchId } · POST /orders { branchId }
+  → đổi chi nhánh giữa chừng → làm mới giỏ hàng
+
+Dashboard
+  → Chi nhánh → bật/tắt "Nhận đơn"
+       tắt → BẮT BUỘC ghi lý do (khách đọc được) + giờ dự kiến mở lại (tuỳ chọn)
+            → PATCH /admin/branches/:id/status → ghi nhật ký (ai tắt, lúc nào, vì sao)
+            → chi nhánh biến mất khỏi Mini App; đơn đang chạy KHÔNG bị ảnh hưởng</code></pre></figure><h2>6. API &amp; dữ liệu</h2><h3>REST (envelope chuẩn)</h3><div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead><tbody><tr><td><code>GET</code></td><td><code>/api/v1/branches</code></td><td>Danh sách chi nhánh cho khách — <strong>chỉ chi nhánh đang nhận đơn</strong>. Public.</td></tr><tr><td><code>GET</code></td><td><code>/api/v1/branches/:id</code></td><td>Chi tiết một chi nhánh (địa chỉ, giờ, hình thức phục vụ)</td></tr><tr><td><code>GET</code></td><td><code>/api/v1/admin/branches</code></td><td>Danh sách đầy đủ cho dashboard (gồm cả chi nhánh đang nghỉ) — JWT + quyền <code>branch</code></td></tr><tr><td><code>POST</code></td><td><code>/api/v1/admin/branches</code></td><td>Thêm chi nhánh — <strong>chỉ chủ quán</strong></td></tr><tr><td><code>PATCH</code></td><td><code>/api/v1/admin/branches/:id</code></td><td>Sửa thông tin — chủ quán / quản lý</td></tr><tr><td><code>PATCH</code></td><td><code>/api/v1/admin/branches/:id/status</code></td><td>Bật/tắt nhận đơn <code>{ status, pauseReason, pauseUntil? }</code> — <code>pauseReason</code> <strong>bắt buộc</strong> khi tắt</td></tr></tbody></table></div><p>Lọc chi nhánh đang mở phải làm <strong>ở server</strong>: client cũ chưa cập nhật vẫn sẽ cho khách đặt vào quán đang nghỉ.</p><h3>Model Prisma (dự kiến)</h3><figure class="code"><figcaption>prisma</figcaption><pre><code>model Branch {
+  id String @id @default(cuid())
+  code String @unique             // "CN01"
+  name String                     // "Hikari Thành Thái"
+  address String
+  district String?
+  lat Float
+  lng Float
+  phone String?
+  openTime String                 // "07:00"
+  closeTime String                // "22:00"
+  dineIn Boolean @default(true)
+  takeaway Boolean @default(true)
+  delivery Boolean @default(true)
+  deliveryRadiusKm Int @default(10)
+  status String @default("OPEN")  // OPEN | PAUSED
+  pauseReason String?             // khách đọc được — bắt buộc khi PAUSED
+  pauseUntil DateTime?
+  sortOrder Int @default(0)
+  orders Order[]
+  @@map("branches")
+}</code></pre></figure><ul><li><code>Order.branchId</code> là <strong>bắt buộc</strong> (spec 08) — không có đơn nào "không thuộc chi nhánh nào".</li><li>Đang mở hay không là <strong>tính ra tại thời điểm hỏi</strong> (<code>status</code> + giờ mở cửa), không lưu sẵn một cờ "đang mở" rồi phải chạy cron đi cập nhật.</li></ul><h3>DTO (<code>@hikari/shared</code>)</h3><p><code>BranchDto</code>, <code>BranchStatus</code>, <code>UpdateBranchStatusDto</code> — zod, FE &amp; BE cùng import. Nhãn trạng thái chi nhánh nằm cùng chỗ với nhãn đơn: <code>packages/ui-kit/src/meta/status-meta.ts</code>.</p><h2>7. Ảnh hưởng sang các spec khác</h2><div class="table-wrap"><table><thead><tr><th>Spec</th><th>Thay đổi</th></tr></thead><tbody><tr><td><a href="01-menu.html">01 — Menu</a></td><td><code>GET /menu?branchId</code> — món còn/hết theo từng chi nhánh. <span class="q">❓</span> Giá và danh sách món có khác nhau giữa hai chi nhánh không (hiện dùng chung)?</td></tr><tr><td><a href="03-phi-giao-hang.html">03 — Phí giao hàng</a></td><td>Báo giá tính từ <strong>toạ độ chi nhánh</strong> khách đang chọn, không phải một địa chỉ quán cố định</td></tr><tr><td><a href="08-dat-hang.html">08 — Đặt hàng</a></td><td>Đơn gắn <code>branchId</code>; khi tạo đơn server <strong>kiểm lại chi nhánh còn nhận đơn không</strong></td></tr><tr><td><a href="05-thong-bao.html">05 — Thông báo</a></td><td><span class="q">❓</span> Gửi ZNS theo khách của từng chi nhánh hay toàn hệ thống?</td></tr><tr><td><a href="06-day-don-sapo.html">06 — Sapo</a></td><td><span class="q">❓</span> Mỗi chi nhánh là một kho/điểm bán riêng bên Sapo hay dồn về một?</td></tr><tr><td><a href="07-dashboard.html">07 — Dashboard</a></td><td>Báo cáo và bảng đơn nên lọc được theo chi nhánh; <span class="q">❓</span> nhân viên có bị giới hạn xem đơn chi nhánh mình không</td></tr></tbody></table></div><h2>8. Edge case &amp; bảo mật</h2><ul><li><strong>Khách đang đặt dở thì chi nhánh bị tắt</strong>: server kiểm lại lúc <code>POST /orders</code> → trả lỗi rõ ràng ("chi nhánh vừa tạm nghỉ") và mời khách đổi chi nhánh. Không im lặng nhận đơn rồi để bếp phát hiện.</li><li><strong>Đơn đang chạy không bị ảnh hưởng</strong> khi tắt chi nhánh — chỉ chặn tạo đơn mới.</li><li><strong>Giỏ hàng thuộc về một chi nhánh</strong>: đổi chi nhánh thì làm mới giỏ (giá và món có thể khác).</li><li><strong>Tắt chi nhánh cuối cùng</strong> = app không đặt được đơn nào → dashboard phải cảnh báo trước khi xác nhận, và hiện băng đỏ ở đầu màn suốt thời gian đó.</li><li><strong>Lý do nghỉ là bắt buộc</strong> khi tắt: khách đọc được, và ca sau đọc để biết vì sao quán đang tắt.</li><li><strong>Ghi nhật ký</strong> mọi lần bật/tắt (ai, lúc nào, lý do) — đây là thao tác làm mất doanh thu, phải truy được.</li><li>Giờ mở cửa tính theo <strong>múi giờ Asia/Ho_Chi_Minh</strong>; hỗ trợ ca qua nửa đêm (<code>close</code> &lt; <code>open</code>).</li><li>Chi nhánh <strong>không xoá</strong> — chỉ tắt. Xoá làm hỏng lịch sử đơn và báo cáo doanh thu theo chi nhánh.</li></ul><h2>9. Tiêu chí hoàn thành (Acceptance)</h2><ul class="tasks"><li><span class="box">☐</span>Mở app lần đầu bắt buộc chọn chi nhánh; chọn xong nhớ cho các lần sau.</li><li><span class="box">☐</span>Chi nhánh tạm nghỉ không chọn được và hiện đúng lý do quán ghi.</li><li><span class="box">☐</span>Ngoài giờ mở cửa hiển thị khác với tạm nghỉ.</li><li><span class="box">☐</span>Mọi chi nhánh nghỉ → app hiện màn "quán tạm nghỉ", không vào được luồng đặt.</li><li><span class="box">☐</span>Dashboard bật/tắt nhận đơn có hỏi lý do, có cảnh báo khi tắt chi nhánh cuối cùng, có ghi nhật ký.</li><li><span class="box">☐</span>Đơn mới luôn có <code>branchId</code>; tắt chi nhánh không làm hỏng đơn đang chạy.</li><li><span class="box">☐</span>Phí giao tính từ chi nhánh khách đang chọn.</li></ul><h2>10. Câu hỏi mở (<span class="q">❓</span> cần chủ quán xác nhận)</h2><ol><li><strong>Giờ mở cửa thật</strong> của từng chi nhánh (kể cả cuối tuần / ngày lễ có khác không)?</li><li>Menu và <strong>giá</strong> hai chi nhánh có giống nhau không? Món hết có tắt riêng từng chi nhánh không?</li><li>Khách đặt <strong>giao hàng</strong> thì app tự chọn chi nhánh gần nhất hay để khách tự chọn?</li><li><strong>Nhân viên</strong> đăng nhập dashboard có bị giới hạn chỉ thấy đơn chi nhánh mình không?</li><li>Bên <strong>Sapo</strong>, hai chi nhánh là hai điểm bán riêng hay dồn về một?</li><li>Điểm thành viên <strong>dùng chung</strong> cho cả hai chi nhánh (đề xuất: có) — chủ quán xác nhận?</li><li>Có cần trạng thái <strong>"sắp khai trương"</strong> (hiện trên app nhưng chưa nhận đơn) cho chi nhánh mới không?</li></ol>
+</div>
+<footer class="foot">Hikari Vegetarian Cafe · tài liệu nội bộ · specs dùng định dạng HTML</footer>
+</body>
+</html>

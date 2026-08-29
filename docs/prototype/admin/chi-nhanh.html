@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chi nhánh — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../../assets/gate.js"></script>
+</head>
+<body>
+<main id="page">
+  <div class="stat-grid" id="kpis"></div>
+
+  <div id="alert"></div>
+  <div id="list"></div>
+
+  <div class="panel">
+    <h2>Ghi chú nghiệp vụ</h2>
+    <div class="schedule-banner">
+      <b>Tạm nghỉ ≠ xoá chi nhánh.</b> Tạm nghỉ chỉ ẩn chi nhánh khỏi Mini App và chặn đặt đơn mới —
+      <b>đơn đang chế biến / đang giao vẫn chạy tiếp</b> và vẫn hiện ở màn Đơn hàng. Xoá chi nhánh làm hỏng
+      lịch sử đơn cũ và báo cáo doanh thu theo chi nhánh, nên chỉ tắt chứ không xoá.
+    </div>
+    <div class="schedule-banner" style="background:var(--info-bg)">
+      <b>Hai kiểu đóng, hai cách khách đọc.</b> <span class="badge red">Tạm nghỉ</span> là người ở quán chủ động tắt
+      (hết nguyên liệu, cúp điện, nghỉ lễ) — khách thấy lý do quán ghi. <span class="badge gray">Ngoài giờ mở cửa</span>
+      là tự động theo giờ, mai lại mở. Gộp làm một thì khách không biết nên chờ hay chọn chi nhánh khác.
+    </div>
+    <div class="schedule-banner" style="background:var(--info-bg)">
+      ❓ <b>Chờ chủ quán chốt:</b> menu và giá có khác nhau giữa hai chi nhánh không (hiện đang dùng chung)?
+      Khách đặt giao hàng thì tự động chọn chi nhánh gần nhất hay để khách tự chọn?
+      Nhân viên chi nhánh này có được xem đơn của chi nhánh kia không?
+    </div>
+  </div>
+</main>
+
+<script src="../shared/branches.js"></script>
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:'chi-nhanh', title:'Chi nhánh', sub:'Bật/tắt nhận đơn · giờ mở cửa · hình thức phục vụ',
+  actions: role() === 'owner'
+    ? `<button class="btn btn-primary btn-sm" onclick="editBranch()"><i class="ti ti-plus"></i> Thêm chi nhánh</button>`
+    : `<span class="badge gray"><i class="ti ti-lock"></i> Chỉ chủ quán mới thêm chi nhánh</span>` })
+
+const canEdit = can('branch')          // chủ quán + quản lý: bật/tắt, sửa thông tin
+const isOwner = role() === 'owner'     // chỉ chủ quán: thêm chi nhánh
+const SERVICE_LABEL = { dine: 'Tại quán', takeaway: 'Mang về', delivery: 'Giao hàng' }
+
+const openCount = () => BRANCHES.filter(b => b.status === 'OPEN').length
+const findBranch = id => BRANCHES.find(b => b.id === id)
+
+function renderKpis(){
+  const taking = BRANCHES.filter(b => branchIsTakingOrders(b)).length
+  const paused = BRANCHES.filter(b => b.status === 'PAUSED')
+  const orders = BRANCHES.reduce((s,b) => s + b.ordersToday, 0)
+  const card = (l,v,f) => `<div class="stat-card" style="cursor:default"><div class="label">${l}</div>
+      <div class="value">${v}</div><div class="kpi-trend muted" style="margin-top:4px">${f}</div></div>`
+  document.getElementById('kpis').innerHTML =
+    card('Chi nhánh', BRANCHES.length, 'đang hoạt động') +
+    card('Đang nhận đơn', taking, 'hiện trên Mini App') +
+    card('Tạm nghỉ', `<span style="color:${paused.length ? 'var(--danger)' : 'inherit'}">${paused.length}</span>`,
+         paused.map(b => b.name).join(', ') || '—') +
+    card('Đơn hôm nay', orders, BRANCHES.map(b => `${b.name.replace('Hikari ','')} ${b.ordersToday}`).join(' · '))
+}
+
+/* Không còn chi nhánh nào nhận đơn = Mini App không đặt được món nào.
+   Chuyện đó phải hiện to ở đầu màn, đừng để chủ quán phát hiện qua việc khách gọi điện hỏi. */
+function renderAlert(){
+  const taking = BRANCHES.filter(b => branchIsTakingOrders(b)).length
+  document.getElementById('alert').innerHTML = taking ? '' : `
+    <div class="panel" style="border-color:var(--danger)">
+      <div class="row-flex" style="gap:10px;align-items:flex-start">
+        <i class="ti ti-alert-triangle" style="font-size:22px;color:var(--danger)"></i>
+        <div><b>Không chi nhánh nào đang nhận đơn.</b>
+          <div class="muted" style="font-size:13px">Mini App đang hiện màn “quán tạm nghỉ” cho mọi khách —
+            không ai đặt được món. Bật lại ít nhất một chi nhánh khi sẵn sàng.</div></div>
+      </div>
+    </div>`
+}
+
+function render(){
+  document.getElementById('list').innerHTML = BRANCHES.map(b => {
+    const st = branchState(b)
+    const services = Object.keys(SERVICE_LABEL).filter(k => b.services[k])
+    return `<div class="panel ${st === 'OPEN' ? '' : 'blocked'}">
+      <div class="row-flex" style="justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <h2 style="margin-bottom:2px">${b.name} ${badge('branch', st)}</h2>
+          <div class="muted" style="font-size:13px"><i class="ti ti-map-pin"></i> ${b.address}</div>
+          ${b.status === 'PAUSED' ? `<div class="schedule-banner" style="background:var(--danger-bg)">
+              <b>Tạm nghỉ:</b> ${b.pauseReason || 'không ghi lý do'}
+              ${b.pauseUntil ? ` · dự kiến mở lại <b>${b.pauseUntil}</b>` : ' · nghỉ tới khi bật lại tay'}
+            </div>` : ''}
+        </div>
+        <label class="row-flex" style="gap:8px;font-size:13px;white-space:nowrap">
+          <input type="checkbox" class="switch" ${b.status === 'OPEN' ? 'checked' : ''}
+            ${canEdit ? `onchange="toggleBranch('${b.id}', this.checked, this)"` : 'disabled title="Không đủ quyền"'}>
+          Nhận đơn
+        </label>
+      </div>
+
+      <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:2px 24px">
+        <div class="kv"><b>Giờ mở cửa</b><span>${b.open} – ${b.close}</span></div>
+        <div class="kv"><b>Hotline</b><span>${b.phone}</span></div>
+        <div class="kv"><b>Phục vụ</b><span>${services.map(k => SERVICE_LABEL[k]).join(' · ') || '—'}</span></div>
+        <div class="kv"><b>Bán kính giao</b><span>${b.services.delivery ? b.radiusKm + ' km' : 'không giao'}</span></div>
+        <div class="kv"><b>Toạ độ</b><span class="mono" style="font-size:12px">${b.lat}, ${b.lng}</span></div>
+        <div class="kv"><b>Đơn hôm nay</b><span>${b.ordersToday}</span></div>
+      </div>
+
+      <div class="action-row" style="margin-top:12px">
+        <button class="btn btn-outline btn-sm" ${canEdit ? `onclick="editBranch('${b.id}')"` : 'disabled'}>
+          <i class="ti ti-pencil"></i> Sửa thông tin</button>
+        <button class="btn btn-ghost btn-sm" onclick="previewApp('${b.id}')">
+          <i class="ti ti-device-mobile"></i> Khách đang thấy gì</button>
+      </div>
+    </div>`
+  }).join('')
+  renderKpis(); renderAlert()
+}
+
+/* Bật/tắt nhận đơn. Tắt thì HỎI LÝ DO — lý do hiện thẳng cho khách trong Mini App,
+   và là thứ ca sau đọc để biết vì sao quán đang tắt. */
+function toggleBranch(id, on, input){
+  const b = findBranch(id)
+  if(on){
+    b.status = 'OPEN'; b.pauseReason = ''; b.pauseUntil = ''
+    render()
+    return toast(`<i class="ti ti-check"></i> <b>${b.name}</b> đã nhận đơn lại — khách đặt được ngay`)
+  }
+  input.checked = true                       // giữ nguyên cho tới khi xác nhận trong modal
+  const last = openCount() === 1
+  const ov = modal({ persistent:true,
+    title: `Cho ${b.name} tạm nghỉ?`,
+    sub: 'Chi nhánh sẽ biến mất khỏi Mini App và không nhận đơn mới. Đơn đang chế biến / đang giao vẫn chạy tiếp.',
+    body: `
+      ${last ? `<div class="schedule-banner" style="background:var(--danger-bg)">
+        <b>Đây là chi nhánh cuối cùng đang mở.</b> Tắt nốt thì Mini App không đặt được đơn nào —
+        khách chỉ thấy màn “quán tạm nghỉ”.</div>` : ''}
+      <div class="field"><label for="bReason">Lý do (khách sẽ đọc được) <span style="color:var(--danger)">*</span></label>
+        <select id="bReason" onchange="document.getElementById('bReasonOther').style.display = this.value === 'other' ? '' : 'none'">
+          <option value="Hết nguyên liệu, quán mở lại sau">Hết nguyên liệu</option>
+          <option value="Quán nghỉ lễ">Nghỉ lễ</option>
+          <option value="Quán đang sửa chữa">Sửa chữa mặt bằng</option>
+          <option value="Sự cố điện/nước, quán tạm ngưng">Sự cố điện/nước</option>
+          <option value="Quán quá tải, tạm ngưng nhận đơn">Quá tải, tạm ngưng nhận đơn</option>
+          <option value="other">Lý do khác…</option>
+        </select></div>
+      <div class="field" id="bReasonOther" style="display:none"><label for="bReasonText">Ghi rõ lý do</label>
+        <input id="bReasonText" placeholder="VD: Bếp bảo trì, mở lại từ 15h"></div>
+      <div class="field"><label for="bUntil">Dự kiến mở lại (tuỳ chọn)</label>
+        <input id="bUntil" type="time"></div>`,
+    actions: `<button class="btn btn-outline" data-close>Không tắt</button>
+              <button class="btn btn-danger" onclick="confirmPause('${id}')">
+                <i class="ti ti-player-pause"></i> Cho tạm nghỉ</button>` })
+  ov.querySelectorAll('[data-close]').forEach(x => x.addEventListener('click', render))
+}
+
+function confirmPause(id){
+  const b = findBranch(id)
+  const sel = document.getElementById('bReason').value
+  const reason = sel === 'other' ? document.getElementById('bReasonText').value.trim() : sel
+  if(!reason) return toast('<i class="ti ti-alert-triangle"></i> Cần ghi lý do để khách biết vì sao quán tắt')
+  b.status = 'PAUSED'
+  b.pauseReason = reason
+  b.pauseUntil = document.getElementById('bUntil').value || ''
+  closeModal(); render()
+  toast(`<i class="ti ti-player-pause"></i> <b>${b.name}</b> đã tạm nghỉ — ẩn khỏi Mini App, đơn đang làm giữ nguyên`)
+}
+
+/* Thêm / sửa chi nhánh — persistent vì có nhập liệu. */
+function editBranch(id){
+  const b = id ? findBranch(id) : null
+  if(!b && !isOwner) return toast('<i class="ti ti-lock"></i> Chỉ <b>chủ quán</b> mới thêm chi nhánh')
+  modal({ persistent:true, lg:true,
+    title: b ? `Sửa chi nhánh — ${b.name}` : 'Thêm chi nhánh mới',
+    sub: 'Địa chỉ và toạ độ là thứ đơn vị giao dùng để tính phí và tìm đường tới lấy hàng.',
+    body: `
+      <div class="grid-2">
+        <div class="field"><label for="cName">Tên chi nhánh <span style="color:var(--danger)">*</span></label>
+          <input id="cName" value="${b ? b.name : ''}" placeholder="VD: Hikari Thành Thái"></div>
+        <div class="field"><label for="cPhone">Hotline chi nhánh</label>
+          <input id="cPhone" value="${b ? b.phone : ''}" placeholder="028 xxxx xxxx"></div>
+      </div>
+      <div class="field"><label for="cAddr">Địa chỉ đầy đủ <span style="color:var(--danger)">*</span></label>
+        <input id="cAddr" value="${b ? b.address : ''}" placeholder="134/1 Đ. Thành Thái, Hòa Hưng, Hồ Chí Minh"></div>
+      <div class="grid-2">
+        <div class="field"><label for="cLat">Vĩ độ (lat)</label>
+          <input id="cLat" value="${b ? b.lat : ''}" placeholder="10.7751709"></div>
+        <div class="field"><label for="cLng">Kinh độ (lng)</label>
+          <input id="cLng" value="${b ? b.lng : ''}" placeholder="106.664583"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label for="cOpen">Giờ mở cửa</label>
+          <input id="cOpen" type="time" value="${b ? b.open : '07:00'}"></div>
+        <div class="field"><label for="cClose">Giờ đóng cửa</label>
+          <input id="cClose" type="time" value="${b ? b.close : '22:00'}"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Hình thức phục vụ</label>
+          <div class="row-flex" style="padding-top:6px;flex-wrap:wrap">
+            ${Object.keys(SERVICE_LABEL).map(k => `<label class="row-flex" style="gap:6px;font-size:13px">
+              <input type="checkbox" class="switch" id="cSv-${k}" ${!b || b.services[k] ? 'checked' : ''}> ${SERVICE_LABEL[k]}</label>`).join('')}
+          </div></div>
+        <div class="field"><label for="cRadius">Bán kính giao (km)</label>
+          <input id="cRadius" type="number" step="1" value="${b ? b.radiusKm : 10}"></div>
+      </div>
+      <div class="schedule-banner">Bán kính chỉ để app báo trước “ngoài vùng giao” cho khách.
+        Phí và thời gian giao vẫn <b>do đơn vị giao trả lời</b> khi khách chọn địa chỉ (spec 03).</div>`,
+    actions: `<button class="btn btn-outline" data-close>Huỷ</button>
+              <button class="btn btn-primary" onclick="saveBranch('${id || ''}')">${b ? 'Lưu thay đổi' : 'Thêm chi nhánh'}</button>` })
+}
+
+function saveBranch(id){
+  const v = i => document.getElementById(i).value.trim()
+  const name = v('cName'), address = v('cAddr')
+  if(!name || !address) return toast('<i class="ti ti-alert-triangle"></i> Cần nhập tên chi nhánh và địa chỉ')
+  const services = { dine:0, takeaway:0, delivery:0 }
+  Object.keys(services).forEach(k => services[k] = document.getElementById('cSv-'+k).checked)
+  if(!services.dine && !services.takeaway && !services.delivery)
+    return toast('<i class="ti ti-alert-triangle"></i> Chi nhánh phải phục vụ ít nhất một hình thức')
+  const patch = {
+    name, address, phone: v('cPhone'),
+    lat: Number(v('cLat')) || 0, lng: Number(v('cLng')) || 0,
+    open: v('cOpen'), close: v('cClose'),
+    services, radiusKm: Number(v('cRadius')) || 0,
+  }
+  if(id){
+    Object.assign(findBranch(id), patch)
+    closeModal(); render()
+    toast(`<i class="ti ti-check"></i> Đã lưu <b>${name}</b>`)
+  } else {
+    BRANCHES.push(Object.assign({
+      id: 'CN' + String(BRANCHES.length + 1).padStart(2, '0'),
+      district: '', status: 'OPEN', pauseReason: '', pauseUntil: '', ordersToday: 0,
+    }, patch))
+    closeModal(); render()
+    toast(`<i class="ti ti-check"></i> Đã thêm <b>${name}</b> — chi nhánh hiện ngay trên Mini App`)
+  }
+}
+
+/* Xem trước đúng thứ khách nhìn thấy ở màn chọn chi nhánh của Mini App. */
+function previewApp(id){
+  const b = findBranch(id)
+  const st = branchState(b)
+  const line = st === 'OPEN'
+    ? '<span class="badge green">Đang mở</span> — khách chọn được và đặt món bình thường.'
+    : st === 'PAUSED'
+      ? `<span class="badge red">Tạm nghỉ</span> — chi nhánh <b>không hiện</b> trong danh sách chọn của khách${b.pauseReason ? `, kèm lý do “${b.pauseReason}”` : ''}.`
+      : `<span class="badge gray">Ngoài giờ mở cửa</span> — khách thấy chi nhánh nhưng không chọn được, kèm dòng “mở lại lúc ${b.open}”.`
+  modal({
+    title: `Khách đang thấy gì — ${b.name}`,
+    sub: 'Đối chiếu nhanh giữa cấu hình ở đây và màn chọn chi nhánh trong Mini App (spec 09).',
+    body: `<p>${line}</p>
+      <div class="kv"><b>Giờ mở cửa</b><span>${b.open} – ${b.close}</span></div>
+      <div class="kv"><b>Phục vụ</b><span>${Object.keys(SERVICE_LABEL).filter(k=>b.services[k]).map(k=>SERVICE_LABEL[k]).join(' · ') || '—'}</span></div>
+      <div class="schedule-banner">Đơn đã đặt trước đó không bị ảnh hưởng khi tắt chi nhánh — vẫn chạy tới khi hoàn tất.</div>`,
+    actions: `<button class="btn btn-outline" data-close>Đóng</button>
+              <a class="btn btn-primary" href="../menu.html" target="_blank"><i class="ti ti-external-link"></i> Mở Mini App</a>` })
+}
+
+render()
+</script>
+</body>
+</html>

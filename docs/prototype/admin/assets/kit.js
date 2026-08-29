@@ -55,6 +55,8 @@ const META = {
   channel: { ZNS: ['blue', 'ZNS (Zalo)'], OA: ['blue', 'Zalo OA'], IN_APP: ['gray', 'Trong Mini App'] },
   tier: { MEMBER: ['gray', 'Thành viên'], SILVER: ['blue', 'Bạc'], GOLD: ['amber', 'Vàng'] },
   role: { owner: ['amber', 'Chủ quán'], manager: ['blue', 'Quản lý'], staff: ['gray', 'Nhân viên'] },
+  // Chi nhánh (spec 09): PAUSED do người ở quán tắt, CLOSED là ngoài giờ mở cửa — hai chuyện khác nhau.
+  branch: { OPEN: ['green', 'Đang nhận đơn'], CLOSED: ['gray', 'Ngoài giờ mở cửa'], PAUSED: ['red', 'Tạm nghỉ'] },
 }
 
 /** Nhãn + màu badge cho một mã trạng thái. `kind` bắt buộc: cùng mã FAILED mang nghĩa
@@ -129,10 +131,12 @@ const ROLE_KEY = 'hikari_proto_role'
 // 'admin' ở đây là quyền MỞ màn tài khoản/nhật ký. Quản lý xem được nhật ký (cần cho
 // đối soát ca), nhưng tạo tài khoản và reset 2FA vẫn chỉ chủ quán — khoá trong chính màn đó.
 const ROLE_CAN = {
-  owner:   ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin'],
-  manager: ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin'],
+  owner:   ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin', 'branch'],
+  manager: ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin', 'branch'],
   staff:   ['orders', 'ship'],
 }
+// Tổng số nhóm quyền — tính ra thay vì viết số cứng, thêm quyền mới không phải nhớ sửa chỗ hiển thị.
+const PERM_TOTAL = ROLE_CAN.owner.length
 const USERS = {
   owner:   { name: 'Cô Hạnh',  email: 'chuquan@hikari.vn' },
   manager: { name: 'Minh Anh', email: 'quanly@hikari.vn' },

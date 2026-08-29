@@ -31,6 +31,7 @@ Vừa là bản demo UX để duyệt với chủ quán, vừa là **bảng ki�
 | [thong-bao.html](thong-bao.html) | 05 — Thông báo cho khách |
 | [sapo.html](sapo.html) | 06 — Đẩy đơn lên Sapo |
 | [menu.html](menu.html) → nút *Tiếp tục đặt hàng* | 08 — Đặt hàng: thông tin nhận hàng → phí giao → thanh toán → theo dõi đơn (dùng [`shared/checkout.js`](shared/checkout.js)) |
+| [menu.html](menu.html) → màn mở đầu | 09 — Chọn chi nhánh trước khi dùng app, đổi chi nhánh ở đầu màn menu (dùng [`shared/branches.js`](shared/branches.js) + [`shared/branch-picker.js`](shared/branch-picker.js)) |
 
 ## Dashboard quản trị — [`admin/`](admin/)
 
@@ -48,6 +49,7 @@ nên khi code FE thật chỉ việc thay markup bằng component — giao diệ
 | [admin/thong-bao.html](admin/thong-bao.html) | Soạn ZNS/OA/in-app, chọn đối tượng, xem trước trên điện thoại, ước tính chi phí, lịch sử gửi |
 | [admin/sapo.html](admin/sapo.html) | Trạng thái kết nối, nhật ký đồng bộ, thử lại đơn lỗi (kèm lý do lỗi thật) |
 | [admin/bao-cao.html](admin/bao-cao.html) | Doanh thu theo ngày, món bán chạy, khách hàng, kênh & cách thanh toán |
+| [admin/chi-nhanh.html](admin/chi-nhanh.html) | Danh sách chi nhánh, bật/tắt nhận đơn (bắt buộc ghi lý do), giờ mở cửa, hình thức phục vụ, bán kính giao |
 | [admin/tai-khoan.html](admin/tai-khoan.html) | Tài khoản admin, ma trận RBAC, reset 2FA, nhật ký thao tác |
 
 ### Mẹo khi duyệt

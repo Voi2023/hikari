@@ -32,6 +32,8 @@
   .app-head .brand-logo { font-size: 1.7rem; line-height: 1; }
   .app-head .brand-sub { font-size: .62rem; }
   .app-head .loc { font-size: .74rem; color: var(--muted); margin-top: 2px; }
+  .app-head .loc .chg { border: 1px solid var(--line); background: #fff; color: var(--matcha); font: inherit;
+    font-size: .68rem; font-weight: 700; border-radius: 999px; padding: 1px 9px; margin-left: 6px; cursor: pointer; }
   .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; position: sticky; top: 74px; background: var(--paper); z-index: 4; border-bottom: 1px solid var(--line); }
   .tabs button { white-space: nowrap; border: 1px solid var(--line); background: #fff; color: var(--ink); padding: 7px 14px; border-radius: 999px; font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
   .tabs button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
@@ -87,6 +89,8 @@
      Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
 <style id="hikari-gate">html{visibility:hidden!important}</style>
 <script src="../assets/gate.js"></script>
+<script src="shared/branches.js"></script>
+<script src="shared/branch-picker.js"></script>
 <script src="shared/checkout.js"></script>
 </head>
 <body>
@@ -96,7 +100,7 @@
     <div class="app-head">
       <div class="brand-logo">Hikari</div>
       <div class="brand-sub">vegetarian cafe</div>
-      <div class="loc">📍 Quận 10, TP.HCM · <span class="tag tag-veg">Thuần chay</span></div>
+      <div class="loc" id="branchLine"></div>
     </div>
     <div class="tabs" id="tabs"></div>
     <div class="list" id="list"></div>
@@ -360,10 +364,12 @@ function setMode(m){ mode=m; openCart(); }
 function startCheckout(){
   if(!cart.length){ alert("Giỏ hàng đang trống."); return; }
   closeSheet();
+  if(!branch){ BranchPicker.ensure(onBranch); return; }
   Checkout.start({
     lines: cart.map(c=>({ name:c.name, opt:c.opt, price:c.price, qty:c.qty })),
     mode,
     subtotal: subtotal(),
+    branch,
     onDone: placed => { if(placed){ cart = []; mode = "dine"; renderCartBar(); } }
   });
 }
@@ -373,8 +379,31 @@ function openSheet(){ document.getElementById("sheetBg").classList.add("open"); 
 function closeSheet(e){ if(e&&e.target.id!=="sheetBg"&&e.type==="click") { } document.getElementById("sheetBg").classList.remove("open"); }
 function toast(){ const b=document.getElementById("cartbar"); b.style.transition="none"; b.style.opacity=".6"; setTimeout(()=>{b.style.transition="opacity .3s";b.style.opacity="1";},60); }
 
+/* ==== Chi nhánh (spec 09) ====
+   Khách phải chọn chi nhánh trước khi xem menu — giờ mở cửa, vùng giao và món còn hàng
+   là của từng quán. Đổi chi nhánh giữa chừng thì làm mới giỏ: giỏ thuộc về một quán. */
+let branch = null;
+
+function renderBranchLine(){
+  document.getElementById("branchLine").innerHTML = branch
+    ? `📍 <strong>${branch.name}</strong> · ${branch.open}–${branch.close}
+       <button class="chg" onclick="changeBranch()">Đổi</button>`
+    : "";
+}
+function onBranch(b){
+  const changed = branch && branch.id !== b.id;
+  branch = b;
+  if(changed && cart.length){ cart = []; renderCartBar(); }
+  renderBranchLine();
+}
+function changeBranch(){
+  if(cart.length && !confirm("Đổi chi nhánh sẽ làm mới giỏ hàng (giỏ thuộc về một quán). Tiếp tục?")) return;
+  BranchPicker.open({ onPick: onBranch });
+}
+
 /* init */
 renderTabs(); renderList(); renderCartBar();
+BranchPicker.ensure(onBranch);
 </script>
 </body>
 </html>

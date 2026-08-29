@@ -17,6 +17,8 @@ const NAV = [
     { page: 'bao-cao',    icon: 'ti-chart-bar', label: 'Báo cáo',     perm: 'report' },
   ]},
   { group: 'Hệ thống', items: [
+    { page: 'chi-nhanh', icon: 'ti-building-store',  label: 'Chi nhánh',     perm: 'branch',
+      badge: () => BRANCHES.filter(b => b.status === 'PAUSED').length },
     { page: 'sapo',      icon: 'ti-plug-connected', label: 'Đồng bộ Sapo', perm: 'sapo' },
     { page: 'tai-khoan', icon: 'ti-shield-lock',    label: 'Tài khoản & nhật ký', perm: 'admin' },
   ]},
@@ -106,7 +108,7 @@ const Shell = {
       <label class="pick-item" style="align-items:flex-start">
         <input type="radio" name="role" value="${r}" ${r === role() ? 'checked' : ''} style="margin-top:4px">
         <div><b>${USERS[r].name}</b> ${badge('role', r)}
-          <div class="meta">${USERS[r].email} · ${ROLE_CAN[r].length}/8 nhóm quyền</div></div>
+          <div class="meta">${USERS[r].email} · ${ROLE_CAN[r].length}/${PERM_TOTAL} nhóm quyền</div></div>
       </label>`).join('')
     const ov = modal({
       title: 'Đổi vai trò đang mô phỏng',
