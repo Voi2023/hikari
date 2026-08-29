@@ -137,10 +137,22 @@ function askSwitch(to){
        <p class="sec-note">Cần đối tác đã kết nối thành công, nếu không khách sẽ không nhận được báo giá.</p>`
   const ov = modal({ title:`Đổi sang: ${t.label}?`, sub:t.desc, persistent:true,
     body: body + `<div class="field" style="margin-top:12px"><label>Lý do đổi (ghi vào nhật ký)</label>
-      <input id="swReason" placeholder="VD: đối tác báo hết tài xế giờ trưa"></div>`,
+      <input id="swReason" value="${defaultReason()}" placeholder="VD: đối tác báo hết tài xế giờ trưa">
+      <div class="mini-hint">Điền sẵn ngày đổi — gõ đè nếu muốn ghi rõ lý do.</div></div>`,
     actions:`<button class="btn btn-outline" data-close>Huỷ</button>
              <button class="btn btn-primary" onclick="doSwitch('${to}')">Xác nhận đổi chế độ</button>` })
   ov.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal))
+  // Bôi sẵn để gõ là thay được ngay — người có lý do thật không phải xoá tay trước.
+  const r = document.getElementById('swReason'); r.focus(); r.select()
+}
+
+/* Lý do mặc định = NGÀY ĐỔI. Ô này bắt buộc có nội dung, nhưng người trực quán thường
+   đổi chế độ giữa lúc bận; bắt gõ lý do mới cho đổi thì sẽ có người gõ bừa "a" cho xong.
+   Điền sẵn ngày để nhật ký luôn đọc được, ai muốn ghi rõ hơn thì gõ đè. */
+function defaultReason(){
+  const d = new Date()
+  return 'Đổi ngày ' + d.toLocaleDateString('vi-VN') + ' lúc ' +
+    d.toLocaleTimeString('vi-VN', { hour:'2-digit', minute:'2-digit' })
 }
 function doSwitch(to){
   const reason = (document.getElementById('swReason').value || '').trim()
