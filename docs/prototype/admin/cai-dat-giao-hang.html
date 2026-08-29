@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cài đặt giao hàng — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../../assets/gate.js"></script>
+<style>
+  /* Hai thẻ chọn chế độ — to, bấm cả thẻ, vì đây là công tắc đổi cách vận hành cả quán,
+     không phải một tuỳ chọn nhỏ giấu trong form. */
+  .mode-pick{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.mode-pick{grid-template-columns:1fr}}
+  .mode-card{position:relative;text-align:left;background:var(--surface);border:2px solid var(--border);
+    border-radius:var(--radius);padding:16px 18px;cursor:pointer;font:inherit;color:inherit;transition:border-color .15s}
+  .mode-card:hover{border-color:var(--brand)}
+  .mode-card.on{border-color:var(--brand);background:var(--brand-tint)}
+  .mode-card .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:19px;
+    background:var(--gray-bg);margin-bottom:10px}
+  .mode-card.on .ic{background:var(--brand);color:#fff}
+  .mode-card h3{margin:0 0 4px;font-size:15px}
+  .mode-card p{margin:0;font-size:12.8px;color:var(--muted)}
+  .mode-card .now{position:absolute;top:14px;right:14px}
+  .mode-card ul{margin:10px 0 0;padding-left:17px;font-size:12.5px;color:var(--muted)}
+  .mode-card li{margin:3px 0}
+  .prov-row.active{background:var(--brand-tint)}
+  .sec-note{font-size:12.4px;color:var(--muted);margin-top:8px}
+  .off-panel{opacity:.62}
+  .mini-hint{font-size:12px;color:var(--muted);margin-top:4px}
+  /* Xem trước phía khách: thu nhỏ khung điện thoại cho vừa cột phải */
+  .prev-wrap .phone{width:300px;border-width:8px;border-radius:32px}
+  .prev-wrap .phone-screen{height:auto;min-height:330px;padding:14px}
+  .prev-line{display:flex;justify-content:space-between;font-size:13px;margin:5px 0}
+  .prev-line.tot{font-weight:800;border-top:1px solid var(--border);margin-top:8px;padding-top:8px}
+  .prev-fee{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin:10px 0}
+  .prev-fee .big{font-size:22px;font-weight:800}
+  .prev-steps{list-style:none;margin:10px 0 0;padding:0;font-size:12.4px}
+  .prev-steps li{padding:5px 0 5px 20px;position:relative;color:var(--muted)}
+  .prev-steps li::before{content:"";position:absolute;left:4px;top:11px;width:8px;height:8px;border-radius:50%;background:var(--border)}
+  .prev-steps li.hi{color:var(--ink);font-weight:600}
+  .prev-steps li.hi::before{background:var(--brand)}
+  .split{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+  @media(max-width:1080px){.split{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main id="page">
+  <div data-ship-ribbon></div>
+
+  <div class="panel">
+    <h2>Chế độ giao hàng đang áp dụng</h2>
+    <p class="muted" style="margin:2px 0 14px;font-size:13px">
+      Hai chế độ khác nhau ở chỗ <b>ai chịu trách nhiệm giao</b> — không chỉ khác cách tính tiền.
+      Đổi chế độ có ghi nhật ký và ảnh hưởng ngay tới đơn đặt mới.
+    </p>
+    <div class="mode-pick" id="modePick"></div>
+    <div class="schedule-banner" id="modeWarn"></div>
+  </div>
+
+  <div class="split">
+    <div>
+      <div class="panel" id="autoPanel"></div>
+      <div class="panel" id="manualPanel"></div>
+      <div class="panel">
+        <h2>Chế độ này đổi những gì</h2>
+        <div class="table-scroll"><table class="data wide" id="cmpTable"></table></div>
+      </div>
+    </div>
+
+    <div class="panel prev-wrap">
+      <h2>Khách nhìn thấy gì</h2>
+      <p class="muted" style="font-size:12.5px;margin:2px 0 12px">Xem trước màn đặt hàng trong Mini App theo chế độ đang chọn.</p>
+      <div class="phone"><div class="phone-notch"></div><div class="phone-screen" id="preview"></div></div>
+    </div>
+  </div>
+</main>
+
+<script src="../shared/branches.js"></script>
+<script src="../shared/shipping-mode.js"></script>
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:"cai-dat-giao-hang", title:"Cài đặt giao hàng",
+  sub:"Chọn cách tính phí và đặt tài xế — spec 10",
+  actions:`<span class="chip" id="modeChip"></span>` })
+
+const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]))
+let CFG = shipCfg()
+
+/* ---- Thẻ chọn chế độ ---- */
+function renderMode(){
+  const m = shipMode()
+  const cards = [
+    { id:'AUTO', icon:'ti-plug-connected', title:'Tự động qua đối tác',
+      desc:'Nối API Grab / Ahamove / BE. Khách nhập địa chỉ là có phí thật, tài xế được đặt tự động.',
+      pts:['Phí do đối tác trả về — không tự đặt giá','Tự gọi tài xế đến lấy hàng','Trạng thái cập nhật qua webhook'] },
+    { id:'MANUAL', icon:'ti-writing', title:'Thủ công — bảng phí theo phường',
+      desc:'Quán tự giao. Phí tra theo phường đã khai. Người ở quán bấm trạng thái để khách theo dõi.',
+      pts:['Phí do quán tự đặt theo phường','KHÔNG có tài xế đối tác — quán tự đi giao','Trạng thái bấm tay trong màn Đơn hàng'] },
+  ]
+  document.getElementById('modePick').innerHTML = cards.map(c => `
+    <button class="mode-card ${m===c.id?'on':''}" onclick="askSwitch('${c.id}')">
+      ${m===c.id?'<span class="now badge green">Đang dùng</span>':''}
+      <div class="ic"><i class="ti ${c.icon}"></i></div>
+      <h3>${c.title}</h3><p>${c.desc}</p>
+      <ul>${c.pts.map(p=>`<li>${p}</li>`).join('')}</ul>
+    </button>`).join('')
+
+  const meta = shipModeMeta(m)
+  document.getElementById('modeChip').innerHTML = `<i class="ti ${meta.icon}"></i> ${meta.short}`
+  document.getElementById('modeWarn').innerHTML = m === 'MANUAL'
+    ? `<b>Đang ở chế độ thủ công.</b> Sẽ <u>không có tài xế nào tự đến lấy hàng</u> —
+       người trực quán phải tự sắp người giao và bấm trạng thái trong màn Đơn hàng.
+       Nền dashboard đậm hơn là để nhắc điều đó.`
+    : `<b>Đang ở chế độ tự động.</b> Đơn giao sẽ được gửi sang đối tác đang chọn để lấy phí và đặt tài xế.
+       Nếu đối tác lỗi, đơn <u>không</u> tự rơi sang thủ công — quán phải chủ động đổi chế độ ở đây.`
+}
+
+/* Đổi chế độ = xác nhận có chủ ý + ghi nhật ký. Không đổi bằng một cú bấm nhầm. */
+function askSwitch(to){
+  if(to === shipMode()) return
+  if(!can('ship')) return toast(`<i class="ti ti-lock"></i> Vai trò <b>${meta('role', role()).label}</b> không đổi được chế độ giao`)
+  const t = shipModeMeta(to)
+  const body = to === 'MANUAL'
+    ? `<div class="schedule-banner" style="margin-top:0">Sau khi đổi, đơn giao mới sẽ <b>không được gửi sang đối tác</b>.
+         Quán phải tự bố trí người giao và tự bấm trạng thái cho từng đơn.</div>
+       <p class="sec-note">Đơn <b>đang giao dở qua đối tác</b> vẫn chạy tiếp bình thường cho tới khi xong.</p>`
+    : `<div class="schedule-banner" style="margin-top:0">Đơn giao mới sẽ được gửi sang
+         <b>${esc((CFG.providers.find(p=>p.id===CFG.activeProvider)||{}).name || '—')}</b> để lấy phí và đặt tài xế.</div>
+       <p class="sec-note">Cần đối tác đã kết nối thành công, nếu không khách sẽ không nhận được báo giá.</p>`
+  const ov = modal({ title:`Đổi sang: ${t.label}?`, sub:t.desc, persistent:true,
+    body: body + `<div class="field" style="margin-top:12px"><label>Lý do đổi (ghi vào nhật ký)</label>
+      <input id="swReason" placeholder="VD: đối tác báo hết tài xế giờ trưa"></div>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="doSwitch('${to}')">Xác nhận đổi chế độ</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal))
+}
+function doSwitch(to){
+  const reason = (document.getElementById('swReason').value || '').trim()
+  if(!reason) return toast('<i class="ti ti-alert-triangle"></i> Nhập lý do để ghi nhật ký')
+  setShipMode(to)                       // đổi cờ + đổi màu nền ngay
+  AUDIT.unshift({ at:new Date().toISOString(), who:USERS[role()].name, role:role(),
+    action:`Đổi chế độ giao hàng → ${shipModeMeta(to).label}`, target:reason, ip:'113.161.x.24' })
+  closeModal(); render()
+  toast(`<i class="ti ti-check"></i> Đã chuyển sang <b>${shipModeMeta(to).label}</b>`)
+}
+
+/* ---- Chế độ 1: đối tác ---- */
+function renderAuto(){
+  const on = shipMode() === 'AUTO'
+  document.getElementById('autoPanel').className = 'panel' + (on ? '' : ' off-panel')
+  document.getElementById('autoPanel').innerHTML = `
+    <h2>1 · Đối tác giao hàng
+      ${on ? '<span class="badge green">Đang áp dụng</span>' : '<span class="badge gray">Chưa áp dụng</span>'}</h2>
+    <p class="muted" style="font-size:12.8px;margin:2px 0 12px">
+      Thêm được nhiều đối tác, chọn một cái để dùng. Khoá lưu ở máy chủ — màn này chỉ hiện 4 ký tự cuối.</p>
+    <div class="table-scroll"><table class="data wide">
+      <thead><tr><th>Đối tác</th><th>Môi trường</th><th>API key</th><th>Secret</th><th>Kết nối</th><th></th></tr></thead>
+      <tbody>${CFG.providers.map(p => `
+        <tr class="prov-row ${p.id===CFG.activeProvider?'active':''}">
+          <td><b>${esc(p.name)}</b>${p.id===CFG.activeProvider?' <span class="badge blue">Đang dùng</span>':''}
+              <div class="mini-hint">${esc(p.note)}</div></td>
+          <td>${p.env==='production'?'<span class="badge green">Thật</span>':'<span class="badge amber">Thử nghiệm</span>'}</td>
+          <td class="mono">${p.key ? esc(p.key.slice(0,10))+'…' : '<span class="muted">chưa nhập</span>'}</td>
+          <td class="mono">${p.secretTail ? '•••• '+esc(p.secretTail) : '<span class="muted">chưa nhập</span>'}</td>
+          <td>${p.connected?'<span class="badge green">Đã kết nối</span>':'<span class="badge gray">Chưa</span>'}</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-ghost btn-sm" onclick="editProvider('${p.id}')"><i class="ti ti-key"></i> Khoá</button>
+            <button class="btn btn-ghost btn-sm" onclick="testProvider('${p.id}')"><i class="ti ti-plug"></i> Kiểm tra</button>
+            ${p.id===CFG.activeProvider?'':`<button class="btn btn-outline btn-sm" onclick="useProvider('${p.id}')">Dùng</button>`}
+          </td></tr>`).join('')}</tbody></table></div>
+    <div class="action-row">
+      <button class="btn btn-outline btn-sm" onclick="editProvider()"><i class="ti ti-plus"></i> Thêm đối tác</button>
+    </div>
+    <hr class="divider">
+    <div class="field"><label>Đặt tài xế vào lúc nào</label>
+      <select onchange="setCfg('autoBookAt', this.value)">
+        <option value="PAID"  ${CFG.autoBookAt==='PAID'?'selected':''}>Ngay khi khách thanh toán xong</option>
+        <option value="READY" ${CFG.autoBookAt==='READY'?'selected':''}>Khi bếp báo món đã sẵn sàng (khuyến nghị)</option>
+      </select>
+      <div class="mini-hint">Gọi tài xế quá sớm thì tài xế phải chờ món; quá muộn thì khách chờ tài xế.</div>
+    </div>`
+}
+function useProvider(id){ CFG.activeProvider = id; saveShipCfg(CFG); render(); toast(`<i class="ti ti-check"></i> Dùng <b>${esc(CFG.providers.find(p=>p.id===id).name)}</b>`) }
+function setCfg(k,v){ CFG[k]=v; saveShipCfg(CFG) }
+
+function editProvider(id){
+  const p = CFG.providers.find(x=>x.id===id) || { id:'', name:'', env:'sandbox', key:'', secretTail:'', note:'' }
+  const ov = modal({ title: id?`Khoá API — ${p.name}`:'Thêm đối tác giao hàng', persistent:true,
+    sub:'Secret chỉ nhập, không đọc lại được. Bản thật lưu mã hoá ở máy chủ, không bao giờ xuống Mini App.',
+    body:`${id?'':`<div class="field"><label>Tên đối tác</label><input id="pName" placeholder="VD: Grab Express"></div>`}
+      <div class="field"><label>Môi trường</label><select id="pEnv">
+        <option value="sandbox" ${p.env==='sandbox'?'selected':''}>Thử nghiệm (sandbox)</option>
+        <option value="production" ${p.env==='production'?'selected':''}>Thật (production)</option></select></div>
+      <div class="field"><label>API key</label><input id="pKey" value="${esc(p.key)}" placeholder="dán key đối tác cấp"></div>
+      <div class="field"><label>API secret</label><input id="pSec" type="password" placeholder="${p.secretTail?'nhập lại để thay khoá cũ':'dán secret'}"></div>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="saveProvider('${id||''}')">Lưu khoá</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal))
+}
+function saveProvider(id){
+  const env = document.getElementById('pEnv').value
+  const key = document.getElementById('pKey').value.trim()
+  const sec = document.getElementById('pSec').value.trim()
+  if(id){
+    const p = CFG.providers.find(x=>x.id===id)
+    p.env = env; p.key = key
+    if(sec) p.secretTail = sec.slice(-4)
+    p.connected = !!(p.key && p.secretTail)
+  } else {
+    const name = document.getElementById('pName').value.trim()
+    if(!name) return toast('Nhập tên đối tác')
+    CFG.providers.push({ id:'p'+Date.now(), name, env, key, secretTail: sec?sec.slice(-4):'',
+      connected: !!(key && sec), note:'Đối tác thêm tay' })
+  }
+  saveShipCfg(CFG); closeModal(); render(); toast('<i class="ti ti-check"></i> Đã lưu khoá')
+}
+function testProvider(id){
+  const p = CFG.providers.find(x=>x.id===id)
+  if(!p.key || !p.secretTail){ p.connected=false; saveShipCfg(CFG); render()
+    return toast('<i class="ti ti-alert-triangle"></i> Chưa có key/secret để kiểm tra') }
+  toast('<i class="ti ti-loader"></i> Đang gọi thử báo giá…')
+  setTimeout(()=>{ p.connected = true; saveShipCfg(CFG); render()
+    toast(`<i class="ti ti-check"></i> ${esc(p.name)}: gọi thử <span class="mono">/quote</span> thành công`) }, 900)
+}
+
+/* ---- Chế độ 2: bảng phí phường ---- */
+function renderManual(){
+  const on = shipMode() === 'MANUAL'
+  document.getElementById('manualPanel').className = 'panel' + (on ? '' : ' off-panel')
+  document.getElementById('manualPanel').innerHTML = `
+    <h2>2 · Bảng phí theo phường
+      ${on ? '<span class="badge green">Đang áp dụng</span>' : '<span class="badge gray">Chưa áp dụng</span>'}</h2>
+    <p class="muted" style="font-size:12.8px;margin:2px 0 12px">
+      Khách chọn phường khi nhập địa chỉ → lấy đúng mức phí ở đây.
+      Phường <b>không</b> có trong bảng thì báo ngoài vùng, không đoán giá.</p>
+    <div class="table-scroll"><table class="data wide">
+      <thead><tr><th>Phường</th><th>Khu vực</th><th>Phí giao</th><th>Dự kiến</th><th></th></tr></thead>
+      <tbody>${CFG.wards.length ? CFG.wards.map((w,i)=>`
+        <tr><td><b>${esc(w.ward)}</b></td><td class="muted">${esc(w.area)}</td>
+          <td>${money(w.fee)}</td><td>~${w.eta} phút</td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-ghost btn-sm" onclick="editWard(${i})"><i class="ti ti-pencil"></i></button>
+            <button class="btn btn-ghost btn-sm" onclick="delWard(${i})"><i class="ti ti-trash"></i></button>
+          </td></tr>`).join('')
+        : `<tr><td colspan="5" class="empty-state">Chưa khai phường nào — khách sẽ không đặt giao được.</td></tr>`}
+      </tbody></table></div>
+    <div class="action-row">
+      <button class="btn btn-outline btn-sm" onclick="editWard()"><i class="ti ti-plus"></i> Thêm phường</button>
+    </div>
+    <hr class="divider">
+    <div class="field"><label>Miễn phí giao cho đơn từ (0 = không áp dụng)</label>
+      <input type="number" value="${CFG.freeFrom}" onchange="setCfg('freeFrom', +this.value||0)"></div>
+    <div class="field"><label>Câu báo khi phường chưa khai phí</label>
+      <input value="${esc(CFG.outOfAreaText)}" onchange="setCfg('outOfAreaText', this.value)"></div>
+    <div class="schedule-banner">Ở chế độ này trạng thái đơn <b>do người ở quán bấm</b> trong màn
+      <a href="don-hang.html"><u>Đơn hàng</u></a>: Đã nhận → Đang chế biến → <b>Đang giao</b> → Hoàn tất.
+      Khách thấy đúng các mốc đó trong Mini App.</div>`
+}
+function editWard(i){
+  const w = (i===undefined) ? { ward:'', area:'', fee:20000, eta:20 } : CFG.wards[i]
+  const ov = modal({ title: i===undefined?'Thêm phường':'Sửa phường '+w.ward, persistent:true,
+    body:`<div class="field"><label>Tên phường</label><input id="wName" value="${esc(w.ward)}" placeholder="VD: Hòa Hưng"></div>
+      <div class="field"><label>Khu vực (ghi chú)</label><input id="wArea" value="${esc(w.area)}" placeholder="VD: Quận 10 (cũ)"></div>
+      <div class="field"><label>Phí giao (đ)</label><input id="wFee" type="number" value="${w.fee}"></div>
+      <div class="field"><label>Thời gian dự kiến (phút)</label><input id="wEta" type="number" value="${w.eta}"></div>
+      <p class="sec-note">❓ Tên phường theo địa giới TP.HCM sau sáp nhập 2025 — cần đối chiếu lại với danh sách chính thức.</p>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="saveWard(${i===undefined?-1:i})">Lưu</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal))
+}
+function saveWard(i){
+  const row = { ward:document.getElementById('wName').value.trim(), area:document.getElementById('wArea').value.trim(),
+    fee:+document.getElementById('wFee').value||0, eta:+document.getElementById('wEta').value||0 }
+  if(!row.ward) return toast('Nhập tên phường')
+  if(i<0) CFG.wards.push(row); else CFG.wards[i]=row
+  saveShipCfg(CFG); closeModal(); render(); toast('<i class="ti ti-check"></i> Đã lưu phí phường')
+}
+function delWard(i){
+  const w = CFG.wards[i]
+  const ov = modal({ title:'Xoá phường '+w.ward+'?',
+    body:`<p class="sec-note">Khách ở phường này sẽ không đặt giao được nữa (báo ngoài vùng).</p>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-danger" onclick="CFG.wards.splice(${i},1);saveShipCfg(CFG);closeModal();render();toast('Đã xoá')">Xoá</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal))
+}
+
+/* ---- Bảng so sánh ---- */
+function renderCmp(){
+  const m = shipMode()
+  const rows = [
+    ['Phí giao tính từ', 'Đối tác trả về theo địa chỉ thật', 'Bảng phí phường quán tự khai'],
+    ['Ai đi giao', 'Tài xế của đối tác', 'Người của quán'],
+    ['Đặt tài xế', 'Tự động khi ' + (CFG.autoBookAt==='PAID'?'thanh toán xong':'bếp làm xong'), 'Quán tự sắp người'],
+    ['Trạng thái đơn', 'Đối tác đẩy về qua webhook', 'Người ở quán bấm trong màn Đơn hàng'],
+    ['Ngoài vùng', 'Đối tác báo không phục vụ', 'Phường chưa khai trong bảng phí'],
+    ['Cần cấu hình gì', 'API key + secret của đối tác', 'Danh sách phường + mức phí'],
+  ]
+  document.getElementById('cmpTable').innerHTML = `
+    <thead><tr><th></th>
+      <th${m==='AUTO'?' style="color:var(--brand)"':''}>Tự động ${m==='AUTO'?'· đang dùng':''}</th>
+      <th${m==='MANUAL'?' style="color:var(--brand)"':''}>Thủ công ${m==='MANUAL'?'· đang dùng':''}</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr><td class="muted">${r[0]}</td>
+      <td${m==='AUTO'?' style="font-weight:600"':''}>${r[1]}</td>
+      <td${m==='MANUAL'?' style="font-weight:600"':''}>${r[2]}</td></tr>`).join('')}</tbody>`
+}
+
+/* ---- Xem trước phía khách ---- */
+function renderPreview(){
+  const m = shipMode(), sub = 95000
+  let feeBox, addr, steps
+  if(m === 'AUTO'){
+    const q = quoteAuto(3.8)
+    addr = 'Công ty — 350 Lê Văn Sỹ, Quận 3'
+    feeBox = `<div class="prev-fee"><div class="big">${vnd(q.fee)}<span class="muted" style="font-size:12px"> phí giao</span></div>
+      <div class="muted" style="font-size:12px">🛵 ~${q.eta} phút · 📏 ${q.km} km · đối tác trả giá</div></div>`
+    steps = [['Quán xác nhận đơn',1],['Đang chế biến',1],['Tài xế đang đến lấy',1],['Đang giao đến bạn',0],['Đã giao',0]]
+  } else {
+    const q = quoteManual('Bàn Cờ', CFG)
+    addr = '350 Lê Văn Sỹ — Phường Bàn Cờ'
+    feeBox = q.state === 'ok'
+      ? `<div class="prev-fee"><div class="big">${vnd(q.fee)}<span class="muted" style="font-size:12px"> phí giao</span></div>
+         <div class="muted" style="font-size:12px">🛵 ~${q.eta} phút · theo phường <b>${esc(q.ward)}</b></div></div>`
+      : `<div class="prev-fee" style="background:var(--danger-bg);border-color:#f3c9c7">${esc(CFG.outOfAreaText)}</div>`
+    steps = [['Quán xác nhận đơn',1],['Đang chế biến',1],['Quán đang giao',0],['Đã giao',0]]
+  }
+  const fee = m==='AUTO' ? quoteAuto(3.8).fee : (quoteManual('Bàn Cờ',CFG).fee || 0)
+  document.getElementById('preview').innerHTML = `
+    <div style="font-family:var(--font-script);font-size:26px;line-height:1">Hikari</div>
+    <div style="color:var(--brand);font-size:9.5px;letter-spacing:2px;font-weight:700">VEGETARIAN CAFE</div>
+    <div style="font-size:12.5px;margin:12px 0 4px"><b>Giao đến</b></div>
+    <div class="muted" style="font-size:12.5px">📍 ${esc(addr)}</div>
+    ${feeBox}
+    <div class="prev-line"><span>Món (2 phần)</span><span>${vnd(sub)}</span></div>
+    <div class="prev-line"><span>Phí giao</span><span>${fee?vnd(fee):'—'}</span></div>
+    <div class="prev-line tot"><span>Tổng cộng</span><span>${vnd(sub+fee)}</span></div>
+    <div style="font-size:12.5px;margin:14px 0 2px"><b>Theo dõi đơn</b></div>
+    <ul class="prev-steps">${steps.map(s=>`<li class="${s[1]?'hi':''}">${s[0]}</li>`).join('')}</ul>
+    <div class="mini-hint" style="margin-top:10px">${m==='AUTO'
+      ? 'Mốc trạng thái do đối tác đẩy về — khách thấy tài xế đang tới.'
+      : 'Mốc trạng thái do quán bấm trong dashboard.'}</div>`
+}
+
+function render(){ CFG = shipCfg(); renderMode(); renderAuto(); renderManual(); renderCmp(); renderPreview(); applyShipTheme() }
+render()
+</script>
+</body>
+</html>

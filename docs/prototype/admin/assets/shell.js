@@ -19,6 +19,7 @@ const NAV = [
   { group: 'Hệ thống', items: [
     { page: 'chi-nhanh', icon: 'ti-building-store',  label: 'Chi nhánh',     perm: 'branch',
       badge: () => BRANCHES.filter(b => b.status === 'PAUSED').length },
+    { page: 'cai-dat-giao-hang', icon: 'ti-settings-bolt', label: 'Cài đặt giao hàng', perm: 'ship' },
     { page: 'sapo',      icon: 'ti-plug-connected', label: 'Đồng bộ Sapo', perm: 'sapo' },
     { page: 'tai-khoan', icon: 'ti-shield-lock',    label: 'Tài khoản & nhật ký', perm: 'admin' },
   ]},
@@ -68,6 +69,15 @@ const Shell = {
       </div>`)
     if (main) main.remove()
     try { if (sessionStorage.getItem('hikari_nav_rail') === '1') Shell.rail(true) } catch {}
+
+    /* Chế độ giao hàng (spec 10) đổi màu nền CẢ dashboard — người trực quán nhìn lướt là biết
+       đang tự động hay tự giao. Trang nào chưa nạp cờ thì nạp ở đây, để không phải sửa từng file. */
+    if (window.applyShipTheme) applyShipTheme()
+    else if (!document.querySelector('script[data-ship-mode]')) {
+      const s = document.createElement('script')
+      s.src = '../shared/shipping-mode.js'; s.dataset.shipMode = '1'
+      document.head.appendChild(s)
+    }
   },
 
   group(g, page) {

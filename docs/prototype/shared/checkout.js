@@ -43,11 +43,26 @@
 
   var USER = { name: 'Minh Anh', points: 320, phone: '0903 *** 456' };
 
+  /* Phương thức thanh toán — `modes` là các hình thức nhận hàng dùng được.
+     ĐƠN GIAO HÀNG CHỈ TRẢ TRƯỚC QUA ZALOPAY: tài xế là đối tác giao, không thu tiền hộ quán,
+     nên không có COD/chuyển khoản cho đơn giao. Tại quán và mang về thì khách trả ở quầy được. */
   var METHODS = [
-    { id: 'zalopay', name: 'ZaloPay', sub: 'Ví ZaloPay — quán đã có merchant', badge: 'Zalo<br>Pay', ready: true },
-    { id: 'vietqr', name: 'Chuyển khoản', sub: 'VietQR — ❓ chờ chủ quán xác nhận', badge: 'QR', ready: false },
-    { id: 'cod', name: 'Tiền mặt / COD', sub: 'Trả khi nhận / tại quầy — ❓ chờ chủ quán xác nhận', badge: '₫', ready: false }
+    { id: 'zalopay', name: 'ZaloPay', sub: 'Ví ZaloPay — quán đã có merchant', badge: 'Zalo<br>Pay',
+      modes: ['dine', 'takeaway', 'delivery'] },
+    { id: 'vietqr', name: 'Chuyển khoản', sub: 'VietQR — ❓ chờ chủ quán xác nhận', badge: 'QR',
+      modes: ['dine', 'takeaway'] },
+    { id: 'cod', name: 'Tiền mặt / COD', sub: 'Trả tại quầy khi nhận — ❓ chờ chủ quán xác nhận', badge: '₫',
+      modes: ['dine', 'takeaway'] }
   ];
+  function methodsFor(mode) {
+    return METHODS.filter(function (m) { return m.modes.indexOf(mode) >= 0; });
+  }
+  /* Đổi hình thức nhận hàng có thể làm phương thức đang chọn hết hợp lệ (chọn COD rồi quay lại
+     đổi sang giao hàng) — chuẩn hoá lại thay vì để đơn đi tiếp với phương thức không dùng được. */
+  function normalizeMethod() {
+    var ok = methodsFor(S.mode).some(function (m) { return m.id === S.method; });
+    if (!ok) S.method = methodsFor(S.mode)[0].id;
+  }
 
   /* Nhãn trạng thái — BẢN SAO của packages/ui-kit/src/meta/status-meta.ts (giống admin/assets/kit.js).
      Sửa một bên phải sửa cả hai: khách đọc nhãn trong app, nhân viên đọc nhãn trong dashboard —
@@ -289,8 +304,13 @@
         : '<div class="co-sub">Cần tối thiểu ' + POINT_BLOCK + ' điểm để đổi.</div>') +
       '</div>' + note('GET /api/v1/loyalty/me · POST /api/v1/loyalty/redeem') + '</div>';
 
+    var methods = methodsFor(S.mode);
     body += '<div class="co-sec"><h4>Phương thức thanh toán</h4>' +
-      METHODS.map(function (m) {
+      (S.mode === 'delivery'
+        ? '<p class="co-fine" style="margin:0 0 8px">Đơn <strong>giao hàng</strong> thanh toán trước qua ZaloPay — ' +
+          'tài xế của đối tác giao không thu tiền hộ quán.</p>'
+        : '') +
+      methods.map(function (m) {
         return '<div class="co-pm ' + (S.method === m.id ? 'on' : '') + '" onclick="Checkout.setMethod(\'' + m.id + '\')">' +
           '<span class="co-logo ' + m.id + '">' + m.badge + '</span>' +
           '<div class="co-pmb"><div>' + m.name + '</div><div class="co-sub">' + m.sub + '</div></div>' +
@@ -451,6 +471,7 @@
 
     setMode: function (m) {
       S.mode = m;
+      normalizeMethod();
       S.phoneShared = S.phoneShared || m === 'dine';
       if (m === 'delivery') { requestQuote(); } else { S.quote = { state: 'idle' }; render(); }
     },
@@ -498,7 +519,7 @@
     setNote: function (v) { S.note = v; },
     sharePhone: function () { S.phoneShared = true; render(); },
 
-    go: function (step) { S.step = step; S.paying = false; render(); },
+    go: function (step) { S.step = step; S.paying = false; if (step === 'pay') normalizeMethod(); render(); },
     backInfo: function () { S.step = 'info'; render(); },
     backPay: function () { S.step = 'pay'; S.paying = false; render(); },
     togglePoints: function () { S.usePoints = !S.usePoints; render(); },

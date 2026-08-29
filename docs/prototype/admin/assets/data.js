@@ -45,7 +45,9 @@ const MENU = [
 ]
 const PACKAGING_FEE = 5000   // phí hộp mang về — menu.json._meta.packaging_fee_takeaway
 
-/* ---- Đơn hàng ---- */
+/* ---- Đơn hàng ----
+   Quy tắc (spec 08 §5): đơn DELIVERY chỉ có method ZALOPAY — trả trước, tài xế không thu tiền hộ.
+   COD / BANK_TRANSFER chỉ dùng cho DINE_IN và TAKEAWAY. */
 const ORDERS = [
   { code: 'H1043', at: ago(4), customer: 'Minh Anh', phone: '0903 xxx 412', tier: 'GOLD',
     items: [['Tamago Ramen', 1, 50000], ['Cà phê muối hồng', 1, 29000]], ship: 27000,
@@ -65,7 +67,7 @@ const ORDERS = [
     shipment: 'ON_ROUTE', driver: 'Trần V. Sơn · 59H1-234.56', sync: 'SYNCED', note: '' },
   { code: 'H1039', at: ago(75), customer: 'Đức Huy', phone: '0912 xxx 108', tier: 'MEMBER',
     items: [['Spicy Tomyum', 1, 53000], ['Cà phê sữa', 1, 29000]], ship: 25000,
-    fulfilment: 'DELIVERY', status: 'COMPLETED', payment: 'PAID', method: 'COD',
+    fulfilment: 'DELIVERY', status: 'COMPLETED', payment: 'PAID', method: 'ZALOPAY',
     shipment: 'DELIVERED', driver: 'Lê T. Bình · 59P2-901.34', sync: 'FAILED', note: '' },
   { code: 'H1038', at: ago(94), customer: 'Ngọc Trâm', phone: '0977 xxx 640', tier: 'GOLD',
     items: [['Miso Udon', 2, 55000]], ship: 0,
