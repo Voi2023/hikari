@@ -59,6 +59,14 @@ const META = {
   branch: { OPEN: ['green', 'Đang nhận đơn'], CLOSED: ['gray', 'Ngoài giờ mở cửa'], PAUSED: ['red', 'Tạm nghỉ'] },
   // Voucher (spec 11): bốn kiểu "không dùng được" có cách xử lý khác hẳn nhau —
   // hết lượt thì nâng hạn mức, hết hạn thì gia hạn, tạm dừng thì bật lại, chưa tới ngày thì chờ.
+  // Máy in (spec 12): ba kiểu "không in được" cần ba hành động khác nhau —
+  // mất kết nối thì cắm lại dây, hết giấy thì thay cuộn, tắt là do người chủ động tắt.
+  printer: {
+    ONLINE:   ['green', 'Sẵn sàng'],
+    OFFLINE:  ['red',   'Mất kết nối'],
+    NO_PAPER: ['amber', 'Hết giấy'],
+    DISABLED: ['gray',  'Đang tắt'],
+  },
   voucher: {
     ACTIVE:    ['green', 'Đang chạy'],
     SCHEDULED: ['blue',  'Chưa tới ngày'],

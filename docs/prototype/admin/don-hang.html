@@ -203,13 +203,24 @@ function printKitchen(code){
 }
 function doKitchen(code){
   closeModal()
-  const n = Print.kitchen(code)
-  toast(`<i class="ti ti-printer"></i> Đã gửi ${n} phiếu bếp cho #${code} · đã ghi nhật ký`)
+  reportPrint(Print.kitchen(code), `phiếu bếp #${code}`)
 }
 function printReceipt(code){
   const o = ORDERS.find(x => x.code === code)
-  const n = Print.receipt(code)
-  toast(`<i class="ti ti-receipt"></i> Đã in ${n} liên hoá đơn #${code} — ${money(orderTotal(o))}đ`)
+  reportPrint(Print.receipt(code), `hoá đơn #${code} — ${money(orderTotal(o))}đ`)
+}
+
+/* Báo lại GIẤY RA Ở MÁY NÀO, không chỉ "đã in xong".
+   Ba kết cục khác nhau ba mức độ: in đúng máy (bình thường), in dự phòng sang máy khác
+   (phải nói, vì người ta sẽ đứng chờ giấy ở máy kia), và không in được (phải hét lên). */
+function reportPrint(r, what){
+  if(r.failed.length && !r.jobs.length)
+    return toast(`<i class="ti ti-alert-triangle"></i> <b>KHÔNG in được ${what}</b> — ${r.failed[0].reason}. 
+      Kiểm tra máy in ở màn <a href="in-phieu.html" style="color:#fff;text-decoration:underline">Mẫu in</a>.`, 7000)
+  const where = r.jobs.map(j => `${j.sheets} tờ → <b>${j.printer.name}</b>`).join(' · ')
+  const fb = r.jobs.find(j => j.fallbackFrom)
+  if(fb) return toast(`<i class="ti ti-alert-triangle"></i> ${where} — <b>IN DỰ PHÒNG</b> vì ${fb.reason}`, 7000)
+  toast(`<i class="ti ti-printer"></i> Đã gửi ${what}: ${where} · đã ghi nhật ký`)
 }
 
 function move(code, to){
@@ -224,8 +235,8 @@ function move(code, to){
   // Xác nhận đơn là lúc bếp cần biết — in ngay, đừng bắt người ở quầy nhớ bấm thêm một nút
   // giữa giờ cao điểm (spec 12 §5). Tắt được ở màn Mẫu in.
   if(to === 'CONFIRMED' && printCfg().autoKitchen){
-    const n = Print.kitchen(code)
-    setTimeout(() => toast(`<i class="ti ti-tools-kitchen-2"></i> Tự động in ${n} phiếu bếp cho #${code}`), 900)
+    const r = Print.kitchen(code)
+    setTimeout(() => reportPrint(r, `phiếu bếp #${code} (tự động)`), 900)
   }
 }
 function retry(code){

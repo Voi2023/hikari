@@ -9,16 +9,22 @@
  * Cùng một đơn, hai bản in, hai lúc khác nhau:
  *   xác nhận đơn → in phiếu bếp (tự động)     ·     khách thanh toán → in hoá đơn
  *
- * Máy in nhiệt khổ 80mm (mặc định) hoặc 58mm. Bản prototype in bằng trình duyệt
- * (window.print + @page). Bản thật xem spec 12 §7 — in qua agent ESC/POS là đường đúng,
- * vì hộp thoại in của trình duyệt không dùng được ở quầy lúc đông khách.
+ * QUÁN CÓ HAI MÁY IN (chốt với chủ quán):
+ *   P1 — đặt trong BẾP          → nhận phiếu bếp (cả món bếp lẫn món pha chế)
+ *   P2 — đặt ở QUẦY THU NGÂN    → nhận hoá đơn
+ * Khổ giấy thuộc về TỪNG MÁY, không phải một cấu hình chung: mỗi máy nạp sẵn một cuộn,
+ * đổi khổ ở màn hình không làm cuộn giấy trong máy hẹp lại.
+ *
+ * Bản prototype in bằng trình duyệt (window.print + @page). Bản thật xem spec 12 §8 —
+ * in qua agent ESC/POS là đường đúng, vì hộp thoại in của trình duyệt không dùng được
+ * ở quầy lúc đông khách và không chọn được máy nào in.
  */
 
 /* ==== Cấu hình in (dashboard sửa, lưu ở localStorage như các cấu hình prototype khác) ==== */
 const PRINT_KEY = 'hikari_print_cfg'
 
 const PRINT_DEFAULT = {
-  paper: '80',                 // '80' | '58' (mm)
+  paper: '80',                 // khổ mặc định khi thêm máy mới — khổ THẬT nằm ở từng máy in
   copies: 2,                   // số liên hoá đơn: 1 = chỉ khách · 2 = khách + lưu quầy
   autoKitchen: true,           // tự in phiếu bếp khi xác nhận đơn
   splitStation: true,          // tách phiếu bếp và phiếu quầy pha chế
@@ -36,6 +42,84 @@ function printCfg() {
 }
 function savePrintCfg(c) { try { localStorage.setItem(PRINT_KEY, JSON.stringify(c)) } catch {} }
 function resetPrintCfg() { try { localStorage.removeItem(PRINT_KEY) } catch {} }
+
+/* ==== MÁY IN ====
+   Máy in thuộc về MỘT CHI NHÁNH: đơn của Thành Thái không thể in ra máy đặt ở Nguyễn Trung Ngạn.
+   `status` ở prototype là để bấm thử tình huống; bản thật do agent tại quán báo về
+   (spec 12 §8) — và phải báo về thật, vì máy in bếp chết trong im lặng là lỗi tệ nhất ở đây. */
+const PRINTERS_KEY = 'hikari_printers'
+const ROUTES_KEY = 'hikari_print_routes'
+
+const PRINTERS_DEFAULT = [
+  { id: 'P1', name: 'Máy in bếp', branchId: 'CN01', place: 'Trong bếp',
+    kind: 'ESC_POS_LAN', address: '192.168.1.51:9100', paper: '80', enabled: true, status: 'ONLINE' },
+  { id: 'P2', name: 'Máy in quầy thu ngân', branchId: 'CN01', place: 'Quầy thu ngân',
+    kind: 'ESC_POS_USB', address: 'USB001', paper: '80', enabled: true, status: 'ONLINE' },
+]
+const PRINTER_KIND_LABEL = { ESC_POS_LAN: 'Mạng LAN (IP)', ESC_POS_USB: 'USB' }
+
+/* Định tuyến: mỗi loại bản in ra máy nào. Ba tuyến vì phiếu bếp có hai trạm —
+   quán hai máy thì cả hai trạm cùng về máy bếp, nhưng vẫn để tách được khi có máy thứ ba. */
+const ROUTES_DEFAULT = { KITCHEN_BEP: 'P1', KITCHEN_BAR: 'P1', RECEIPT: 'P2' }
+const ROUTE_LABEL = {
+  KITCHEN_BEP: 'Phiếu bếp — món bếp (mì, cơm)',
+  KITCHEN_BAR: 'Phiếu bếp — món pha chế (cà phê, trà)',
+  RECEIPT: 'Hoá đơn thanh toán',
+}
+
+function printers() {
+  try {
+    const raw = localStorage.getItem(PRINTERS_KEY)
+    return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(PRINTERS_DEFAULT))
+  } catch { return JSON.parse(JSON.stringify(PRINTERS_DEFAULT)) }
+}
+function savePrinters(list) { try { localStorage.setItem(PRINTERS_KEY, JSON.stringify(list)) } catch {} }
+function printRoutes() {
+  try {
+    const raw = localStorage.getItem(ROUTES_KEY)
+    return raw ? Object.assign({}, ROUTES_DEFAULT, JSON.parse(raw)) : Object.assign({}, ROUTES_DEFAULT)
+  } catch { return Object.assign({}, ROUTES_DEFAULT) }
+}
+function savePrintRoutes(r) { try { localStorage.setItem(ROUTES_KEY, JSON.stringify(r)) } catch {} }
+function resetPrinters() {
+  try { localStorage.removeItem(PRINTERS_KEY); localStorage.removeItem(ROUTES_KEY) } catch {}
+}
+const printerById = id => printers().find(p => p.id === id) || null
+const printerReady = p => !!p && p.enabled && p.status === 'ONLINE'
+
+/* Tuyến của một bản in: 'KITCHEN_BEP' | 'KITCHEN_BAR' | 'RECEIPT'. */
+function routeKey(kind, station) {
+  return kind === 'RECEIPT' ? 'RECEIPT' : (station === 'BAR' ? 'KITCHEN_BAR' : 'KITCHEN_BEP')
+}
+
+/* Chọn máy in cho một bản in, KÈM đường dự phòng.
+   Máy được gán mà hỏng thì thà in nhầm chỗ còn hơn không in: một phiếu bếp không ra tờ nào
+   nghĩa là khách ngồi chờ món chưa ai làm, và không ai biết cho tới lúc khách hỏi.
+   Trả { printer, fallbackFrom, reason } — `fallbackFrom` khác null nghĩa là đã đổi máy,
+   chỗ gọi PHẢI nói ra cho người bấm biết. */
+function resolvePrinter(o, kind, station) {
+  const key = routeKey(kind, station)
+  const wanted = printerById(printRoutes()[key])
+  if (printerReady(wanted) && wanted.branchId === o.branchId) {
+    return { printer: wanted, fallbackFrom: null, reason: '' }
+  }
+  const why = !wanted ? 'chưa gán máy'
+    : wanted.branchId !== o.branchId ? `máy “${wanted.name}” thuộc chi nhánh khác`
+    : !wanted.enabled ? `máy “${wanted.name}” đang tắt`
+    : wanted.status === 'NO_PAPER' ? `máy “${wanted.name}” hết giấy`
+    : `máy “${wanted.name}” mất kết nối`
+  // Dự phòng: bất kỳ máy nào còn sống của ĐÚNG chi nhánh đó.
+  const alt = printers().find(p => p.branchId === o.branchId && printerReady(p))
+  return alt
+    ? { printer: alt, fallbackFrom: wanted || { name: 'chưa gán' }, reason: why }
+    : { printer: null, fallbackFrom: null, reason: why + ' — không còn máy nào của chi nhánh này' }
+}
+
+/* Khổ giấy của một bản in = khổ của máy sẽ in ra nó. */
+function paperFor(o, kind, station) {
+  const r = resolvePrinter(o, kind, station)
+  return r.printer ? r.printer.paper : printCfg().paper
+}
 
 /* ==== Trạm làm món ====
    Quán có hai nơi làm: BẾP (mì, cơm) và QUẦY PHA CHẾ (cà phê, trà). In chung một phiếu
@@ -93,7 +177,7 @@ function whereText(o) {
    `opts.kind`:  'FULL' phiếu thường · 'ADD' phiếu bổ sung (chỉ món mới) · 'VOID' phiếu huỷ món.
    Ba loại phải nhìn khác nhau từ xa một mét, vì người bếp liếc chứ không đọc. */
 function kitchenTicketHtml(o, group, opts = {}) {
-  const cfg = printCfg()
+  const paper = opts.paper || paperFor(o, 'KITCHEN', group.station)
   const kind = opts.kind || 'FULL'
   const again = opts.reprint || 0
   const stLabel = group.all ? 'Bếp & quầy' : STATION_LABEL[group.station]
@@ -109,7 +193,8 @@ function kitchenTicketHtml(o, group, opts = {}) {
       <td class="k-qty">${qty}</td></tr>`
   }).join('')
 
-  return `<div class="pr pr-${cfg.paper}">
+  return `<div class="pr pr-${paper}">
+    ${opts.dest ? `<div class="pr-dest">→ ${pEsc(opts.dest)}</div>` : ''}
     ${kind === 'VOID' ? '<div class="k-stamp void">PHIẾU HUỶ MÓN</div>' : ''}
     ${kind === 'ADD' ? '<div class="k-stamp add">PHIẾU BỔ SUNG</div>' : ''}
     ${again > 0 ? `<div class="k-stamp again">IN LẠI · LẦN ${again + 1}</div>` : ''}
@@ -133,6 +218,7 @@ function kitchenTicketHtml(o, group, opts = {}) {
    và kế toán dò khi đối soát. `opts.copy` = liên thứ mấy (1 khách giữ, 2 quầy lưu). */
 function receiptHtml(o, opts = {}) {
   const cfg = printCfg()
+  const paper = opts.paper || paperFor(o, 'RECEIPT')
   const b = branchOf(o)
   const copy = opts.copy || 1
   const now = opts.at || Date.now()
@@ -155,7 +241,8 @@ function receiptHtml(o, opts = {}) {
       </tr>${ops}${note}`
   }).join('')
 
-  return `<div class="pr pr-${cfg.paper}">
+  return `<div class="pr pr-${paper}">
+    ${opts.dest ? `<div class="pr-dest">→ ${pEsc(opts.dest)}</div>` : ''}
     <div class="r-shop">${pEsc(b.name.toUpperCase())}</div>
     <div class="r-addr">${pEsc(b.address)}</div>
     <div class="r-addr">SĐT: ${pEsc(b.phone)}</div>
@@ -209,6 +296,8 @@ function printCss() {
   .pr-80{width:80mm;font-size:12px;}
   .pr-58{width:58mm;font-size:10.5px;}
   .pr table{width:100%;border-collapse:collapse;}
+  /* Dòng "máy nào in tờ này" — chỉ để người duyệt đối chiếu định tuyến, in thật thì bỏ đi được */
+  .pr-dest{font-size:.8em;color:#555;border-bottom:1px dotted #999;margin-bottom:3px;padding-bottom:2px;}
   .pr .c{text-align:center;} .pr .r{text-align:right;}
 
   /* --- Phiếu bếp --- */
@@ -256,19 +345,18 @@ function printCss() {
 /* ==== Gửi lệnh in ====
    Dùng iframe ẩn thay vì window.open: cửa sổ bật lên bị trình duyệt chặn mặc định, và
    nhân viên ở quầy sẽ không hiểu vì sao "bấm in mà không ra gì". */
-function sendToPrinter(html, title) {
+function sendToPrinter(html, title, paper) {
   const old = document.getElementById('hikari-print-frame')
   if (old) old.remove()
   const f = document.createElement('iframe')
   f.id = 'hikari-print-frame'
   f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden'
   document.body.appendChild(f)
-  const cfg = printCfg()
   const doc = f.contentWindow.document
   doc.open()
   doc.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>${pEsc(title || 'In')}</title>
     <style>
-      @page{size:${cfg.paper}mm auto;margin:0;}
+      @page{size:${paper || printCfg().paper}mm auto;margin:0;}
       html,body{margin:0;padding:0;background:#fff;}
       /* Mỗi liên / mỗi trạm là một tờ riêng — dính nhau thì phải cắt tay giữa ca đông khách. */
       .pr{page-break-after:always;}
@@ -280,30 +368,72 @@ function sendToPrinter(html, title) {
   f.contentWindow.print()
 }
 
-/* ==== API cho các màn dùng ==== */
+/* ==== API cho các màn dùng ====
+   Mỗi hàm trả về BÁO CÁO chứ không chỉ số tờ: người bấm phải biết giấy ra ở máy nào, và
+   biết ngay khi bản in phải đi đường dự phòng hoặc không in được. Nút bấm im lặng "thành công"
+   trong khi bếp không nhận được gì là kiểu hỏng tệ nhất của tính năng in. */
 const Print = {
-  /** In phiếu bếp — mỗi trạm một tờ. Trả về số tờ đã gửi để chỗ gọi báo lại cho người bấm. */
+  /** In phiếu bếp — mỗi trạm một tờ, gộp theo MÁY IN sẽ nhận.
+   *  Trả { sheets, jobs:[{printer, sheets, fallbackFrom, reason}], failed:[...] } */
   kitchen(code, opts = {}) {
     const o = ORDERS.find(x => x.code === code)
-    if (!o) return 0
-    const groups = splitByStation(o)
+    if (!o) return { sheets: 0, jobs: [], failed: [] }
     const again = printCountOf(code, 'kitchen')
-    const html = groups.map(g => kitchenTicketHtml(o, g, Object.assign({ reprint: again }, opts))).join('')
-    sendToPrinter(html, `Phiếu bếp #${code}`)
-    markPrinted(code, 'kitchen')
-    return groups.length
+    const jobs = new Map()      // printerId → { printer, html, sheets, fallbackFrom, reason }
+    const failed = []
+
+    splitByStation(o).forEach(g => {
+      const r = resolvePrinter(o, 'KITCHEN', g.station)
+      if (!r.printer) { failed.push({ station: g.station, reason: r.reason }); return }
+      const tk = kitchenTicketHtml(o, g, Object.assign(
+        { reprint: again, paper: r.printer.paper, dest: r.printer.name }, opts))
+      const cur = jobs.get(r.printer.id)
+      if (cur) { cur.html += tk; cur.sheets++ }
+      else jobs.set(r.printer.id, { printer: r.printer, html: tk, sheets: 1, fallbackFrom: r.fallbackFrom, reason: r.reason })
+    })
+
+    // Bản thật: mỗi job là một lệnh ESC/POS gửi riêng tới từng máy. Prototype in bằng trình duyệt
+    // nên gộp làm một tài liệu, mỗi tờ ghi rõ máy nhận ở dòng đầu.
+    const list = [...jobs.values()]
+    if (list.length) {
+      sendToPrinter(list.map(j => j.html).join(''), `Phiếu bếp #${code}`, list[0].printer.paper)
+      markPrinted(code, 'kitchen')
+    }
+    return { sheets: list.reduce((n, j) => n + j.sheets, 0), jobs: list, failed }
   },
-  /** In hoá đơn — in đủ số liên đã cấu hình. */
+
+  /** In hoá đơn — đủ số liên đã cấu hình, ra máy của tuyến RECEIPT. */
   receipt(code, opts = {}) {
     const o = ORDERS.find(x => x.code === code)
-    if (!o) return 0
-    const cfg = printCfg()
-    const n = cfg.copies
-    const html = Array.from({ length: n }, (_, i) => receiptHtml(o, Object.assign({ copy: i + 1 }, opts))).join('')
-    sendToPrinter(html, `Hoá đơn #${code}`)
+    if (!o) return { sheets: 0, jobs: [], failed: [] }
+    const r = resolvePrinter(o, 'RECEIPT')
+    if (!r.printer) return { sheets: 0, jobs: [], failed: [{ station: 'RECEIPT', reason: r.reason }] }
+    const n = printCfg().copies
+    const html = Array.from({ length: n }, (_, i) => receiptHtml(o, Object.assign(
+      { copy: i + 1, paper: r.printer.paper, dest: r.printer.name }, opts))).join('')
+    sendToPrinter(html, `Hoá đơn #${code}`, r.printer.paper)
     markPrinted(code, 'receipt')
-    return n
+    return { sheets: n, jobs: [{ printer: r.printer, sheets: n, fallbackFrom: r.fallbackFrom, reason: r.reason }], failed: [] }
   },
+
+  /** In thử một máy — để biết máy còn sống và nạp đúng khổ giấy, trước khi vào ca. */
+  test(printerId) {
+    const p = printerById(printerId)
+    if (!printerReady(p)) return false
+    sendToPrinter(`<div class="pr pr-${p.paper}">
+      <div class="r-title">PHIẾU IN THỬ</div>
+      <div class="r-kv"><span>Máy in</span><b>${pEsc(p.name)}</b></div>
+      <div class="r-kv"><span>Vị trí</span><span>${pEsc(p.place)}</span></div>
+      <div class="r-kv"><span>Kết nối</span><span>${PRINTER_KIND_LABEL[p.kind]} · ${pEsc(p.address || '—')}</span></div>
+      <div class="r-kv"><span>Khổ giấy</span><b>${p.paper}mm</b></div>
+      <div class="r-sep dash"></div>
+      <div class="r-foot">Tiếng Việt có dấu: Trà sữa ô long, mì Ramen, đậu hủ</div>
+      <div class="r-foot">${pDateTime(Date.now())}</div>
+    </div>`, `In thử ${p.name}`, p.paper)
+    return true
+  },
+
   countOf: printCountOf,
   kitchenTicketHtml, receiptHtml, splitByStation, printCss, printCfg, savePrintCfg, resetPrintCfg,
+  printers, savePrinters, printRoutes, savePrintRoutes, resetPrinters, resolvePrinter, paperFor,
 }

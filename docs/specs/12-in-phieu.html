@@ -119,12 +119,26 @@ footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted)
 <li><strong>Đơn chưa thanh toán mà in</strong> → đóng dấu <code>** CHỜ THANH TOÁN **</code> giữa hoá đơn, để không ai cầm nhầm tờ đó làm bằng chứng đã trả tiền.</li>
 </ul>
 
-<h2>6. Khổ giấy</h2>
+<h2>6. Máy in &amp; định tuyến</h2>
+<p><strong>Quán có hai máy in</strong> (đã chốt với chủ quán):</p>
+<div class="table-wrap"><table><thead><tr><th>Máy</th><th>Đặt ở</th><th>Nhận bản in</th><th>Kết nối</th></tr></thead><tbody>
+<tr><td><strong>P1 — Máy in bếp</strong></td><td>Trong bếp</td><td>Phiếu bếp (cả món bếp lẫn món pha chế)</td><td>Mạng LAN, <code>IP:9100</code></td></tr>
+<tr><td><strong>P2 — Máy in quầy thu ngân</strong></td><td>Quầy thu ngân</td><td>Hoá đơn thanh toán</td><td>USB vào máy quầy</td></tr>
+</tbody></table></div>
+<h3>Ba tuyến, không phải hai</h3>
+<p>Định tuyến khai theo <strong>ba tuyến</strong> — <em>phiếu bếp (món bếp)</em>, <em>phiếu bếp (món pha chế)</em>, <em>hoá đơn</em> — dù hiện chỉ có hai máy. Hai tuyến phiếu bếp cùng trỏ về P1; ngày quán mua máy thứ ba đặt ở quầy pha chế thì <strong>đổi một ô chọn</strong> là tách xong, không phải sửa code.</p>
+<p>Khi hai trạm dùng chung một máy, bật “tách trạm” nghĩa là <strong>hai tờ liên tiếp trên cùng một máy</strong> (bếp một tờ, pha chế một tờ) — không phải hai máy khác nhau. Màn cấu hình nói thẳng điều đó, vì người đọc “tách trạm” rất dễ tưởng là đã có hai máy.</p>
+<h3>Khổ giấy thuộc về từng máy</h3>
 <div class="table-wrap"><table><thead><tr><th>Khổ</th><th>Dùng khi</th><th>Lưu ý</th></tr></thead><tbody>
-<tr><td><strong>80mm</strong> (mặc định)</td><td>Máy in nhiệt phổ biến ở quán</td><td>Vùng in thật ~72mm</td></tr>
+<tr><td><strong>80mm</strong> (cả hai máy hiện tại)</td><td>Máy in nhiệt phổ biến ở quán</td><td>Vùng in thật ~72mm</td></tr>
 <tr><td><strong>58mm</strong></td><td>Máy nhỏ, máy cầm tay</td><td>Tên món dài xuống dòng nhiều — phải xem trước rồi mới chốt</td></tr>
 </tbody></table></div>
-<p>Bản xem trước ở dashboard dựng bằng <strong>đúng bộ CSS dùng khi in</strong> và đơn vị <code>mm</code>. Hai bộ CSS riêng cho xem trước và cho máy in là cách chắc chắn nhất để “xem một đằng, in một nẻo” — và lỗi chỉ lộ ra khi giấy đã chạy.</p>
+<p>Khổ giấy khai ở <strong>từng máy</strong>, không phải một cấu hình chung của quán: mỗi máy nạp sẵn một cuộn, và đổi con số trên màn hình không làm cuộn giấy trong máy hẹp lại. Bản in lấy khổ theo <strong>máy sẽ in ra nó</strong>.</p>
+<p>Bản xem trước ở dashboard dựng bằng <strong>đúng bộ CSS dùng khi in</strong> và đơn vị <code>mm</code>, và ghi rõ <strong>tờ này ra máy nào</strong>. Hai bộ CSS riêng cho xem trước và cho máy in là cách chắc chắn nhất để “xem một đằng, in một nẻo” — lỗi chỉ lộ ra khi giấy đã chạy.</p>
+<h3>Dự phòng khi một máy chết</h3>
+<blockquote><p><strong>Thà in nhầm chỗ còn hơn không in.</strong> Máy được gán mà mất kết nối / hết giấy / bị tắt thì bản in <strong>tự chuyển sang máy còn sống của cùng chi nhánh</strong>, và màn hình <strong>nói rõ</strong>: “2 tờ → Máy in quầy thu ngân — IN DỰ PHÒNG vì máy bếp mất kết nối”. Người bấm phải biết mà ra máy kia lấy giấy; im lặng đổi máy thì họ đứng chờ ở máy bếp.</p></blockquote>
+<p>Không còn máy nào của chi nhánh đó → <strong>báo lỗi to</strong>, không báo “đã in xong”. Nút in im lặng thành công trong khi bếp không nhận được gì là kiểu hỏng tệ nhất của tính năng này.</p>
+<p><strong>Máy in thuộc về một chi nhánh.</strong> Đơn của Thành Thái không in ra máy đặt ở Nguyễn Trung Ngạn. Chi nhánh chưa khai máy nào thì dashboard hiện băng đỏ ngay ở màn cấu hình — <span class="q">❓</span> xem §12.</p>
 
 <h2>7. API &amp; dữ liệu</h2>
 <h3>REST (envelope chuẩn)</h3>
@@ -132,7 +146,11 @@ footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted)
 <tr><td><code>POST</code></td><td><code>/api/v1/admin/orders/:code/print</code></td><td><code>{ kind: KITCHEN|ADDITION|VOID|RECEIPT, station?, copies? }</code> → tạo lệnh in. Quyền <code>orders</code>.</td></tr>
 <tr><td><code>GET</code></td><td><code>/api/v1/admin/print-jobs?status=QUEUED</code></td><td>Agent in tại quán lấy hàng đợi (hoặc nhận qua Socket.IO room <code>branch:{id}:printers</code>)</td></tr>
 <tr><td><code>PATCH</code></td><td><code>/api/v1/admin/print-jobs/:id</code></td><td><code>{ status: PRINTED|FAILED, error? }</code> — agent báo lại kết quả</td></tr>
-<tr><td><code>GET/PUT</code></td><td><code>/api/v1/admin/print-settings</code></td><td>Khổ giấy, số liên, chân hoá đơn, tự in phiếu bếp. Quyền <code>print</code>.</td></tr>
+<tr><td><code>GET/PUT</code></td><td><code>/api/v1/admin/print-settings</code></td><td>Số liên, chân hoá đơn, tự in phiếu bếp, tách trạm. Quyền <code>print</code>.</td></tr>
+<tr><td><code>GET/POST/PATCH</code></td><td><code>/api/v1/admin/printers</code></td><td>Khai máy in (tên, vị trí, chi nhánh, kết nối, khổ giấy). Quyền <code>print</code>.</td></tr>
+<tr><td><code>PUT</code></td><td><code>/api/v1/admin/print-routes</code></td><td>Gán tuyến → máy: <code>{ KITCHEN_BEP, KITCHEN_BAR, RECEIPT }</code></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/v1/admin/printers/:id/test</code></td><td>In thử một máy — kiểm máy còn sống và <strong>đúng khổ giấy</strong> trước ca</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/v1/admin/printers/:id/heartbeat</code></td><td>Agent báo trạng thái máy (<code>ONLINE</code> / <code>NO_PAPER</code> / lỗi)</td></tr>
 <tr><td><code>GET</code></td><td><code>/api/v1/admin/orders/:code/prints</code></td><td>Lịch sử in của một đơn — ai in, lúc nào, lần thứ mấy</td></tr>
 </tbody></table></div>
 <h3>Model Prisma (dự kiến)</h3>
@@ -170,14 +188,27 @@ model Receipt {
 
 model Printer {
   id String @id @default(cuid())
-  branchId String
-  station String                 // BEP | BAR | CASHIER
-  name String                    // "Máy in bếp tầng 1"
+  branchId String                // máy thuộc MỘT chi nhánh — đơn chi nhánh khác không in ra đây
+  name String                    // "Máy in bếp"
+  place String                   // "Trong bếp" — để người ở quán biết ra đâu lấy giấy
   kind String                    // ESC_POS_LAN | ESC_POS_USB
   address String?                // IP:port với máy LAN
-  paper String @default("80")
+  paper String @default("80")    // khổ giấy ĐANG NẠP trong máy này
   enabled Boolean @default(true)
+  status String @default("ONLINE")   // ONLINE | OFFLINE | NO_PAPER — agent tại quán cập nhật
+  lastSeenAt DateTime?               // im quá lâu = coi như mất kết nối
   @@map("printers")
+}
+
+/* Bản in nào ra máy nào. Tách khỏi Printer để đổi máy không phải sửa từng phiếu,
+   và để thêm máy thứ ba (quầy pha chế) chỉ là đổi một dòng dữ liệu. */
+model PrintRoute {
+  id String @id @default(cuid())
+  branchId String
+  route String                   // KITCHEN_BEP | KITCHEN_BAR | RECEIPT
+  printerId String
+  @@unique([branchId, route])
+  @@map("print_routes")
 }</code></pre></figure>
 <p><code>payload</code> lưu <strong>ảnh chụp nội dung lúc in</strong>, không phải tham chiếu tới đơn. Đơn sửa sau đó (đổi món, đổi giá) thì tờ giấy đã nằm trong tay khách vẫn phải tra lại được đúng như lúc in.</p>
 
@@ -204,6 +235,7 @@ model Printer {
 <h2>10. Edge case &amp; bảo mật</h2>
 <ul>
 <li><strong>Máy in bếp mất kết nối là sự cố im lặng — và là lỗi tệ nhất ở đây.</strong> Bếp không biết mình đang thiếu phiếu, khách ngồi chờ món chưa ai làm. Agent phải <strong>báo về dashboard</strong> và màn Đơn hàng hiện băng đỏ khi có lệnh in <code>QUEUED</code> quá 60 giây.</li>
+<li><strong>Máy được gán chết → chuyển máy dự phòng, và NÓI RA.</strong> Bản in đi sang máy còn sống của cùng chi nhánh kèm dòng cảnh báo trên màn hình; không còn máy nào thì báo lỗi to chứ không báo thành công.</li>
 <li><strong>Hết giấy giữa chừng</strong> → lệnh in giữ nguyên <code>QUEUED</code>, thay giấy xong in tiếp; không đánh dấu <code>PRINTED</code> khi chưa có xác nhận từ máy.</li>
 <li><strong>In lại phải hỏi xác nhận</strong> và đóng dấu — với phiếu bếp là món làm hai lần, với hoá đơn là hai tờ cùng một số tiền có thể bị dùng để đối soát hai lần.</li>
 <li><strong>Huỷ hoá đơn không xoá và không cấp lại số</strong> — đánh dấu <code>voidedAt</code>. Dãy số nhảy cóc là dấu hiệu kế toán sẽ hỏi.</li>
@@ -224,6 +256,10 @@ model Printer {
 <li><span class="box">☐</span>Hoá đơn khớp từng đồng với chi tiết đơn: topping, hộp mang về, phí giao, voucher, điểm.</li>
 <li><span class="box">☐</span>Trả tiền mặt → có dòng tiền khách đưa và tiền thừa; đơn chưa thanh toán → có dấu cảnh báo.</li>
 <li><span class="box">☐</span>Đổi khổ giấy 80 ⇄ 58mm: bản xem trước và bản in ra giống nhau, không mất cột nào.</li>
+<li><span class="box">☐</span>Phiếu bếp ra <strong>máy P1 trong bếp</strong>, hoá đơn ra <strong>máy P2 ở quầy</strong> — đúng theo bảng định tuyến.</li>
+<li><span class="box">☐</span>Rút dây máy in bếp → phiếu bếp <strong>tự in sang máy quầy</strong> kèm cảnh báo “IN DỰ PHÒNG”, không mất tờ nào.</li>
+<li><span class="box">☐</span>Tắt cả hai máy → bấm in <strong>báo lỗi</strong>, không báo “đã in xong”.</li>
+<li><span class="box">☐</span>Đổi khổ giấy của một máy → chỉ bản in ra máy đó đổi khổ, máy kia giữ nguyên.</li>
 <li><span class="box">☐</span>Rút dây máy in bếp → dashboard báo trong vòng 60 giây, không im lặng nuốt lệnh in.</li>
 <li><span class="box">☐</span>Nhân viên thu ngân in được hoá đơn nhưng <strong>không sửa được mẫu in</strong>.</li>
 <li><span class="box">☐</span>Tiếng Việt in ra <strong>đủ dấu</strong> trên máy in nhiệt thật.</li>
@@ -231,8 +267,9 @@ model Printer {
 
 <h2>12. Câu hỏi mở (<span class="q">❓</span> cần chủ quán xác nhận)</h2>
 <ol>
-<li><strong>Quán có mấy máy in</strong>, đặt ở đâu (một máy ở quầy, hay thêm một máy trong bếp)? Đây là câu quyết định có tách trạm được hay không.</li>
-<li>Khổ giấy máy đang dùng là <strong>80mm hay 58mm</strong>?</li>
+<li><strong>Chi nhánh Nguyễn Trung Ngạn có máy in riêng không?</strong> Hiện mới khai <strong>2 máy cho Thành Thái</strong> — đơn của chi nhánh kia đang không in được tờ nào. Đây là câu cần trả lời trước khi mở chi nhánh 2. <em>(Câu “quán có mấy máy” đã chốt: 2 máy — bếp và quầy thu ngân.)</em></li>
+<li>Khổ giấy hai máy đang nạp là <strong>80mm cả hai</strong> (đang khai vậy) hay có máy 58mm?</li>
+<li>Máy in bếp nối <strong>LAN hay USB</strong>? Đang khai LAN <code>192.168.1.51:9100</code> — cần IP thật. Nối USB thì máy đó phải cắm vào chính máy tính chạy agent.</li>
 <li>Hoá đơn in <strong>mấy liên</strong> — quán có giữ liên lưu cuối ca không?</li>
 <li>Có cần <strong>tem dán túi</strong> cho đơn mang về / giao hàng (tên khách + SĐT + mã đơn) không? Đây là mẫu thứ ba, chưa làm ở spec này.</li>
 <li>Có cần <strong>phiếu tạm tính</strong> đưa khách xem trước khi thanh toán không?</li>

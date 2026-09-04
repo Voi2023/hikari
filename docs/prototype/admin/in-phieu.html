@@ -31,19 +31,28 @@
   <div class="split">
     <div>
       <div class="panel">
-        <h2>Khổ giấy &amp; số liên</h2>
-        <div class="field"><label>Khổ giấy</label>
-          <select class="input" id="paper" onchange="setCfg('paper', this.value)">
-            <option value="80">Khổ giấy 80mm</option>
-            <option value="58">Khổ giấy 58mm</option>
-          </select>
-          <div class="hintbox">80mm là khổ máy in nhiệt phổ biến ở quán. 58mm nhỏ hơn —
-            tên món dài sẽ xuống dòng nhiều, xem trước bên phải trước khi chốt.</div></div>
-        <div class="field"><label>Số liên hoá đơn</label>
+        <h2>Máy in <span class="muted" style="font-weight:400;font-size:12.5px">— quán có 2 máy</span></h2>
+        <div id="printers"></div>
+        <div class="action-row">
+          <button class="btn btn-outline btn-sm" onclick="editPrinter()"><i class="ti ti-plus"></i> Thêm máy in</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Bản in nào ra máy nào</h2>
+        <div id="routes"></div>
+        <div id="routeWarn"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Số liên hoá đơn</h2>
+        <div class="field">
           <select class="input" id="copies" onchange="setCfg('copies', +this.value)">
             <option value="1">1 liên — chỉ đưa khách</option>
             <option value="2">2 liên — khách giữ + quầy lưu</option>
-          </select></div>
+          </select>
+          <div class="hintbox">Khổ giấy <b>không đặt ở đây</b> mà ở từng máy in — mỗi máy nạp sẵn
+            một cuộn, đổi trên màn hình không làm cuộn giấy trong máy hẹp lại.</div></div>
       </div>
 
       <div class="panel">
@@ -153,17 +162,145 @@ function setCfg(k, v){
   toast('<i class="ti ti-check"></i> Đã lưu cấu hình in')
 }
 function restore(){
-  resetPrintCfg(); CFG = printCfg(); fillForm(); render()
-  toast('<i class="ti ti-rotate"></i> Đã khôi phục mẫu in mặc định')
+  resetPrintCfg(); resetPrinters(); CFG = printCfg(); fillForm(); render()
+  toast('<i class="ti ti-rotate"></i> Đã khôi phục mẫu in và cấu hình máy in mặc định')
 }
 function fillForm(){
-  paper.value = CFG.paper; copies.value = CFG.copies
+  copies.value = CFG.copies
   autoKitchen.checked = CFG.autoKitchen; splitStation.checked = CFG.splitStation
   showWifi.checked = CFG.showWifi; footer.value = CFG.footer
   wifiName.value = CFG.wifiName; wifiPass.value = CFG.wifiPass
   const dis = !can('print')
-  ;['paper','copies','autoKitchen','splitStation','showWifi','footer','wifiName','wifiPass']
+  ;['copies','autoKitchen','splitStation','showWifi','footer','wifiName','wifiPass']
     .forEach(id => document.getElementById(id).disabled = dis)
+}
+
+/* ---- Máy in ---- */
+const printerState = p => !p.enabled ? 'DISABLED' : p.status
+
+function renderPrinters(){
+  const list = printers()
+  document.getElementById('printers').innerHTML = list.map(p => {
+    const b = BRANCHES.find(x => x.id === p.branchId)
+    return `<div class="panel" style="padding:12px;margin-bottom:10px">
+      <div class="row-flex" style="justify-content:space-between;align-items:flex-start;gap:8px">
+        <div><b>${escp(p.name)}</b> ${badge('printer', printerState(p))}
+          <div class="muted" style="font-size:12px">${escp(p.place)} · ${b ? escp(b.name) : '<span style="color:var(--danger)">chi nhánh không tồn tại</span>'}</div>
+          <div class="muted" style="font-size:12px">${PRINTER_KIND_LABEL[p.kind]} · <span class="mono">${escp(p.address || '—')}</span> · giấy <b>${p.paper}mm</b></div>
+        </div>
+        <label class="row-flex" style="gap:6px;font-size:12.5px;white-space:nowrap">
+          <input type="checkbox" class="switch" ${p.enabled ? 'checked' : ''}
+            ${can('print') ? `onchange="togglePrinter('${p.id}', this.checked)"` : 'disabled'}> Bật</label>
+      </div>
+      <div class="action-row" style="margin-top:8px">
+        <button class="btn btn-outline btn-sm" onclick="testPrint('${p.id}')"><i class="ti ti-printer"></i> In thử</button>
+        <button class="btn btn-ghost btn-sm" ${can('print') ? `onclick="editPrinter('${p.id}')"` : 'disabled'}><i class="ti ti-pencil"></i> Sửa</button>
+        <select class="input" style="width:auto;font-size:12px;padding:4px 8px"
+          ${can('print') ? `onchange="setStatus('${p.id}', this.value)"` : 'disabled'} title="Mô phỏng tình huống để duyệt">
+          ${['ONLINE','OFFLINE','NO_PAPER'].map(k =>
+            `<option value="${k}" ${p.status===k?'selected':''}>${meta('printer',k).label}</option>`).join('')}
+        </select>
+      </div>
+    </div>`
+  }).join('')
+
+  // Chi nhánh không có máy in nào = đơn của chi nhánh đó không in được tờ nào.
+  const noPrinter = BRANCHES.filter(b => !list.some(p => p.branchId === b.id && p.enabled))
+  if(noPrinter.length){
+    document.getElementById('printers').insertAdjacentHTML('beforeend',
+      `<div class="schedule-banner" style="background:var(--danger-bg)">
+        <b>${noPrinter.map(b => escp(b.name)).join(', ')}</b> chưa có máy in nào đang bật —
+        đơn của chi nhánh này sẽ không in được phiếu bếp lẫn hoá đơn.</div>`)
+  }
+}
+const escp = s => String(s ?? '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]))
+
+function togglePrinter(id, on){
+  const list = printers(); const p = list.find(x => x.id === id)
+  p.enabled = on; savePrinters(list); render()
+  toast(on ? `<i class="ti ti-check"></i> Đã bật ${escp(p.name)}`
+           : `<i class="ti ti-player-pause"></i> Đã tắt ${escp(p.name)} — bản in của máy này sẽ đi đường dự phòng`)
+}
+function setStatus(id, st){
+  const list = printers(); const p = list.find(x => x.id === id)
+  p.status = st; savePrinters(list); render()
+  toast(`<i class="ti ti-plug"></i> ${escp(p.name)}: <b>${meta('printer', st).label}</b> (mô phỏng)`)
+}
+function testPrint(id){
+  const p = printerById(id)
+  if(!Print.test(id))
+    return toast(`<i class="ti ti-alert-triangle"></i> ${escp(p.name)} — ${meta('printer', printerState(p)).label.toLowerCase()}, không in thử được`, 5000)
+  toast(`<i class="ti ti-printer"></i> Đã gửi phiếu in thử tới <b>${escp(p.name)}</b>`)
+}
+
+function editPrinter(id){
+  const list = printers()
+  const isNew = !id
+  const p = isNew
+    ? { id:'P'+(list.length+1), name:'', branchId: BRANCHES[0].id, place:'', kind:'ESC_POS_LAN',
+        address:'', paper:'80', enabled:true, status:'ONLINE' }
+    : list.find(x => x.id === id)
+  const ov = modal({ persistent:true, title: isNew ? 'Thêm máy in' : 'Sửa ' + escp(p.name),
+    sub:'Máy in thuộc về một chi nhánh — đơn của chi nhánh khác không in ra máy này được.',
+    body:`<div class="field"><label>Tên máy</label>
+        <input class="input" id="pName" value="${escp(p.name)}" placeholder="Máy in bếp"></div>
+      <div class="field"><label>Đặt ở đâu</label>
+        <input class="input" id="pPlace" value="${escp(p.place)}" placeholder="Trong bếp"></div>
+      <div class="field"><label>Chi nhánh</label>
+        <select class="input" id="pBranch">${BRANCHES.map(b =>
+          `<option value="${b.id}" ${p.branchId===b.id?'selected':''}>${escp(b.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Kết nối</label>
+        <select class="input" id="pKind">${Object.keys(PRINTER_KIND_LABEL).map(k =>
+          `<option value="${k}" ${p.kind===k?'selected':''}>${PRINTER_KIND_LABEL[k]}</option>`).join('')}</select></div>
+      <div class="field"><label>Địa chỉ máy (IP:cổng hoặc tên cổng USB)</label>
+        <input class="input" id="pAddr" value="${escp(p.address)}" placeholder="192.168.1.51:9100"></div>
+      <div class="field"><label>Khổ giấy đang nạp trong máy</label>
+        <select class="input" id="pPaper">
+          <option value="80" ${p.paper==='80'?'selected':''}>80mm</option>
+          <option value="58" ${p.paper==='58'?'selected':''}>58mm</option></select></div>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="savePrinter('${isNew?'':id}')">Lưu</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal))
+}
+function savePrinter(id){
+  const g = x => document.getElementById(x).value
+  const name = g('pName').trim()
+  if(!name) return toast('<i class="ti ti-alert-circle"></i> Chưa đặt tên máy in')
+  const list = printers()
+  const row = { id: id || 'P'+Date.now(), name, place: g('pPlace').trim(), branchId: g('pBranch'),
+    kind: g('pKind'), address: g('pAddr').trim(), paper: g('pPaper'),
+    enabled: id ? list.find(x=>x.id===id).enabled : true,
+    status: id ? list.find(x=>x.id===id).status : 'ONLINE' }
+  savePrinters(id ? list.map(x => x.id === id ? row : x) : [...list, row])
+  closeModal(); render(); toast(`<i class="ti ti-check"></i> Đã lưu <b>${escp(name)}</b>`)
+}
+
+/* ---- Định tuyến: bản in nào ra máy nào ---- */
+function renderRoutes(){
+  const R = printRoutes(), list = printers()
+  document.getElementById('routes').innerHTML = Object.keys(ROUTE_LABEL).map(k => `
+    <div class="field"><label>${ROUTE_LABEL[k]}</label>
+      <select class="input" ${can('print') ? `onchange="setRoute('${k}', this.value)"` : 'disabled'}>
+        ${list.map(p => `<option value="${p.id}" ${R[k]===p.id?'selected':''}>${escp(p.name)} · ${p.paper}mm</option>`).join('')}
+      </select></div>`).join('')
+
+  // Hai trạm dùng chung một máy là chuyện BÌNH THƯỜNG khi quán chỉ có 2 máy — nhưng phải nói ra,
+  // vì lúc đó "tách trạm" nghĩa là 2 tờ liên tiếp trên cùng một máy, không phải 2 máy khác nhau.
+  const shared = R.KITCHEN_BEP === R.KITCHEN_BAR
+  const cfg = printCfg()
+  document.getElementById('routeWarn').innerHTML = shared
+    ? `<div class="schedule-banner" style="background:var(--info-bg)">
+        Quán có <b>2 máy</b> nên phiếu bếp và phiếu pha chế cùng ra
+        <b>${escp((printerById(R.KITCHEN_BEP)||{}).name || '—')}</b>.
+        ${cfg.splitStation
+          ? 'Đang bật <b>tách trạm</b> → in <b>2 tờ liên tiếp</b> trên cùng máy đó (bếp một tờ, pha chế một tờ).'
+          : 'Đang tắt tách trạm → in <b>1 tờ gộp</b> cả món bếp lẫn món pha chế.'}
+        Có máy thứ ba đặt ở quầy pha chế thì đổi tuyến ở đây là tách được ngay.</div>`
+    : ''
+}
+function setRoute(k, v){
+  const R = printRoutes(); R[k] = v; savePrintRoutes(R); render()
+  toast(`<i class="ti ti-route"></i> ${ROUTE_LABEL[k]} → <b>${escp(printerById(v).name)}</b>`)
 }
 
 /* Chọn đơn để xem trước — mỗi đơn mẫu cho thấy một tình huống khác nhau
@@ -180,34 +317,56 @@ function renderTabs(){
 }
 function setTab(t){ TAB = t; render() }
 
+/* Nhãn máy nhận cho từng tờ trong bản xem trước. Xem trước mà không nói tờ này ra máy nào
+   thì cấu hình định tuyến chỉ là mấy cái ô chọn không ai kiểm chứng được. */
+function destLabel(r){
+  if(!r.printer) return `<span style="color:var(--danger)">KHÔNG IN ĐƯỢC — ${escp(r.reason)}</span>`
+  return escp(r.printer.name) + ' · ' + r.printer.paper + 'mm' +
+    (r.fallbackFrom ? ' · DỰ PHÒNG' : '')
+}
+
 function render(){
   CFG = printCfg()
-  renderTabs()
+  renderTabs(); renderPrinters(); renderRoutes()
   const o = curOrder()
   const stage = document.getElementById('stage')
   const ex = document.getElementById('explain')
 
   if(TAB === 'kitchen'){
     const groups = splitByStation(o)
+    const rs = groups.map(g => resolvePrinter(o, 'KITCHEN', g.station))
+    const bad = rs.filter(r => !r.printer).length
+    const fb = rs.find(r => r.fallbackFrom)
     ex.innerHTML = `<b>Phiếu bếp — không có tiền.</b> Đơn này ra <b>${groups.length} tờ</b>
-      (${groups.map(g => g.all ? 'gộp bếp &amp; quầy' : STATION_LABEL[g.station]).join(' · ')}).
-      Bếp cần mức đường/đá, topping và ghi chú; giá tiền là việc của thu ngân.`
-    stage.innerHTML = groups.map(g => `<div class="paper" data-label="${g.all ? 'Bếp &amp; quầy' : STATION_LABEL[g.station]} · ${CFG.paper}mm">
-        ${kitchenTicketHtml(o, g, { reprint: Print.countOf(o.code, 'kitchen') })}</div>`).join('')
+      (${groups.map((g,i) => `${g.all ? 'gộp bếp &amp; quầy' : STATION_LABEL[g.station]} → <b>${rs[i].printer ? escp(rs[i].printer.name) : '✗'}</b>`).join(' · ')}).
+      ${bad ? '<br><b style="color:var(--danger)">Có tờ không in được — khách sẽ ngồi chờ món chưa ai làm.</b>' : ''}
+      ${fb ? `<br><b>In dự phòng</b> vì ${escp(fb.reason)}: giấy ra ở <b>${escp(fb.printer.name)}</b>, nhớ ra đó lấy.` : ''}`
+    stage.innerHTML = groups.map((g,i) => `<div class="paper" data-label="${destLabel(rs[i])}">
+        ${kitchenTicketHtml(o, g, { reprint: Print.countOf(o.code, 'kitchen'),
+          paper: rs[i].printer ? rs[i].printer.paper : CFG.paper })}</div>`).join('')
   } else {
-    ex.innerHTML = `<b>Hoá đơn — cho thu ngân và khách.</b> In <b>${CFG.copies} liên</b>.
-      Tên quán, địa chỉ, SĐT lấy từ chi nhánh <b>${branchOf(o).name}</b> của đơn.`
+    const r = resolvePrinter(o, 'RECEIPT')
+    const paper = r.printer ? r.printer.paper : CFG.paper
+    ex.innerHTML = `<b>Hoá đơn — cho thu ngân và khách.</b> In <b>${CFG.copies} liên</b> ra
+      <b>${r.printer ? escp(r.printer.name) : '<span style="color:var(--danger)">không có máy nào</span>'}</b>.
+      Tên quán, địa chỉ, SĐT lấy từ chi nhánh <b>${escp(branchOf(o).name)}</b> của đơn.
+      ${r.fallbackFrom ? `<br><b>In dự phòng</b> vì ${escp(r.reason)}.` : ''}`
     stage.innerHTML = Array.from({length: CFG.copies}, (_,i) =>
-      `<div class="paper" data-label="Liên ${i+1}/${CFG.copies} · ${CFG.paper}mm">
-        ${receiptHtml(o, { copy: i+1 })}</div>`).join('')
+      `<div class="paper" data-label="Liên ${i+1}/${CFG.copies} · ${destLabel(r)}">
+        ${receiptHtml(o, { copy: i+1, paper })}</div>`).join('')
   }
 }
 
 function doPrint(){
   const o = curOrder()
-  const n = TAB === 'kitchen' ? Print.kitchen(o.code) : Print.receipt(o.code)
+  const r = TAB === 'kitchen' ? Print.kitchen(o.code) : Print.receipt(o.code)
   render()   // vẽ lại để thấy dấu "IN LẠI" xuất hiện đúng như khi in thật
-  toast(`<i class="ti ti-printer"></i> Đã gửi ${n} tờ tới máy in`)
+  if(r.failed.length && !r.jobs.length)
+    return toast(`<i class="ti ti-alert-triangle"></i> <b>Không in được</b> — ${escp(r.failed[0].reason)}`, 6000)
+  const where = r.jobs.map(j => `${j.sheets} tờ → <b>${escp(j.printer.name)}</b>`).join(' · ')
+  const fb = r.jobs.find(j => j.fallbackFrom)
+  toast(fb ? `<i class="ti ti-alert-triangle"></i> ${where} — <b>IN DỰ PHÒNG</b> vì ${escp(fb.reason)}`
+           : `<i class="ti ti-printer"></i> Đã gửi ${where}`, fb ? 6000 : 2600)
 }
 
 fillForm(); fillOrders(); render()
