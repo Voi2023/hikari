@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Topping & phần thêm — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../../assets/gate.js"></script>
+<style>
+  .lim-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px}
+  .lim-grid .field{margin:0}
+  .grp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .grp-head h3{margin:0;font-size:14.5px}
+  .mini-hint{font-size:12.2px;color:var(--muted)}
+  .prev-wrap .phone{width:300px;border-width:8px;border-radius:32px}
+  .prev-wrap .phone-screen{height:auto;min-height:300px;padding:14px}
+  .prev-row{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);
+    border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:13px;background:var(--surface)}
+  .prev-row.on{border-color:var(--brand);background:var(--brand-tint)}
+  .prev-q{display:flex;align-items:center;gap:7px;font-size:12.5px}
+  .prev-q span.n{min-width:12px;text-align:center;font-weight:700}
+  .split{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+  @media(max-width:1080px){.split{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main id="page">
+  <div class="panel">
+    <h2>Giới hạn chung cho một tô</h2>
+    <p class="muted" style="font-size:12.8px;margin:2px 0 12px">
+      Trần áp cho <strong>tổng mọi phần thêm</strong> của một món. Đặt <code>0</code> nếu không muốn giới hạn.
+      Giới hạn ở đây là để <strong>bếp làm kịp giờ cao điểm</strong>, không phải để hạn chế khách tiêu tiền.</p>
+    <div class="lim-grid">
+      <div class="field"><label>Tối đa phần thêm / tô</label>
+        <input type="number" min="0" id="maxPerDish" onchange="setLimit(this.value)"></div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div id="groups"></div>
+    <div class="panel prev-wrap">
+      <h2>Khách nhìn thấy gì</h2>
+      <p class="muted" style="font-size:12.5px;margin:2px 0 12px">Bảng chọn khi khách bấm thêm một món mì.</p>
+      <div class="phone"><div class="phone-notch"></div><div class="phone-screen" id="preview"></div></div>
+      <div class="action-row"><button class="btn btn-ghost btn-sm" onclick="resetPreview()">
+        <i class="ti ti-refresh"></i> Đặt lại thử nghiệm</button></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Ghi chú</h2>
+    <ul style="font-size:13px;margin:0;padding-left:18px">
+      <li>Bảng giá này <strong>dùng chung</strong> với “Tô tự chọn” trong Mini App — sửa ở đây là cả hai chỗ đổi theo.</li>
+      <li>Nước dùng thêm vào món cố định tính theo <strong>1 chén</strong>; giá “1 phần” chỉ dùng khi khách tự dựng tô.</li>
+      <li>Giới hạn được kiểm <strong>cả ở máy chủ</strong> khi tạo đơn — không tin số lượng client gửi lên.</li>
+    </ul>
+  </div>
+</main>
+
+<script src="../shared/branches.js"></script>
+<script src="../shared/extras-config.js"></script>
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:"cai-dat-topping", title:"Topping & phần thêm",
+  sub:"Giá và giới hạn số lượng phần thêm — spec 01",
+  actions:`<button class="btn btn-outline btn-sm" onclick="restoreDefault()">
+             <i class="ti ti-rotate"></i> Khôi phục mặc định</button>` })
+
+const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]))
+let CFG = extrasCfg()
+let PQ = {}   // số lượng đang thử ở khung xem trước
+
+function renderLimits(){ document.getElementById('maxPerDish').value = CFG.limits.maxPerDish }
+function setLimit(v){
+  CFG.limits.maxPerDish = Math.max(0, +v||0); saveExtrasCfg(CFG); render()
+  toast('<i class="ti ti-check"></i> Đã lưu giới hạn chung')
+}
+
+function renderGroups(){
+  document.getElementById('groups').innerHTML = CFG.groups.map((g,gi)=>`
+    <div class="panel">
+      <div class="grp-head">
+        <div><h3>${esc(g.title)} <span class="badge gray">${g.choices.length} loại</span></h3>
+          <div class="mini-hint">${g.broth?'Có 2 mức giá: 1 phần (khi tự dựng tô) và 1 chén (khi thêm vào món cố định)':'Tính theo phần'}</div></div>
+        <div class="row-flex" style="gap:8px">
+          <label class="mini-hint">Tối đa/loại
+            <input class="input" style="width:64px;margin-left:6px" type="number" min="0" value="${g.maxPerItem}"
+              onchange="setGroupLimit(${gi},'maxPerItem',this.value)"></label>
+          <label class="mini-hint">Tối đa nhóm
+            <input class="input" style="width:64px;margin-left:6px" type="number" min="0" value="${g.maxTotal}"
+              onchange="setGroupLimit(${gi},'maxTotal',this.value)"></label>
+        </div>
+      </div>
+      <div class="table-scroll"><table class="data wide">
+        <thead><tr><th>Tên</th>${g.broth?'<th>Giá 1 phần</th><th>Giá 1 chén</th>':'<th>Giá</th>'}<th></th></tr></thead>
+        <tbody>${g.choices.map((c,ci)=>`
+          <tr><td><b>${esc(c.name)}</b></td>
+            ${g.broth
+              ? `<td>${money(c.serving)}</td><td>${money(c.bowl)}</td>`
+              : `<td>${money(c.price)}</td>`}
+            <td style="white-space:nowrap">
+              <button class="btn btn-ghost btn-sm" onclick="editChoice(${gi},${ci})"><i class="ti ti-pencil"></i></button>
+              <button class="btn btn-ghost btn-sm" onclick="delChoice(${gi},${ci})"><i class="ti ti-trash"></i></button>
+            </td></tr>`).join('')}
+        </tbody></table></div>
+      <div class="action-row">
+        <button class="btn btn-outline btn-sm" onclick="editChoice(${gi})"><i class="ti ti-plus"></i> Thêm loại</button>
+      </div>
+    </div>`).join('')
+}
+function setGroupLimit(gi,k,v){
+  CFG.groups[gi][k] = Math.max(0, +v||0); saveExtrasCfg(CFG); render()
+  toast('<i class="ti ti-check"></i> Đã lưu giới hạn nhóm')
+}
+function editChoice(gi,ci){
+  const g = CFG.groups[gi]
+  const c = (ci===undefined) ? { name:'', price:5000, serving:15000, bowl:10000 } : g.choices[ci]
+  const ov = modal({ title:(ci===undefined?'Thêm loại — ':'Sửa — ')+g.title, persistent:true,
+    body:`<div class="field"><label>Tên</label><input id="cName" value="${esc(c.name)}" placeholder="VD: Trứng (nửa trái)"></div>`+
+      (g.broth
+        ? `<div class="field"><label>Giá 1 phần (đ)</label><input id="cServing" type="number" value="${c.serving||0}"></div>
+           <div class="field"><label>Giá 1 chén (đ)</label><input id="cBowl" type="number" value="${c.bowl||0}"></div>`
+        : `<div class="field"><label>Giá (đ)</label><input id="cPrice" type="number" value="${c.price||0}"></div>`),
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="saveChoice(${gi},${ci===undefined?-1:ci})">Lưu</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal))
+}
+function saveChoice(gi,ci){
+  const g = CFG.groups[gi]
+  const name = document.getElementById('cName').value.trim()
+  if(!name) return toast('Nhập tên')
+  const row = g.broth
+    ? { name, serving:+document.getElementById('cServing').value||0, bowl:+document.getElementById('cBowl').value||0 }
+    : { name, price:+document.getElementById('cPrice').value||0 }
+  if(ci<0) g.choices.push(row); else g.choices[ci]=row
+  saveExtrasCfg(CFG); closeModal(); render(); toast('<i class="ti ti-check"></i> Đã lưu')
+}
+function delChoice(gi,ci){
+  const c = CFG.groups[gi].choices[ci]
+  const ov = modal({ title:`Xoá “${c.name}”?`,
+    body:`<p class="muted" style="font-size:13px">Khách sẽ không thêm được loại này nữa. Đơn cũ đã có nó vẫn giữ nguyên.</p>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-danger" onclick="CFG.groups[${gi}].choices.splice(${ci},1);saveExtrasCfg(CFG);closeModal();render();toast('Đã xoá')">Xoá</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal))
+}
+function restoreDefault(){
+  const ov = modal({ title:'Khôi phục bảng mặc định?',
+    body:`<p class="muted" style="font-size:13px">Đưa giá và giới hạn về đúng bảng trích từ ảnh menu của quán.</p>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="resetExtrasCfg();closeModal();CFG=extrasCfg();render();toast('Đã khôi phục mặc định')">Khôi phục</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal))
+}
+
+/* ---- Xem trước: bấm thử để thấy đúng chỗ khách bị chặn ---- */
+function resetPreview(){ PQ={}; renderPreview() }
+function pStep(gi,ci,d){
+  const g=CFG.groups[gi], k=gi+':'+ci, cur=PQ[k]||0, next=cur+d
+  if(next<0) return
+  const grpTotal = g.choices.reduce((n,_,i)=>n+(PQ[gi+':'+i]||0),0)
+  const all = Object.values(PQ).reduce((a,b)=>a+b,0)
+  if(d>0){
+    if(g.maxPerItem && next>g.maxPerItem)      return toast(`<i class="ti ti-hand-stop"></i> Tối đa ${g.maxPerItem} × ${esc(g.choices[ci].name)}`)
+    if(g.maxTotal && grpTotal+1>g.maxTotal)     return toast(`<i class="ti ti-hand-stop"></i> ${esc(g.title)}: tối đa ${g.maxTotal} phần`)
+    if(CFG.limits.maxPerDish && all+1>CFG.limits.maxPerDish) return toast(`<i class="ti ti-hand-stop"></i> Tối đa ${CFG.limits.maxPerDish} phần thêm / tô`)
+  }
+  PQ[k]=next; renderPreview()
+}
+function renderPreview(){
+  const base = 50000
+  const chosen = []
+  let extra = 0
+  CFG.groups.forEach((g,gi)=>g.choices.forEach((c,ci)=>{
+    const q=PQ[gi+':'+ci]||0
+    if(q){ chosen.push(c.name+(q>1?` ×${q}`:'')); extra += (g.broth?c.bowl:c.price)*q }
+  }))
+  const n = Object.values(PQ).reduce((a,b)=>a+b,0)
+  document.getElementById('preview').innerHTML = `
+    <div style="font-weight:700;font-size:14px">Tamago Ramen</div>
+    <div class="muted" style="font-size:11.5px;margin-bottom:8px">Món cố định · ${vnd(base)}đ</div>
+    ${CFG.groups.map((g,gi)=>`
+      <div style="font-size:12px;font-weight:700;margin:9px 0 5px">${esc(g.title)}
+        <span class="muted" style="font-weight:400">· tối đa ${g.maxPerItem}/loại · ${g.maxTotal} phần</span></div>
+      ${g.choices.map((c,ci)=>{const q=PQ[gi+':'+ci]||0;return `
+        <div class="prev-row ${q?'on':''}">
+          <span>${esc(c.name)}<span class="muted" style="font-size:11px"> +${vnd(g.broth?c.bowl:c.price)}đ</span></span>
+          <span class="prev-q">
+            <button class="btn btn-ghost btn-sm" style="padding:1px 7px" onclick="pStep(${gi},${ci},-1)">−</button>
+            <span class="n">${q}</span>
+            <button class="btn btn-ghost btn-sm" style="padding:1px 7px" onclick="pStep(${gi},${ci},1)">+</button>
+          </span></div>`}).join('')}`).join('')}
+    <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px;font-size:12.5px">
+      <div class="muted">${n? n+' phần thêm'+(CFG.limits.maxPerDish?` / tối đa ${CFG.limits.maxPerDish}`:''):'Chưa thêm gì'}</div>
+      ${chosen.length?`<div class="muted" style="font-size:11.5px">${esc(chosen.join(' · '))}</div>`:''}
+      <div style="display:flex;justify-content:space-between;font-weight:800;margin-top:6px">
+        <span>Tạm tính</span><span>${vnd(base+extra)}đ</span></div>
+    </div>`
+}
+
+function render(){ CFG = extrasCfg(); renderLimits(); renderGroups(); renderPreview() }
+render()
+</script>
+</body>
+</html>

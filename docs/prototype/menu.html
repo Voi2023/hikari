@@ -61,6 +61,12 @@
   .opt input { accent-color: var(--matcha); }
   .broth-mode { display: flex; gap: 6px; }
   .broth-mode label { font-size: .72rem; border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; cursor: pointer; }
+  .stepper { display: flex; align-items: center; gap: 8px; }
+  .stepper button { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--line);
+    background: #fff; font-size: 1rem; line-height: 1; cursor: pointer; }
+  .stepper b { min-width: 14px; text-align: center; font-size: .9rem; }
+  .warn-line { display: none; background: #fbe9e8; color: var(--chili); font-size: .76rem;
+    font-weight: 600; border-radius: 8px; padding: 7px 10px; margin: 4px 0 8px; }
   /* sheet */
   .sheet-bg { position: absolute; inset: 0; background: rgba(0,0,0,.35); display: none; z-index: 20; }
   .sheet-bg.open { display: block; }
@@ -91,6 +97,7 @@
 <script src="../assets/gate.js"></script>
 <script src="shared/branches.js"></script>
 <script src="shared/branch-picker.js"></script>
+<script src="shared/extras-config.js"></script>
 <script src="shared/checkout.js"></script>
 </head>
 <body>
@@ -153,30 +160,22 @@ const MENU = [
   ]},
 ];
 /* Tô tự chọn — 4 bước */
+/* Bảng phần thêm & giá nằm ở shared/extras-config.js — "Tô tự chọn" và topping thêm của
+   món cố định dùng CHUNG một bảng, chủ quán sửa giá/giới hạn trong dashboard
+   (admin/cai-dat-topping.html). */
+const XG = extrasCfg();
 const BYO = {
   id:"byo", name:"Tô tự chọn",
   steps:[
-    { key:"noodle", title:"1. Chọn loại mì", required:true, choices:[
-      { name:"Mì Ramen", price:15000 }, { name:"Mì Udon", price:19000 } ]},
-    { key:"broth", title:"2. Chọn nước dùng", required:true, broth:true, choices:[
-      { name:"Nước Ramen (Cashew Paitan)", serving:20000, bowl:10000 },
-      { name:"Nước Spicy Tomyum", serving:27000, bowl:17000 },
-      { name:"Nước Miso", serving:17000, bowl:10000 },
-      { name:"Nước Spicy Shoyu", serving:22000, bowl:12000 } ]},
-    { key:"topping", title:"3. Chọn topping (nhiều)", required:false, multi:true, choices:[
-      { name:"Nấm kim châm chiên", price:9000 }, { name:"Trứng (nửa trái)", price:5000 },
-      { name:"Đậu hủ (3 miếng)", price:5000 }, { name:"Chả chay", price:5000 }, { name:"Ngưu bàng chiên", price:5000 } ]},
-    { key:"veg", title:"4. Chọn rau (nhiều)", required:false, multi:true, choices:[
-      { name:"Cải thìa luộc", price:3000 }, { name:"Bông cải luộc", price:4000 }, { name:"Nấm bào ngư luộc", price:4000 } ]},
+    { key:"noodle",  title:"1. Chọn loại mì",          required:true,  choices: extraChoices("noodle") },
+    { key:"broth",   title:"2. Chọn nước dùng",        required:true,  broth:true, choices: extraChoices("broth") },
+    { key:"topping", title:"3. Chọn topping (nhiều)",  required:false, multi:true, choices: extraChoices("topping") },
+    { key:"veg",     title:"4. Chọn rau (nhiều)",      required:false, multi:true, choices: extraChoices("veg") },
   ]
 };
-/* ==== Topping thêm cho MÓN CỐ ĐỊNH ====
-   Lấy thẳng bảng giá của "Tô tự chọn" thay vì chép lại: cùng một miếng đậu hủ mà chỗ này
-   5k chỗ kia 7k là khách thấy ngay, và sửa giá một chỗ sẽ quên chỗ còn lại. */
-const EXTRAS = [
-  { key:"topping", title:"Thêm topping", choices: BYO.steps.find(s=>s.key==="topping").choices },
-  { key:"veg",     title:"Thêm rau",     choices: BYO.steps.find(s=>s.key==="veg").choices },
-];
+/* Món cố định thêm được CẢ 4 nhóm: mì, nước dùng, topping, rau. */
+const EXTRAS = XG.groups;
+const EXTRA_MAX = XG.limits.maxPerDish;   // trần chung cho một tô (0 = không giới hạn)
 const PACKAGING_FEE = 5000;
 
 /* ==== State ==== */
@@ -236,17 +235,18 @@ function byoCard(){
   </div></div>`;
 }
 
-/* ==== Sheet: món cố định — chọn tuỳ chọn bắt buộc + THÊM TOPPING ====
-   Món signature đã có topping sẵn trong tô, nhưng khách hay muốn thêm trứng/đậu hủ.
-   Trước đây chỉ "Tô tự chọn" mới thêm được, nên ai muốn Tamago Ramen + trứng phải tự
-   dựng lại cả tô từ đầu — vừa lâu vừa dễ ra khác món gốc. */
-let dishBase = 0;
+/* ==== Sheet: món cố định — tuỳ chọn bắt buộc + THÊM MÌ / NƯỚC DÙNG / TOPPING / RAU ====
+   Món signature đã có sẵn topping trong tô, nhưng khách hay muốn thêm trứng, thêm mì cho no.
+   Dùng bộ đếm số lượng (không phải tick có/không) vì "2 trứng" là yêu cầu có thật;
+   giới hạn số lượng do chủ quán đặt trong dashboard — chặn ở đây để bếp không nhận
+   nổi một tô 30 phần thêm rồi vỡ trận giờ cao điểm. */
+let dishBase = 0, dishQty = {};
 
 function pick(id){
   const grp = MENU.find(m => m.items.some(x=>x.id===id));
   const it  = grp && grp.items.find(x=>x.id===id);
   if(!it) return;
-  // Chỉ món mì mới thêm topping; đồ uống thêm thẳng cho nhanh, đừng bắt qua thêm một sheet trống.
+  // Chỉ món mì mới thêm được; đồ uống thêm thẳng, đừng bắt qua một bảng chọn trống.
   const canExtra = grp.id === "signature-noodles";
   if(!canExtra && !it.options){
     addToCart({ key:id, name:it.name, opt:"", price:it.price }); toast(); return;
@@ -259,42 +259,89 @@ function openDishSheet(it, canExtra){
   s.innerHTML = `<h3>${it.name}</h3>
     ${it.tops?`<div class="muted" style="font-size:.78rem;margin:-4px 0 10px">Đã có sẵn trong tô: ${it.tops}</div>`:""}
     <div id="dishBody"></div>
+    <div id="dishWarn" class="warn-line"></div>
+    <div class="sumrow"><span class="muted" id="dishCount"></span><span></span></div>
     <div class="sumrow total"><span>Tạm tính</span><span class="price" id="dishTotal">0</span></div>
     <button class="btn btn-matcha" style="width:100%;margin-top:10px" onclick="confirmDish('${it.id}')">Thêm vào giỏ</button>`;
+  dishBase = it.price; dishQty = {};
 
   let html = `<div class="byo-step"><h4>Món</h4>
-    <label class="opt sel"><span class="r">${it.name}</span><span class="price">${vnd(it.price)}</span></label></div>`;
+    <div class="opt sel"><span class="r">${it.name}</span><span class="price">${vnd(it.price)}</span></div></div>`;
   if(it.options){
     html += `<div class="byo-step"><h4>${it.options.group} <span>*</span></h4>` +
       it.options.choices.map((c,i)=>`<label class="opt ${i===0?'sel':''}">
-        <span class="r"><input type="radio" name="dish-opt" value="${c}" ${i===0?'checked':''} onchange="onDishChange(this)"> ${c}</span>
+        <span class="r"><input type="radio" name="dish-opt" value="${c}" ${i===0?'checked':''} onchange="onSauceChange(this)"> ${c}</span>
       </label>`).join("") + `</div>`;
   }
-  if(canExtra) html += EXTRAS.map((g,gi)=>`<div class="byo-step">
-      <h4>${g.title} <span style="color:var(--muted);font-weight:400">· không bắt buộc</span></h4>
-      ${g.choices.map((c,ci)=>`<label class="opt">
-        <span class="r"><input type="checkbox" data-gi="${gi}" data-ci="${ci}" onchange="onDishChange(this)"> ${c.name}</span>
-        <span class="price">+${vnd(c.price)}</span></label>`).join("")}
-    </div>`).join("");
+  if(canExtra) html += EXTRAS.map((g,gi)=>extraGroupBlock(g,gi)).join("");
   document.getElementById("dishBody").innerHTML = html;
-  dishBase = it.price;
   recalcDish(); openSheet();
 }
 
-function onDishChange(inp){
-  const label = inp.closest(".opt");
-  if(inp.type==="radio") label.parentElement.querySelectorAll(".opt").forEach(o=>o.classList.remove("sel"));
-  label.classList.toggle("sel", inp.checked);
-  recalcDish();
+function extraGroupBlock(g,gi){
+  const lim = [];
+  if(g.maxPerItem) lim.push(`tối đa ${g.maxPerItem}/loại`);
+  if(g.maxTotal)   lim.push(`tối đa ${g.maxTotal} phần`);
+  return `<div class="byo-step">
+    <h4>${g.title} <span style="color:var(--muted);font-weight:400">· ${lim.join(" · ") || "không bắt buộc"}</span></h4>
+    ${g.choices.map((c,ci)=>`<div class="opt" id="x-${gi}-${ci}">
+      <span class="r" style="flex:1;display:block">${c.name}${g.broth?'<div class="muted" style="font-size:.68rem;line-height:1.2">1 chén</div>':''}</span>
+      <span class="stepper">
+        <span class="price">+${vnd(extraPrice(g,c))}</span>
+        <button type="button" onclick="stepExtra(${gi},${ci},-1)">−</button>
+        <b id="q-${gi}-${ci}">0</b>
+        <button type="button" onclick="stepExtra(${gi},${ci},1)">+</button>
+      </span></div>`).join("")}
+  </div>`;
 }
-/** Extras đang chọn — dùng chung cho tính tiền và cho dòng mô tả trong giỏ,
+
+function onSauceChange(inp){
+  const l = inp.closest(".opt");
+  l.parentElement.querySelectorAll(".opt").forEach(o=>o.classList.remove("sel"));
+  l.classList.add("sel");
+}
+
+const groupCount = gi => EXTRAS[gi].choices.reduce((n,_,ci)=>n+(dishQty[gi+":"+ci]||0), 0);
+const totalExtras = () => Object.values(dishQty).reduce((a,b)=>a+b, 0);
+
+/** Chặn TẠI CHỖ và nói rõ vì sao — nút xám không lý do làm khách tưởng app hỏng. */
+function stepExtra(gi,ci,d){
+  const g = EXTRAS[gi], key = gi+":"+ci, cur = dishQty[key]||0, next = cur+d;
+  if(next < 0) return;
+  if(d > 0){
+    if(g.maxPerItem && next > g.maxPerItem)          return dishWarn(`Tối đa ${g.maxPerItem} × ${g.choices[ci].name} cho một tô`);
+    if(g.maxTotal   && groupCount(gi)+1 > g.maxTotal) return dishWarn(`${g.title}: tối đa ${g.maxTotal} phần cho một tô`);
+    if(EXTRA_MAX    && totalExtras()+1 > EXTRA_MAX)   return dishWarn(`Tối đa ${EXTRA_MAX} phần thêm cho một tô`);
+  }
+  dishQty[key] = next;
+  document.getElementById(`q-${gi}-${ci}`).textContent = next;
+  document.getElementById(`x-${gi}-${ci}`).classList.toggle("sel", next>0);
+  dishWarn(""); recalcDish();
+}
+let warnTimer;
+function dishWarn(msg){
+  const el = document.getElementById("dishWarn"); if(!el) return;
+  el.textContent = msg; el.style.display = msg ? "block" : "none";
+  clearTimeout(warnTimer); if(msg) warnTimer = setTimeout(()=>dishWarn(""), 2600);
+}
+
+/** Phần thêm đang chọn — một nguồn cho cả tính tiền lẫn dòng mô tả trong giỏ,
  *  để hai chỗ không bao giờ lệch nhau. */
 function dishExtras(){
-  return [...document.querySelectorAll('#dishBody input[type=checkbox]:checked')]
-    .map(i => EXTRAS[i.dataset.gi].choices[i.dataset.ci]);
+  const out = [];
+  EXTRAS.forEach((g,gi)=>g.choices.forEach((c,ci)=>{
+    const q = dishQty[gi+":"+ci]||0;
+    if(q) out.push({ name:c.name, qty:q, price:extraPrice(g,c)*q });
+  }));
+  return out;
 }
-function dishTotalCalc(){ return dishBase + dishExtras().reduce((s,c)=>s+c.price, 0); }
-function recalcDish(){ document.getElementById("dishTotal").textContent = vnd(dishTotalCalc()); }
+function dishTotalCalc(){ return dishBase + dishExtras().reduce((s,x)=>s+x.price, 0); }
+function recalcDish(){
+  document.getElementById("dishTotal").textContent = vnd(dishTotalCalc());
+  const n = totalExtras();
+  document.getElementById("dishCount").textContent =
+    n ? `${n} phần thêm${EXTRA_MAX?` / tối đa ${EXTRA_MAX}`:""}` : "";
+}
 
 function confirmDish(id){
   const it = MENU.flatMap(m=>m.items).find(x=>x.id===id);
@@ -302,9 +349,9 @@ function confirmDish(id){
   const extras = dishExtras();
   const parts = [];
   if(sauce) parts.push(sauce);
-  if(extras.length) parts.push("+ " + extras.map(c=>c.name).join(" · "));
+  if(extras.length) parts.push("+ " + extras.map(x=>x.name + (x.qty>1?` ×${x.qty}`:"")).join(" · "));
   addToCart({
-    key: id + ":" + [sauce, ...extras.map(c=>c.name)].join("|"),   // món + topping khác nhau là 2 dòng giỏ
+    key: id + ":" + [sauce, ...extras.map(x=>x.name+"x"+x.qty)].join("|"),  // khác phần thêm = khác dòng giỏ
     name: it.name, opt: parts.join(" · "), price: dishTotalCalc()
   });
   closeSheet(); toast();
