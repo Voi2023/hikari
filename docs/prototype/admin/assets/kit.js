@@ -57,6 +57,15 @@ const META = {
   role: { owner: ['amber', 'Chủ quán'], manager: ['blue', 'Quản lý'], staff: ['gray', 'Nhân viên'] },
   // Chi nhánh (spec 09): PAUSED do người ở quán tắt, CLOSED là ngoài giờ mở cửa — hai chuyện khác nhau.
   branch: { OPEN: ['green', 'Đang nhận đơn'], CLOSED: ['gray', 'Ngoài giờ mở cửa'], PAUSED: ['red', 'Tạm nghỉ'] },
+  // Voucher (spec 11): bốn kiểu "không dùng được" có cách xử lý khác hẳn nhau —
+  // hết lượt thì nâng hạn mức, hết hạn thì gia hạn, tạm dừng thì bật lại, chưa tới ngày thì chờ.
+  voucher: {
+    ACTIVE:    ['green', 'Đang chạy'],
+    SCHEDULED: ['blue',  'Chưa tới ngày'],
+    PAUSED:    ['red',   'Tạm dừng'],
+    EXPIRED:   ['gray',  'Hết hạn'],
+    USED_UP:   ['amber', 'Hết lượt'],
+  },
 }
 
 /** Nhãn + màu badge cho một mã trạng thái. `kind` bắt buộc: cùng mã FAILED mang nghĩa
@@ -131,8 +140,8 @@ const ROLE_KEY = 'hikari_proto_role'
 // 'admin' ở đây là quyền MỞ màn tài khoản/nhật ký. Quản lý xem được nhật ký (cần cho
 // đối soát ca), nhưng tạo tài khoản và reset 2FA vẫn chỉ chủ quán — khoá trong chính màn đó.
 const ROLE_CAN = {
-  owner:   ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin', 'branch'],
-  manager: ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin', 'branch'],
+  owner:   ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin', 'branch', 'promo'],
+  manager: ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin', 'branch', 'promo'],
   staff:   ['orders', 'ship'],
 }
 // Tổng số nhóm quyền — tính ra thay vì viết số cứng, thêm quyền mới không phải nhớ sửa chỗ hiển thị.

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hikari Cafe — Prototype Kho ưu đãi (voucher)</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,sans-serif;--font-script:"Caveat",cursive;}
+  *{box-sizing:border-box;} body{margin:0;font-family:var(--font);color:var(--ink);background:#efece5;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .brand-logo{font-family:var(--font-script);font-weight:700;} .muted{color:var(--muted);}
+  .phone{width:390px;max-width:100%;margin:24px auto;background:var(--paper);border:10px solid #171614;border-radius:40px;overflow:hidden;box-shadow:var(--shadow);}
+  .phone-notch{height:26px;background:#171614;} .screen{height:760px;max-height:82vh;overflow-y:auto;padding-bottom:24px;}
+  .head{padding:14px 16px 8px;} .head .brand-logo{font-size:1.6rem;} .head .sub{color:var(--matcha);font-size:.62rem;letter-spacing:2px;text-transform:lowercase;font-weight:600;}
+  .sec{margin:14px 16px;} .sec h3{font-size:.95rem;margin:0 0 8px;}
+
+  .rule{display:flex;gap:10px;align-items:flex-start;background:#fff8e6;border:1px solid #f0e2b8;border-radius:var(--radius);padding:12px;font-size:.82rem;}
+  .rule b{display:block;}
+
+  .addform{display:flex;gap:8px;}
+  .addform input{flex:1;font:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff;text-transform:uppercase;}
+  .btn{border:none;border-radius:10px;background:var(--matcha);color:#fff;font:inherit;font-weight:600;padding:9px 14px;cursor:pointer;font-size:.82rem;}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn:disabled{background:#cfcabf;cursor:not-allowed;}
+  .err{color:var(--chili);font-size:.76rem;margin-top:6px;}
+  .ok{color:var(--matcha);font-size:.76rem;margin-top:6px;}
+
+  /* Khung "đơn thử" — để chủ quán bấm thử và thấy ĐÚNG chỗ mã bị chặn, thay vì đọc bảng điều kiện */
+  .sim{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px;}
+  .segs{display:flex;gap:6px;margin:6px 0 2px;}
+  .segs button{flex:1;border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 4px;font:inherit;font-size:.74rem;font-weight:600;cursor:pointer;}
+  .segs button.on{background:var(--matcha);color:#fff;border-color:var(--matcha);}
+  .simlabel{font-size:.72rem;color:var(--muted);margin-top:8px;}
+
+  .tabs{display:flex;gap:6px;margin:0 16px;}
+  .tabs button{flex:1;border:none;background:transparent;border-bottom:2px solid var(--line);padding:8px 4px;font:inherit;font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer;}
+  .tabs button.on{color:var(--ink);border-color:var(--matcha);}
+
+  /* Thẻ voucher — hình vé có răng cưa hai bên, nhìn là biết đây là "vé", không phải một dòng danh sách */
+  .v{display:flex;gap:0;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;cursor:pointer;}
+  .v.off{opacity:.6;}
+  .v .left{width:78px;flex:none;background:var(--matcha-soft);color:var(--matcha);display:grid;place-items:center;text-align:center;padding:8px 4px;position:relative;}
+  .v.off .left{background:#f1efe9;color:var(--muted);}
+  .v .left .big{font-weight:700;font-size:.92rem;line-height:1.15;}
+  .v .left::after{content:"";position:absolute;right:-5px;top:0;bottom:0;width:10px;
+    background:radial-gradient(circle at 5px 5px, transparent 4px, #fff 4px) 0 0/10px 10px repeat-y;}
+  .v .body{flex:1;padding:10px 12px;min-width:0;}
+  .v .t{font-weight:600;font-size:.88rem;}
+  .v .c{font-size:.74rem;color:var(--muted);margin-top:2px;}
+  .v .no{font-size:.74rem;color:var(--chili);margin-top:4px;}
+  .v .yes{font-size:.76rem;color:var(--matcha);font-weight:700;margin-top:4px;}
+  .code{font-family:ui-monospace,Menlo,monospace;font-size:.68rem;font-weight:700;background:var(--ink);color:#fff;border-radius:5px;padding:2px 6px;display:inline-block;margin-top:6px;}
+
+  .sheet{position:fixed;inset:0;background:rgba(28,27,25,.45);display:none;align-items:flex-end;justify-content:center;z-index:40;}
+  .sheet.open{display:flex;}
+  .sheet .card{background:var(--paper);width:390px;max-width:100%;border-radius:18px 18px 0 0;padding:18px 16px 22px;max-height:78vh;overflow-y:auto;}
+  .sheet h4{margin:0 0 4px;font-size:1rem;}
+  .kv{display:flex;justify-content:space-between;gap:10px;font-size:.82rem;padding:6px 0;border-bottom:1px solid var(--line);}
+  .kv:last-of-type{border-bottom:none;}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:.85rem;opacity:0;transition:.3s;z-index:60;}
+  .toast.show{opacity:1;}
+  .disc{text-align:center;font-size:.68rem;color:var(--muted);padding:6px 16px;}
+</style>
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../assets/gate.js"></script>
+</head>
+<body>
+<div class="phone"><div class="phone-notch"></div><div class="screen">
+  <div class="head"><div class="brand-logo">Hikari</div><div class="sub">vegetarian cafe</div></div>
+
+  <div class="sec">
+    <h3>Kho ưu đãi của bạn</h3>
+    <div class="rule">🎟️<div><b>Mỗi đơn chỉ dùng được một mã.</b>
+      Chọn mã khác ở bước thanh toán là thay mã đang chọn — không cộng dồn hai mã vào cùng một đơn.</div></div>
+  </div>
+
+  <div class="sec">
+    <h3>Nhập mã</h3>
+    <div class="addform">
+      <input id="code" placeholder="VD: HIKARIVIP" onkeydown="if(event.key==='Enter')addCode()">
+      <button class="btn" onclick="addCode()">Lưu mã</button>
+    </div>
+    <div id="addmsg"></div>
+    <p class="muted" style="font-size:.72rem;margin:8px 2px 0">
+      Mã gửi riêng qua ZNS hoặc in trên tờ rơi không tự hiện ở đây — nhập đúng một lần là mã vào kho.</p>
+  </div>
+
+  <div class="sec">
+    <h3>Đơn thử <span class="muted" style="font-weight:400;font-size:.76rem">— để xem mã nào dùng được</span></h3>
+    <div class="sim">
+      <div class="simlabel">Hình thức nhận hàng</div>
+      <div class="segs" id="segMode"></div>
+      <div class="simlabel">Chi nhánh</div>
+      <div class="segs" id="segBranch"></div>
+      <div class="simlabel">Tiền món trong giỏ</div>
+      <div class="segs" id="segAmount"></div>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="sec" id="list"></div>
+
+  <div class="disc">Prototype — dữ liệu mẫu, mọi chương trình ưu đãi ❓ chờ chủ quán chốt (xem spec 11).<br>
+    <button class="btn ghost" style="margin-top:8px;font-size:.74rem;padding:6px 10px" onclick="resetDemo()">
+      Đặt lại thử nghiệm — xoá mã đã lưu &amp; lượt đã dùng</button></div>
+</div></div>
+
+<div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()"><div class="card" id="sheetCard"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="shared/branches.js"></script>
+<script src="shared/vouchers.js"></script>
+<script>
+/* Đơn thử: prototype không có giỏ hàng thật, nhưng điều kiện voucher chỉ có nghĩa khi soi vào
+   một đơn cụ thể. Cho chủ quán bấm đổi hình thức / chi nhánh / số tiền là thấy ngay mã nào rụng. */
+const SIM = { mode:'delivery', branchId:'CN01', subtotal:150000 };
+const SHIP_FEE = 27000;          // phí giao mẫu (spec 03 — thật thì đối tác giao trả về)
+let TAB = 'usable';
+
+const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const ctx = () => ({
+  subtotal: SIM.subtotal,
+  packaging: SIM.mode === 'takeaway' ? 5000 : 0,
+  ship: SIM.mode === 'delivery' ? SHIP_FEE : 0,
+  mode: SIM.mode, branchId: SIM.branchId, isFirstOrder: false, now: new Date()
+});
+
+function segs(el, items, cur, onpick){
+  document.getElementById(el).innerHTML = items.map(([v,l]) =>
+    `<button class="${String(v)===String(cur)?'on':''}" onclick="${onpick}('${v}')">${l}</button>`).join('');
+}
+function setMode(m){ SIM.mode = m; render(); }
+function setBranch(b){ SIM.branchId = b; render(); }
+function setAmount(a){ SIM.subtotal = +a; render(); }
+
+function addCode(){
+  const input = document.getElementById('code');
+  const code = input.value.trim().toUpperCase();
+  const box = document.getElementById('addmsg');
+  if(!code){ box.innerHTML = '<div class="err">Chưa nhập mã.</div>'; return; }
+  const v = voucherByCode(code);
+  if(!v){ box.innerHTML = '<div class="err">Mã không tồn tại.</div>'; return; }
+  addToWallet(code);
+  input.value = '';
+  // Lưu được KHÔNG có nghĩa là dùng được cho đơn đang thử — nói rõ để khách không hiểu nhầm.
+  const chk = voucherCheck(v, ctx());
+  box.innerHTML = `<div class="ok">Đã lưu ${esc(code)} vào kho.</div>` +
+    (chk.ok ? '' : `<div class="err">Chưa dùng được cho đơn thử: ${esc(chk.reason)}</div>`);
+  render();
+  toast('🎟️ Đã lưu mã ' + code);
+}
+
+function tabsOf(opts){
+  const n = { usable: opts.filter(o=>o.ok).length, other: opts.filter(o=>!o.ok).length };
+  document.getElementById('tabs').innerHTML = [
+    ['usable', `Dùng được (${n.usable})`],
+    ['other',  `Chưa dùng được (${n.other})`],
+  ].map(([k,l]) => `<button class="${TAB===k?'on':''}" onclick="setTab('${k}')">${l}</button>`).join('');
+}
+function setTab(t){ TAB = t; render(); }
+
+function vCard(o){
+  const v = o.v;
+  const left = v.type === 'PERCENT' ? `<div class="big">${v.value}%</div>`
+    : v.type === 'FREESHIP' ? `<div class="big">FREE<br>SHIP</div>`
+    : `<div class="big">${Math.round(v.value/1000)}K</div>`;
+  return `<div class="v ${o.ok?'':'off'}" onclick="openSheet('${v.code}')">
+    <div class="left">${left}</div>
+    <div class="body">
+      <div class="t">${esc(v.title)}</div>
+      <div class="c">${esc(voucherCondLabel(v))}</div>
+      <div class="c">HSD ${dmyText(v.endAt)}${v.stackPoints===false?' · không cộng dồn với điểm':''}</div>
+      ${o.ok ? `<div class="yes">Giảm ${vndText(o.off)} cho đơn thử</div>`
+             : `<div class="no">${esc(o.reason)}</div>`}
+      <span class="code">${esc(v.code)}</span>
+    </div></div>`;
+}
+
+function openSheet(code){
+  const v = voucherByCode(code);
+  const chk = voucherCheck(v, ctx());
+  const left = v.quota ? Math.max(0, v.quota - v.used) : '∞';
+  const mine = v.perUser ? `${voucherUsedByMe(v.code)}/${v.perUser} lượt` : 'không giới hạn';
+  document.getElementById('sheetCard').innerHTML = `
+    <h4>${esc(v.title)}</h4>
+    <div class="muted" style="font-size:.8rem">${esc(v.desc)}</div>
+    <div style="margin:12px 0 6px"><span class="code" style="font-size:.8rem">${esc(v.code)}</span></div>
+    <div class="kv"><span>Ưu đãi</span><b>${esc(voucherValueLabel(v))}</b></div>
+    <div class="kv"><span>Đơn tối thiểu</span><b>${v.minOrder?vndText(v.minOrder):'không'}</b></div>
+    <div class="kv"><span>Hình thức</span><b>${v.modes.map(m=>VOUCHER_MODE_LABEL[m]).join(' · ')}</b></div>
+    <div class="kv"><span>Chi nhánh</span><b>${v.branchIds.length?v.branchIds.map(voucherBranchName).join(', '):'Mọi chi nhánh'}</b></div>
+    ${v.hours?`<div class="kv"><span>Khung giờ</span><b>${v.hours.from}–${v.hours.to}</b></div>`:''}
+    <div class="kv"><span>Hiệu lực</span><b>${dmyText(v.startAt)} – ${dmyText(v.endAt)}</b></div>
+    <div class="kv"><span>Bạn đã dùng</span><b>${mine}</b></div>
+    <div class="kv"><span>Lượt còn lại của chương trình</span><b>${left}</b></div>
+    <div class="kv"><span>Cộng dồn với đổi điểm</span><b>${v.stackPoints===false?'Không':'Có'}</b></div>
+    <div class="rule" style="margin-top:12px">🎟️<div><b>Mỗi đơn một mã.</b>
+      Mã này chỉ áp ở bước thanh toán và sẽ thay mã đang chọn (nếu có).</div></div>
+    ${chk.ok ? '' : `<div class="err" style="margin-top:10px">Với đơn thử hiện tại: ${esc(chk.reason)}</div>`}
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn ghost" style="flex:1" onclick="closeSheet()">Đóng</button>
+      <button class="btn" style="flex:1" ${chk.ok?'':'disabled'} onclick="useNow('${v.code}')">Dùng cho đơn mới</button>
+    </div>`;
+  document.getElementById('sheet').classList.add('open');
+}
+function closeSheet(){ document.getElementById('sheet').classList.remove('open'); }
+/* Prototype dừng ở đây: luồng đặt món thật nằm ở menu.html, mã được chọn lại ở bước thanh toán. */
+function useNow(code){ closeSheet(); toast('Mở menu và chọn mã ' + code + ' ở bước thanh toán'); }
+
+/* Đặt mã về như mới sau khi duyệt thử — nếu không, mã perUser = 1 dùng một lần là
+   biến mất khỏi tab "dùng được", và người duyệt tiếp theo tưởng prototype hỏng. */
+function resetDemo(){ resetVoucherUsage(); render(); toast('Đã đặt lại kho ưu đãi thử nghiệm'); }
+
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
+function render(){
+  segs('segMode', [['dine','Tại quán'],['takeaway','Mang về'],['delivery','Giao hàng']], SIM.mode, 'setMode');
+  segs('segBranch', BRANCHES.map(b=>[b.id, b.name.replace('Hikari ','')]), SIM.branchId, 'setBranch');
+  segs('segAmount', [[80000,'80K'],[150000,'150K'],[260000,'260K']], SIM.subtotal, 'setAmount');
+
+  const opts = voucherOptions(ctx());
+  tabsOf(opts);
+  const show = opts.filter(o => TAB === 'usable' ? o.ok : !o.ok);
+  document.getElementById('list').innerHTML = show.length
+    ? show.map(vCard).join('')
+    : `<div class="muted" style="font-size:.82rem;text-align:center;padding:20px 0">
+         ${TAB==='usable' ? 'Không có mã nào dùng được cho đơn thử này.' : 'Mọi mã trong kho đều đang dùng được.'}</div>`;
+}
+render();
+</script>
+</body>
+</html>

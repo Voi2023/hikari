@@ -221,4 +221,4 @@ mọi trang khác vẫn hỏi mật khẩu, và sẽ không ai phát hiện ra.
 
 ## 7. Trạng thái hiện tại
 
-Xem [`docs/specs/FEATURES.html`](docs/specs/FEATURES.html) — bảng theo dõi 9 chức năng + dashboard, kèm link spec & prototype.
+Xem [`docs/specs/FEATURES.html`](docs/specs/FEATURES.html) — bảng theo dõi các chức năng (01–11) + dashboard, kèm link spec & prototype.

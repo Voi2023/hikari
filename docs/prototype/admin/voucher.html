@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voucher & ưu đãi — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../../assets/gate.js"></script>
+<style>
+  .vcode{font-family:var(--font-mono,ui-monospace,Menlo,monospace);font-weight:700;font-size:12.5px;
+    background:var(--brand-tint);color:var(--brand);border-radius:6px;padding:2px 7px;white-space:nowrap}
+  .bar{height:6px;border-radius:999px;background:var(--border);overflow:hidden;margin-top:5px;min-width:110px}
+  .bar i{display:block;height:100%;background:var(--brand)}
+  .bar i.hot{background:var(--danger)}
+  .grid-form{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  .grid-form .full{grid-column:1/-1}
+  .checks{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-top:4px}
+  .checks label{display:flex;align-items:center;gap:6px}
+  .split{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+  @media(max-width:1080px){.split{grid-template-columns:1fr}}
+  .try-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border);
+    border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:12.8px;background:var(--surface)}
+  .try-row.on{border-color:var(--brand);background:var(--brand-tint)}
+  .try-row .why{font-size:11.8px;color:var(--muted)}
+  /* Bảng nhiều cột: cho cuộn ngang thay vì bóp mỗi ô còn một chữ một dòng */
+  #tbl{min-width:960px}
+  #tbl th:nth-child(2),#tbl td:nth-child(2){min-width:190px}
+  #tbl th:nth-child(4),#tbl td:nth-child(4){min-width:150px}
+  #tbl td:nth-child(3){min-width:120px}
+  .toolbar #q{flex:1;min-width:190px}
+</style>
+</head>
+<body>
+<main id="page">
+  <div class="stat-grid" id="kpis"></div>
+
+  <div class="panel">
+    <div class="schedule-banner">
+      <b>Mỗi đơn chỉ dùng được MỘT mã.</b> Khách chọn một mã ở bước thanh toán; chọn mã khác là thay mã cũ,
+      không cộng dồn. Luật này chốt ở <b>máy chủ</b> lúc tạo đơn — mini app chỉ là chỗ khách chọn cho dễ nhìn,
+      nên sửa app không lách được. Cộng dồn với <b>đổi điểm</b> (spec 02) thì bật/tắt riêng từng mã.
+    </div>
+  </div>
+
+  <div class="split">
+    <div>
+      <div class="panel">
+        <div class="toolbar">
+          <div class="tabs" id="filters"></div>
+          <input class="input" id="q" placeholder="Tìm mã hoặc tên chương trình…" oninput="render()">
+        </div>
+        <div class="table-scroll"><table class="data wide" id="tbl"></table></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Thử với một đơn</h2>
+      <p class="muted" style="font-size:12.5px;margin:2px 0 12px">
+        Đặt điều kiện xong thì bấm thử ở đây — thấy ngay mã nào rụng và <b>vì sao</b>,
+        thay vì đợi khách gọi hỏi “sao mã không dùng được”.</p>
+      <div class="field"><label>Hình thức</label>
+        <select class="input" id="tMode" onchange="renderTry()">
+          <option value="dine">Tại quán</option><option value="takeaway">Mang về</option>
+          <option value="delivery" selected>Giao hàng</option></select></div>
+      <div class="field"><label>Chi nhánh</label><select class="input" id="tBranch" onchange="renderTry()"></select></div>
+      <div class="field"><label>Tiền món (đ)</label>
+        <input class="input" id="tSub" type="number" step="10000" value="150000" onchange="renderTry()"></div>
+      <div class="field"><label>Phí giao (đ)</label>
+        <input class="input" id="tShip" type="number" step="1000" value="27000" onchange="renderTry()"></div>
+      <div id="tryList"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Ghi chú nghiệp vụ</h2>
+    <ul style="font-size:13px;margin:0;padding-left:18px">
+      <li><b>Mã giảm % phải có trần.</b> Không đặt trần thì một đơn tiệc 2 triệu cũng giảm theo %, và phần lỗ đó
+        không ai thấy cho tới cuối tháng.</li>
+      <li><b>Giảm giá trừ vào tiền món, không trừ vào phí giao</b> — trừ mã “miễn phí giao”, vốn chỉ trừ vào phí giao.
+        Gộp hai túi tiền là cách hoá đơn bắt đầu sai.</li>
+      <li><b>Không xoá mã đã có lượt dùng</b> — xoá là mất lịch sử đối soát doanh thu khuyến mãi. Chỉ tạm dừng.</li>
+      <li><b>Hạn mức mỗi khách</b> (<code>perUser</code>) đếm ở máy chủ theo tài khoản Zalo, không đếm ở máy khách.</li>
+      <li>Điểm thành viên cộng trên <b>tiền thực trả</b> sau khuyến mãi — không cộng điểm cho phần quán đã giảm.</li>
+    </ul>
+  </div>
+</main>
+
+<script src="../shared/branches.js"></script>
+<script src="../shared/vouchers.js"></script>
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:'voucher', title:'Voucher & ưu đãi',
+  sub:'Tạo mã, điều kiện áp dụng, hạn mức — spec 11 · mỗi đơn 1 mã',
+  actions: can('promo')
+    ? `<button class="btn btn-primary btn-sm" onclick="editVoucher()"><i class="ti ti-plus"></i> Tạo mã</button>`
+    : `<span class="badge gray"><i class="ti ti-lock"></i> Vai trò này không sửa được ưu đãi</span>` })
+
+const canEdit = can('promo')
+const escv = s => String(s ?? '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]))
+let LIST = vouchersAll()
+let FILTER = 'ALL'
+
+/* Số tiền giảm ước tính đã phát ra — prototype nhân lượt dùng với mức giảm danh nghĩa.
+   Thật thì cộng từ bảng voucher_redemptions (số tiền giảm THẬT của từng đơn), vì mã % giảm
+   mỗi đơn một khác. Ước lượng chỉ để màn hình có số mà nhìn. */
+const nominal = v => v.type === 'PERCENT' ? (v.maxDiscount || 0) : v.value
+const spent = v => v.used * nominal(v)
+
+function renderKpis(){
+  const running = LIST.filter(v => voucherState(v) === 'ACTIVE')
+  const used = LIST.reduce((s,v) => s + v.used, 0)
+  const money = LIST.reduce((s,v) => s + spent(v), 0)
+  // "Sắp hết lượt" = còn dưới 10% quota. Biết trước mới kịp nâng hạn mức hoặc dừng quảng cáo.
+  const low = running.filter(v => v.quota && v.quota - v.used <= v.quota * 0.1)
+  const card = (l,val,f) => `<div class="stat-card" style="cursor:default"><div class="label">${l}</div>
+      <div class="value">${val}</div><div class="kpi-trend muted" style="margin-top:4px">${f}</div></div>`
+  document.getElementById('kpis').innerHTML =
+    card('Mã đang chạy', running.length, `${LIST.length} mã trong hệ thống`) +
+    card('Lượt đã dùng', vnd(used), 'cộng dồn từ đầu chương trình') +
+    card('Tiền giảm (ước tính)', vnd(money) + 'đ', 'ước theo mức giảm danh nghĩa') +
+    card('Sắp hết lượt', `<span style="color:${low.length?'var(--danger)':'inherit'}">${low.length}</span>`,
+         low.map(v => v.code).join(', ') || '—')
+}
+
+function renderFilters(){
+  const counts = { ALL: LIST.length }
+  LIST.forEach(v => { const s = voucherState(v); counts[s] = (counts[s]||0)+1 })
+  const chips = [['ALL','Tất cả'],['ACTIVE','Đang chạy'],['PAUSED','Tạm dừng'],
+                 ['SCHEDULED','Chưa tới ngày'],['USED_UP','Hết lượt'],['EXPIRED','Hết hạn']]
+  document.getElementById('filters').innerHTML = chips.map(([k,l]) =>
+    `<button class="${FILTER===k?'active':''}" onclick="setFilter('${k}')">${l} (${counts[k]||0})</button>`).join('')
+}
+function setFilter(f){ FILTER = f; render() }
+
+function rows(){
+  const q = (document.getElementById('q')?.value || '').trim().toLowerCase()
+  return LIST.filter(v => {
+    if (FILTER !== 'ALL' && voucherState(v) !== FILTER) return false
+    if (q && !(v.code.toLowerCase().includes(q) || v.title.toLowerCase().includes(q))) return false
+    return true
+  })
+}
+
+function renderTable(){
+  const list = rows()
+  document.getElementById('tbl').innerHTML = `
+    <thead><tr>
+      <th>Mã</th><th>Chương trình</th><th>Ưu đãi</th><th>Điều kiện</th>
+      <th>Hiệu lực</th><th>Lượt dùng</th><th>Trạng thái</th><th></th></tr></thead>
+    <tbody>${list.length ? list.map(v => {
+      const st = voucherState(v)
+      const left = v.quota ? v.quota - v.used : null
+      const pctUsed = v.quota ? Math.min(100, Math.round(v.used / v.quota * 100)) : 0
+      return `<tr>
+        <td><span class="vcode">${escv(v.code)}</span>
+          ${v.visibility === 'SECRET' ? '<div class="muted" style="font-size:11.5px;margin-top:4px"><i class="ti ti-eye-off"></i> mã bí mật</div>' : ''}</td>
+        <td><b>${escv(v.title)}</b><div class="muted" style="font-size:12px">${escv(v.desc)}</div></td>
+        <td>${escv(voucherValueLabel(v))}
+          ${v.stackPoints === false ? '<div class="muted" style="font-size:11.5px">không cộng dồn điểm</div>' : ''}</td>
+        <td style="font-size:12.5px">${escv(voucherCondLabel(v))}</td>
+        <td style="font-size:12.5px;white-space:nowrap">${dmyText(v.startAt)}<br>→ ${dmyText(v.endAt)}</td>
+        <td style="min-width:130px">${vnd(v.used)}${v.quota ? ' / ' + vnd(v.quota) : ' / ∞'}
+          ${v.quota ? `<div class="bar"><i class="${pctUsed>=90?'hot':''}" style="width:${pctUsed}%"></i></div>
+            <div class="muted" style="font-size:11.5px">còn ${vnd(left)} lượt</div>` : ''}
+          <div class="muted" style="font-size:11.5px">tối đa ${v.perUser} lượt/khách</div></td>
+        <td>${badge('voucher', st)}</td>
+        <td style="white-space:nowrap">
+          <label class="row-flex" style="gap:6px;font-size:12px;white-space:nowrap">
+            <input type="checkbox" class="switch" ${v.status === 'ACTIVE' ? 'checked' : ''}
+              ${canEdit ? `onchange="togglePause('${v.code}', this.checked)"` : 'disabled title="Không đủ quyền"'}>
+            Bật</label>
+          <button class="btn btn-ghost btn-sm" ${canEdit ? `onclick="editVoucher('${v.code}')"` : 'disabled'}
+            title="Sửa"><i class="ti ti-pencil"></i></button>
+          <button class="btn btn-ghost btn-sm" ${canEdit ? `onclick="delVoucher('${v.code}')"` : 'disabled'}
+            title="Xoá"><i class="ti ti-trash"></i></button>
+        </td></tr>`
+    }).join('') : `<tr><td colspan="8"><div class="empty-state">
+        <i class="ti ti-ticket-off"></i><p>Không có mã nào khớp bộ lọc.</p></div></td></tr>`}
+    </tbody>`
+}
+
+/* Tắt mã đang chạy = ngừng phát khuyến mãi ngay lập tức. Đơn ĐANG đặt dở mà đã chọn mã này
+   sẽ bị máy chủ từ chối ở bước tạo đơn — nên nói trước, đừng để chủ quán tắt rồi mới biết. */
+function togglePause(code, on){
+  const v = LIST.find(x => x.code === code)
+  v.status = on ? 'ACTIVE' : 'PAUSED'
+  saveVouchers(LIST); render()
+  toast(on ? `<i class="ti ti-player-play"></i> Đã bật lại <b>${escv(code)}</b>`
+           : `<i class="ti ti-player-pause"></i> Đã tạm dừng <b>${escv(code)}</b> — khách không chọn được mã này nữa`)
+}
+
+function delVoucher(code){
+  const v = LIST.find(x => x.code === code)
+  // Mã đã phát ra tiền thì xoá là mất dấu vết đối soát. Chặn hẳn, và chỉ đường sang cách đúng.
+  if (v.used > 0) {
+    modal({ title: `Không xoá được ${escv(code)}`,
+      body: `<p style="font-size:13px">Mã này đã dùng <b>${vnd(v.used)} lượt</b>. Xoá đi là mất lịch sử
+        đối soát doanh thu khuyến mãi và báo cáo sẽ hụt mất phần đã giảm.</p>
+        <p class="muted" style="font-size:12.5px">Muốn ngừng phát thì <b>tắt công tắc</b> ở cột cuối —
+        mã biến mất khỏi Mini App nhưng lịch sử vẫn còn.</p>`,
+      actions: `<button class="btn btn-primary" data-close>Đã hiểu</button>` })
+      .querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal))
+    return
+  }
+  const ov = modal({ title: `Xoá mã ${escv(code)}?`,
+    body: `<p class="muted" style="font-size:13px">Mã chưa có lượt dùng nào nên xoá được an toàn.</p>`,
+    actions: `<button class="btn btn-outline" data-close>Huỷ</button>
+              <button class="btn btn-danger" onclick="doDelete('${code}')">Xoá</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal))
+}
+function doDelete(code){
+  LIST = LIST.filter(v => v.code !== code)
+  saveVouchers(LIST); closeModal(); render(); toast('Đã xoá mã ' + escv(code))
+}
+
+/* ---- Tạo / sửa ---- */
+function editVoucher(code){
+  const isNew = !code
+  const v = isNew
+    ? { code:'', title:'', desc:'', type:'PERCENT', value:10, maxDiscount:30000, minOrder:100000,
+        modes:['dine','takeaway','delivery'], branchIds:[], hours:null,
+        startAt:vDate(0), endAt:vDate(30), quota:200, used:0, perUser:1,
+        firstOrderOnly:false, stackPoints:true, visibility:'PUBLIC', status:'ACTIVE' }
+    : LIST.find(x => x.code === code)
+
+  const modeCheck = ['dine','takeaway','delivery'].map(m =>
+    `<label><input type="checkbox" id="m_${m}" ${v.modes.includes(m)?'checked':''}> ${VOUCHER_MODE_LABEL[m]}</label>`).join('')
+  const branchCheck = BRANCHES.map(b =>
+    `<label><input type="checkbox" id="b_${b.id}" ${v.branchIds.includes(b.id)?'checked':''}> ${b.name}</label>`).join('')
+
+  const ov = modal({ lg:true, persistent:true,
+    title: isNew ? 'Tạo mã ưu đãi' : 'Sửa mã ' + escv(v.code),
+    sub: 'Mã áp cho cả đơn và mỗi đơn chỉ dùng được một mã — điều kiện ở đây quyết định khách có chọn được hay không.',
+    body: `<div class="grid-form">
+      <div class="field"><label>Mã khách nhập <span style="color:var(--danger)">*</span></label>
+        <input class="input" id="f_code" value="${escv(v.code)}" ${isNew?'':'disabled'}
+          style="text-transform:uppercase" placeholder="HIKARI30"></div>
+      <div class="field"><label>Kiểu ưu đãi</label>
+        <select class="input" id="f_type" onchange="typeHint()">
+          ${Object.keys(VOUCHER_TYPE_LABEL).map(t =>
+            `<option value="${t}" ${v.type===t?'selected':''}>${VOUCHER_TYPE_LABEL[t]}</option>`).join('')}
+        </select></div>
+
+      <div class="field full"><label>Tên chương trình (khách đọc)</label>
+        <input class="input" id="f_title" value="${escv(v.title)}" placeholder="Giảm 30% tối đa 30.000đ"></div>
+      <div class="field full"><label>Mô tả ngắn</label>
+        <input class="input" id="f_desc" value="${escv(v.desc)}" placeholder="Mừng Mini App — áp dụng mọi hình thức"></div>
+
+      <div class="field"><label id="l_value">Giá trị giảm</label>
+        <input class="input" id="f_value" type="number" value="${v.value}"></div>
+      <div class="field"><label>Giảm tối đa (đ)</label>
+        <input class="input" id="f_max" type="number" value="${v.maxDiscount||0}">
+        <div class="muted" style="font-size:11.5px;margin-top:3px" id="h_max"></div></div>
+
+      <div class="field"><label>Đơn tối thiểu (đ)</label>
+        <input class="input" id="f_min" type="number" value="${v.minOrder||0}"></div>
+      <div class="field"><label>Hiển thị</label>
+        <select class="input" id="f_vis">
+          <option value="PUBLIC" ${v.visibility==='PUBLIC'?'selected':''}>Công khai — hiện trong kho ưu đãi</option>
+          <option value="SECRET" ${v.visibility==='SECRET'?'selected':''}>Bí mật — khách nhập tay mới thấy</option>
+        </select></div>
+
+      <div class="field"><label>Bắt đầu</label><input class="input" id="f_start" type="date" value="${v.startAt}"></div>
+      <div class="field"><label>Kết thúc</label><input class="input" id="f_end" type="date" value="${v.endAt}"></div>
+
+      <div class="field"><label>Tổng lượt (0 = không giới hạn)</label>
+        <input class="input" id="f_quota" type="number" value="${v.quota||0}"></div>
+      <div class="field"><label>Lượt tối đa / khách</label>
+        <input class="input" id="f_peruser" type="number" min="1" value="${v.perUser||1}"></div>
+
+      <div class="field full"><label>Hình thức nhận hàng áp dụng</label>
+        <div class="checks">${modeCheck}</div></div>
+      <div class="field full"><label>Chi nhánh áp dụng <span class="muted">(không chọn = mọi chi nhánh)</span></label>
+        <div class="checks">${branchCheck}</div></div>
+
+      <div class="field full"><label>Khung giờ áp dụng</label>
+        <div class="checks">
+          <label><input type="checkbox" id="f_hasHours" ${v.hours?'checked':''}> Chỉ áp dụng trong khung giờ</label>
+          <label>Từ <input class="input" id="f_hFrom" type="time" value="${v.hours?v.hours.from:'14:00'}" style="width:112px"></label>
+          <label>đến <input class="input" id="f_hTo" type="time" value="${v.hours?v.hours.to:'17:00'}" style="width:112px"></label>
+        </div></div>
+
+      <div class="field full"><div class="checks">
+        <label><input type="checkbox" id="f_first" ${v.firstOrderOnly?'checked':''}> Chỉ đơn đầu tiên của khách</label>
+        <label><input type="checkbox" id="f_stack" ${v.stackPoints!==false?'checked':''}> Cho cộng dồn với đổi điểm (spec 02)</label>
+      </div></div>
+    </div>`,
+    actions: `<button class="btn btn-outline" data-close>Huỷ</button>
+              <button class="btn btn-primary" onclick="saveVoucher('${isNew?'':v.code}')">Lưu</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal))
+  typeHint()
+}
+
+/* Nhãn ô "giá trị" đổi theo kiểu mã: 30 nghĩa là 30% hay 30 đồng là hai chuyện khác nhau. */
+function typeHint(){
+  const t = document.getElementById('f_type').value
+  document.getElementById('l_value').textContent =
+    t === 'PERCENT' ? 'Phần trăm giảm (%)' : t === 'FREESHIP' ? 'Giảm tối đa phí giao (đ) — 0 = miễn phí hết' : 'Số tiền giảm (đ)'
+  document.getElementById('h_max').textContent =
+    t === 'PERCENT' ? 'Bắt buộc với mã %: không có trần thì đơn càng to quán càng lỗ.' : 'Không dùng với mã giảm tiền cố định.'
+}
+
+function saveVoucher(oldCode){
+  const g = id => document.getElementById(id)
+  const code = (oldCode || g('f_code').value).trim().toUpperCase()
+  if (!code) return toast('<i class="ti ti-alert-circle"></i> Chưa nhập mã')
+  if (!oldCode && LIST.some(v => v.code === code)) return toast('<i class="ti ti-alert-circle"></i> Mã này đã tồn tại')
+  const type = g('f_type').value
+  const value = +g('f_value').value || 0
+  if (type !== 'FREESHIP' && value <= 0) return toast('<i class="ti ti-alert-circle"></i> Giá trị giảm phải lớn hơn 0')
+  const maxDiscount = +g('f_max').value || 0
+  if (type === 'PERCENT' && !maxDiscount) return toast('<i class="ti ti-alert-circle"></i> Mã giảm % bắt buộc có mức giảm tối đa')
+  const startAt = g('f_start').value, endAt = g('f_end').value
+  if (endAt && startAt && endAt < startAt) return toast('<i class="ti ti-alert-circle"></i> Ngày kết thúc trước ngày bắt đầu')
+  const modes = ['dine','takeaway','delivery'].filter(m => g('m_'+m).checked)
+  if (!modes.length) return toast('<i class="ti ti-alert-circle"></i> Chọn ít nhất một hình thức nhận hàng')
+  if (type === 'FREESHIP' && !modes.includes('delivery'))
+    return toast('<i class="ti ti-alert-circle"></i> Mã miễn phí giao phải áp dụng cho đơn giao hàng')
+
+  const row = {
+    code, title: g('f_title').value.trim() || code, desc: g('f_desc').value.trim(),
+    type, value, maxDiscount: type === 'AMOUNT' ? value : maxDiscount,
+    minOrder: +g('f_min').value || 0,
+    modes, branchIds: BRANCHES.filter(b => g('b_'+b.id).checked).map(b => b.id),
+    hours: g('f_hasHours').checked ? { from: g('f_hFrom').value, to: g('f_hTo').value } : null,
+    startAt, endAt,
+    quota: +g('f_quota').value || 0, perUser: Math.max(1, +g('f_peruser').value || 1),
+    firstOrderOnly: g('f_first').checked, stackPoints: g('f_stack').checked,
+    visibility: g('f_vis').value,
+    used: oldCode ? LIST.find(v => v.code === oldCode).used : 0,
+    status: oldCode ? LIST.find(v => v.code === oldCode).status : 'ACTIVE'
+  }
+  if (oldCode) LIST = LIST.map(v => v.code === oldCode ? row : v)
+  else LIST.unshift(row)
+  saveVouchers(LIST); closeModal(); render()
+  toast(`<i class="ti ti-check"></i> Đã lưu mã <b>${escv(code)}</b>`)
+}
+
+/* ---- Thử điều kiện với một đơn cụ thể ---- */
+function renderTry(){
+  const mode = document.getElementById('tMode').value
+  const branchId = document.getElementById('tBranch').value
+  const subtotal = +document.getElementById('tSub').value || 0
+  const shipInput = +document.getElementById('tShip').value || 0
+  const ctx = { subtotal, packaging: mode === 'takeaway' ? 5000 : 0,
+                ship: mode === 'delivery' ? shipInput : 0, mode, branchId, isFirstOrder: false, now: new Date() }
+  // Mã bí mật cũng hiện ở đây: quản lý cần thử được mã mình vừa tạo, không phải đi nhập như khách.
+  const opts = LIST.map(v => {
+    const chk = voucherCheck(v, ctx)
+    return { v, ok: chk.ok, reason: chk.reason, off: chk.ok ? voucherTotalOff(v, ctx) : 0 }
+  }).sort((a,b) => a.ok === b.ok ? b.off - a.off : (a.ok ? -1 : 1))
+
+  document.getElementById('tryList').innerHTML =
+    `<div class="muted" style="font-size:12.5px;margin:10px 0 6px">
+       <b>${opts.filter(o=>o.ok).length}</b> mã dùng được cho đơn này — khách chỉ chọn <b>một</b>.</div>` +
+    opts.map(o => `<div class="try-row ${o.ok?'on':''}">
+      <div><span class="vcode">${escv(o.v.code)}</span>
+        <div class="why">${o.ok ? 'Giảm ' + vndText(o.off) : escv(o.reason)}</div></div>
+      <i class="ti ${o.ok?'ti-check':'ti-x'}" style="color:${o.ok?'var(--brand)':'var(--muted)'}"></i>
+    </div>`).join('')
+}
+
+function render(){
+  renderKpis(); renderFilters(); renderTable(); renderTry()
+}
+document.getElementById('tBranch').innerHTML = BRANCHES.map(b => `<option value="${b.id}">${b.name}</option>`).join('')
+render()
+</script>
+</body>
+</html>

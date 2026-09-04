@@ -14,6 +14,7 @@ const NAV = [
     { page: 'menu',       icon: 'ti-soup',      label: 'Menu & giá',  perm: 'menu' },
     { page: 'cai-dat-topping', icon: 'ti-tools-kitchen-2', label: 'Topping & phần thêm', perm: 'menu' },
     { page: 'khach-diem', icon: 'ti-users',     label: 'Khách & điểm', perm: 'points' },
+    { page: 'voucher',    icon: 'ti-ticket',    label: 'Voucher & ưu đãi', perm: 'promo' },
     { page: 'thong-bao',  icon: 'ti-bell',      label: 'Thông báo',   perm: 'notify' },
     { page: 'bao-cao',    icon: 'ti-chart-bar', label: 'Báo cáo',     perm: 'report' },
   ]},

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11 — Voucher &amp; mã ưu đãi — Hikari Vegetarian Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+.brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+.muted{color:var(--muted);}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;}
+.topbar .brand-logo{font-size:1.5rem;line-height:1;}
+.topbar nav{margin-left:auto;display:flex;gap:14px;font-size:.85rem;}
+.topbar nav a{color:var(--muted);text-decoration:none;font-weight:600;}
+.topbar nav a:hover{color:var(--matcha);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 72px;}
+h1{font-size:1.9rem;line-height:1.25;margin:8px 0 18px;}
+h2{font-size:1.2rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+h3{font-size:1rem;margin:24px 0 8px;color:var(--matcha);}
+h4{font-size:.92rem;margin:18px 0 6px;}
+p{margin:10px 0;}
+a{color:var(--matcha);}
+hr{border:none;border-top:1px solid var(--line);margin:32px 0;}
+code{font-family:var(--mono);font-size:.86em;background:#f1ede3;border:1px solid var(--line);border-radius:6px;padding:1px 5px;}
+figure.code{margin:14px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+figure.code figcaption{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f4f1ea;border-bottom:1px solid var(--line);padding:6px 14px;}
+figure.code pre{margin:0;padding:14px 16px;overflow-x:auto;}
+figure.code code{background:none;border:none;padding:0;font-size:.82rem;line-height:1.55;}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-left:3px solid var(--sun);border-radius:var(--radius);}
+blockquote p:first-child{margin-top:0;}
+blockquote p:last-child{margin-bottom:0;}
+ul,ol{margin:10px 0;padding-left:22px;}
+li{margin:5px 0;}
+li>ul,li>ol{margin:5px 0;}
+ul.tasks{list-style:none;padding-left:2px;}
+ul.tasks .box{color:var(--matcha);font-size:1rem;margin-right:8px;}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);box-shadow:var(--shadow);}
+table{border-collapse:collapse;width:100%;font-size:.92rem;}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{background:var(--matcha-soft);color:var(--matcha);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#faf9f5;}
+.q{color:var(--chili);font-weight:700;}
+footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted);font-size:.8rem;}
+@media(max-width:640px){h1{font-size:1.5rem;}.topbar nav{gap:10px;font-size:.78rem;}}
+</style>
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../assets/gate.js"></script>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <span class="brand-logo">Hikari</span><span class="brand-sub">vegetarian cafe</span>
+  <nav>
+    <a href="README.html">Specs</a>
+    <a href="FEATURES.html">Chức năng</a>
+    <a href="00-tong-quan.html">Tổng quan</a>
+    <a href="../prototype/index.html">Prototype</a>
+  </nav>
+</div></div>
+<div class="wrap">
+<h1>11 — Voucher &amp; mã ưu đãi</h1><p>Trạng thái: 🎨 Prototype · Mini App: <a href="../prototype/voucher.html"><code>../prototype/voucher.html</code></a> (kho ưu đãi) · <a href="../prototype/menu.html"><code>../prototype/menu.html</code></a> (chọn mã ở bước thanh toán) · Dashboard: <a href="../prototype/admin/voucher.html"><code>../prototype/admin/voucher.html</code></a> · Mã dùng chung: <a href="../prototype/shared/vouchers.js"><code>../prototype/shared/vouchers.js</code></a></p>
+
+<h2>1. Mục tiêu &amp; phạm vi</h2>
+<p><strong>Làm:</strong> quán phát <strong>mã ưu đãi</strong> (voucher) theo kiểu Grab — khách có một <strong>kho ưu đãi</strong> trong Mini App, và ở bước thanh toán chọn <strong>một</strong> mã cho đơn. Quán tạo/sửa/tạm dừng mã trong dashboard với điều kiện áp dụng (đơn tối thiểu, hình thức nhận hàng, chi nhánh, khung giờ, hạn dùng, tổng lượt, lượt mỗi khách).</p>
+<blockquote><p><strong>Luật xuyên suốt spec này: MỖI ĐƠN CHỈ DÙNG ĐƯỢC MỘT MÃ.</strong> Không cộng dồn hai voucher vào cùng một đơn, ở bất kỳ hình thức nhận hàng nào.</p></blockquote>
+<p><strong>Không làm (ở spec này):</strong> mã áp cho <em>một món cụ thể</em> (tặng 1 matcha khi mua mì), sinh <strong>mã riêng cho từng khách</strong> hàng loạt (<code>HIKARI-A7F2</code>), mã giới thiệu bạn bè, mã <strong>tự động áp</strong> không cần khách chọn, và ưu đãi theo hạng thành viên (<span class="q">❓</span> xem §11).</p>
+
+<h2>2. Luật cốt lõi — một đơn, một mã</h2>
+<p>Quy tắc này phải được cài ở <strong>ba lớp</strong>, vì mỗi lớp hỏng theo một kiểu khác nhau:</p>
+<div class="table-wrap"><table><thead><tr><th>Lớp</th><th>Cài ở đâu</th><th>Hỏng thì ra sao</th></tr></thead><tbody>
+<tr><td><strong>Giao diện</strong></td><td>Đơn có <strong>một ô "Ưu đãi"</strong> duy nhất. Chọn mã khác là <strong>thay</strong> mã đang chọn (radio, không phải checkbox).</td><td>Khách kỳ vọng cộng dồn rồi thất vọng ở bước cuối — mất đơn ngay tại chỗ.</td></tr>
+<tr><td><strong>Máy chủ</strong></td><td><code>POST /orders</code> nhận <strong>một</strong> <code>voucherCode</code> (chuỗi, không phải mảng), tính lại tiền giảm từ đầu.</td><td>Sửa app hoặc gọi thẳng API là dùng được hai mã — mất tiền thật, phát hiện qua báo cáo cuối tháng.</td></tr>
+<tr><td><strong>Cơ sở dữ liệu</strong></td><td><code>voucher_redemptions.orderId</code> là <strong>UNIQUE</strong> — một đơn tối đa một dòng đổi mã.</td><td>Hai request song song lách qua tầng ứng dụng; ràng buộc DB là chốt chặn cuối, không thể lách.</td></tr>
+</tbody></table></div>
+<p>Voucher <strong>khác</strong> đổi điểm (<a href="02-tich-diem.html">spec 02</a>): điểm là tiền khách đã tích được, voucher là khuyến mãi quán phát ra. Mặc định <strong>cho phép dùng chung</strong> voucher + điểm trong một đơn, nhưng mỗi mã có cờ <code>stackPoints</code> để tắt riêng khi chương trình đã giảm sâu. <span class="q">❓</span> Cần chủ quán xác nhận mặc định này.</p>
+
+<h2>3. Kiểu mã &amp; điều kiện áp dụng</h2>
+<div class="table-wrap"><table><thead><tr><th>Kiểu</th><th>Ý nghĩa</th><th>Trừ vào đâu</th></tr></thead><tbody>
+<tr><td><code>PERCENT</code></td><td>Giảm % trên tiền món, <strong>bắt buộc có trần</strong> (<code>maxDiscount</code>)</td><td>Tiền món</td></tr>
+<tr><td><code>AMOUNT</code></td><td>Giảm số tiền cố định</td><td>Tiền món</td></tr>
+<tr><td><code>FREESHIP</code></td><td>Giảm phí giao, tối đa <code>value</code> (0 = miễn phí toàn bộ)</td><td>Phí giao</td></tr>
+</tbody></table></div>
+<blockquote><p><strong>Mã % không có trần là lỗ có kế hoạch.</strong> Một đơn tiệc 2.000.000đ giảm 30% là mất 600.000đ, và không ai nhìn thấy cho tới lúc chốt doanh thu tháng. Form tạo mã ở dashboard <strong>chặn lưu</strong> mã <code>PERCENT</code> không có <code>maxDiscount</code>.</p></blockquote>
+<p><strong>Hai túi tiền tách bạch.</strong> Giảm giá món trừ vào <strong>tiền món</strong>, mã miễn phí giao trừ vào <strong>phí giao</strong> — không gộp thành một con số rồi trừ vào tổng. Gộp lại là cách khuyến mãi âm thầm ăn vào phần phí quán trả cho đơn vị giao, và hoá đơn không còn đối soát được.</p>
+<h3>Điều kiện một mã có thể mang</h3>
+<div class="table-wrap"><table><thead><tr><th>Trường</th><th>Nghĩa</th></tr></thead><tbody>
+<tr><td><code>minOrder</code></td><td>Đơn tối thiểu (tiền món + phụ phí đóng gói, <strong>chưa tính phí giao</strong>)</td></tr>
+<tr><td><code>modes</code></td><td>Hình thức nhận hàng dùng được: tại quán / mang về / giao hàng</td></tr>
+<tr><td><code>branchIds</code></td><td>Chi nhánh áp dụng — rỗng là mọi chi nhánh (<a href="09-chi-nhanh.html">spec 09</a>)</td></tr>
+<tr><td><code>hours</code></td><td>Khung giờ (kéo khách vào giờ bếp rảnh), hỗ trợ khung qua nửa đêm</td></tr>
+<tr><td><code>startAt</code> / <code>endAt</code></td><td>Thời gian hiệu lực</td></tr>
+<tr><td><code>quota</code> / <code>used</code></td><td>Tổng lượt của cả chương trình (0 = không giới hạn)</td></tr>
+<tr><td><code>perUser</code></td><td>Số lượt tối đa <strong>mỗi khách</strong> — đếm ở máy chủ theo tài khoản Zalo</td></tr>
+<tr><td><code>firstOrderOnly</code></td><td>Chỉ dành cho khách chưa từng có đơn hoàn tất</td></tr>
+<tr><td><code>stackPoints</code></td><td>Cho phép dùng chung với đổi điểm hay không</td></tr>
+<tr><td><code>visibility</code></td><td><code>PUBLIC</code> hiện sẵn trong kho mọi khách · <code>SECRET</code> chỉ ai nhập đúng mã mới thấy (gửi ZNS, in tờ rơi)</td></tr>
+<tr><td><code>status</code></td><td><code>ACTIVE</code> / <code>PAUSED</code> — quán tắt tay khi bếp quá tải</td></tr>
+</tbody></table></div>
+<h3>Năm trạng thái, đừng gộp làm một</h3>
+<div class="table-wrap"><table><thead><tr><th>Trạng thái</th><th>Do đâu</th><th>Quán xử lý thế nào</th></tr></thead><tbody>
+<tr><td><strong>Đang chạy</strong> (<code>ACTIVE</code>)</td><td>Trong hạn, còn lượt, không bị tắt</td><td>—</td></tr>
+<tr><td><strong>Chưa tới ngày</strong> (<code>SCHEDULED</code>)</td><td>Chưa tới <code>startAt</code></td><td>Chờ, hoặc dời ngày bắt đầu</td></tr>
+<tr><td><strong>Hết hạn</strong> (<code>EXPIRED</code>)</td><td>Quá <code>endAt</code></td><td>Gia hạn nếu muốn chạy tiếp</td></tr>
+<tr><td><strong>Hết lượt</strong> (<code>USED_UP</code>)</td><td><code>used ≥ quota</code></td><td>Nâng hạn mức, hoặc dừng quảng cáo mã này</td></tr>
+<tr><td><strong>Tạm dừng</strong> (<code>PAUSED</code>)</td><td>Người ở quán chủ động tắt</td><td>Bật lại khi sẵn sàng</td></tr>
+</tbody></table></div>
+<p>Bốn kiểu "không dùng được" cần bốn hành động khác nhau. Gộp chung thành một chữ "không hợp lệ" là bắt quản lý đi dò xem vì sao mã của mình không chạy.</p>
+
+<h2>4. Personas &amp; user story</h2>
+<ul>
+<li><strong>US-1</strong> — <em>Là khách</em>, tôi mở <strong>kho ưu đãi</strong> thấy mã nào đang có, mã nào dùng được cho đơn của mình, mã nào chưa dùng được và <strong>vì sao</strong>.
+  <ul><li>Given đơn 90.000đ và mã yêu cầu đơn từ 100.000đ, When mở kho, Then mã hiện kèm câu <em>"Đơn tối thiểu 100.000đ — còn thiếu 10.000đ"</em>, không phải "không hợp lệ".</li></ul></li>
+<li><strong>US-2</strong> — <em>Là khách ở bước thanh toán</em>, tôi chọn <strong>một</strong> mã và thấy ngay số tiền giảm trong bảng tính tiền.
+  <ul><li>Given đã chọn mã A, When tôi chọn mã B, Then mã A <strong>rời khỏi đơn</strong> và chỉ mã B được áp — không có chỗ nào cộng dồn.</li></ul></li>
+<li><strong>US-3</strong> — <em>Là khách nhận mã qua ZNS</em>, tôi nhập mã bí mật một lần và mã được lưu vào kho cho những lần sau.</li>
+<li><strong>US-4</strong> — <em>Là khách</em>, khi tôi đổi từ giao hàng sang mang về, mã <em>miễn phí giao</em> đang chọn <strong>tự rời đơn kèm lời giải thích</strong>, không im lặng biến mất khỏi hoá đơn.</li>
+<li><strong>US-5</strong> — <em>Là chủ quán</em>, tôi tạo mã với đủ điều kiện áp dụng và <strong>thử ngay với một đơn giả định</strong> để chắc mã chạy đúng ý trước khi đem đi quảng cáo.</li>
+<li><strong>US-6</strong> — <em>Là quản lý ca</em>, khi bếp quá tải tôi <strong>tạm dừng</strong> một mã trong vài giây; đơn đang chạy không bị ảnh hưởng.</li>
+<li><strong>US-7</strong> — <em>Là chủ quán</em>, tôi xem <strong>một mã đã dùng bao nhiêu lượt, giảm bao nhiêu tiền</strong> để biết chương trình có đáng chạy tiếp không.</li>
+</ul>
+
+<h2>5. Luồng</h2>
+<figure class="code"><figcaption>text</figcaption><pre><code>Khách đặt món → bước Thanh toán
+  → GET /api/v1/vouchers/available?branchId&amp;mode&amp;subtotal
+       (server trả: mã PUBLIC + mã khách đã lưu, kèm CÓ DÙNG ĐƯỢC KHÔNG và LÝ DO)
+  → khách chọn MỘT mã          → order.voucherCode = "HIKARI30"   (một ô, không phải mảng)
+       ├─ chọn mã khác          → ô bị GHI ĐÈ, mã cũ rời đơn
+       ├─ nhập mã bí mật đúng   → POST /vouchers/claim → mã vào kho → áp luôn
+       └─ đổi hình thức / địa chỉ → điều kiện đổi → mã hết hợp lệ thì GỠ + báo lý do
+  → POST /api/v1/orders { branchId, items[], voucherCode }
+       → SERVER kiểm lại từ đầu (hạn, lượt, đơn tối thiểu, hình thức, chi nhánh, khung giờ)
+       → SERVER tính lại tiền giảm (không tin số client gửi)
+       → trong CÙNG transaction tạo đơn:
+            UPDATE vouchers SET used = used + 1 WHERE id = ? AND (quota = 0 OR used &lt; quota)
+            INSERT voucher_redemptions (orderId UNIQUE)   ← chốt "mỗi đơn một mã"
+       → không thoả điều kiện → 422 kèm lý do đọc được → app mời chọn mã khác
+  → thanh toán ZaloPay trên SỐ TIỀN SERVER TÍNH (spec 04)
+  → đơn huỷ / thanh toán thất bại → nhả lượt lại (xem §9)
+
+Dashboard
+  → Voucher &amp; ưu đãi → Tạo mã → điều kiện → "Thử với một đơn" → Lưu
+  → công tắc Bật/Tắt → PATCH /admin/vouchers/:code/status → ghi nhật ký (ai tắt, lúc nào)</code></pre></figure>
+
+<h2>6. Màn hình</h2>
+<div class="table-wrap"><table><thead><tr><th>Màn</th><th>Prototype</th><th>Điểm chính</th></tr></thead><tbody>
+<tr><td>Kho ưu đãi (Mini App)</td><td><a href="../prototype/voucher.html">voucher.html</a></td><td>Tách <em>dùng được</em> / <em>chưa dùng được</em>, ô nhập mã bí mật, khung "đơn thử" để soi điều kiện, chi tiết từng mã kèm số lượt còn lại</td></tr>
+<tr><td>Chọn ưu đãi trong checkout</td><td><a href="../prototype/menu.html">menu.html</a> → giỏ → Thanh toán → <em>Ưu đãi</em></td><td>Một ô ưu đãi duy nhất; băng nhắc "mỗi đơn một mã"; mã không dùng được vẫn hiện kèm lý do</td></tr>
+<tr><td>Voucher &amp; ưu đãi (dashboard)</td><td><a href="../prototype/admin/voucher.html">admin/voucher.html</a></td><td>Danh sách + lọc theo trạng thái, thanh tiến độ lượt dùng, công tắc tạm dừng, form tạo/sửa, bảng "thử với một đơn"</td></tr>
+</tbody></table></div>
+<p>Mã không dùng được <strong>vẫn hiện</strong> trong kho, làm mờ kèm lý do. Ẩn đi thì khách tưởng mã của mình bị mất và gọi hotline hỏi — đó là chi phí thật của một dòng chữ bị giấu.</p>
+
+<h2>7. API &amp; dữ liệu</h2>
+<h3>REST (envelope chuẩn)</h3>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead><tbody>
+<tr><td><code>GET</code></td><td><code>/api/v1/vouchers/available</code></td><td>Mã dùng được cho đơn đang dựng — query <code>branchId</code>, <code>mode</code>, <code>subtotal</code>. Trả kèm <code>eligible</code> + <code>reason</code> cho từng mã. JWT.</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/v1/vouchers/mine</code></td><td>Kho của khách (mã PUBLIC + mã đã lưu), kèm số lượt đã dùng. JWT.</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/v1/vouchers/claim</code></td><td><code>{ code }</code> — lưu mã (kể cả mã bí mật) vào kho. <strong>Có rate-limit</strong> (§9). JWT.</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/v1/vouchers/validate</code></td><td><code>{ code, branchId, mode, items[] }</code> → số tiền giảm dự kiến hoặc lý do từ chối. <strong>Không</strong> trừ lượt. JWT + rate-limit.</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/v1/orders</code></td><td>Thêm trường <code>voucherCode?: string</code> — <strong>một chuỗi, không phải mảng</strong>. Server tính lại tiền và trừ lượt.</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/v1/admin/vouchers</code></td><td>Danh sách đầy đủ cho dashboard — JWT + quyền <code>promo</code></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/v1/admin/vouchers</code></td><td>Tạo mã — quyền <code>promo</code>. <span class="q">❓</span> chỉ chủ quán hay cả quản lý (§11)</td></tr>
+<tr><td><code>PATCH</code></td><td><code>/api/v1/admin/vouchers/:code</code></td><td>Sửa mã. <strong>Không đổi được <code>code</code></strong> khi mã đã có lượt dùng.</td></tr>
+<tr><td><code>PATCH</code></td><td><code>/api/v1/admin/vouchers/:code/status</code></td><td>Bật/tắt <code>{ status }</code> — ghi nhật ký</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/v1/admin/vouchers/:code/redemptions</code></td><td>Lượt đã dùng: đơn nào, khách nào, giảm bao nhiêu — để đối soát</td></tr>
+<tr><td><code>DELETE</code></td><td><code>/api/v1/admin/vouchers/:code</code></td><td>Chỉ xoá được mã <strong>chưa có lượt dùng nào</strong>; còn lại chỉ tạm dừng</td></tr>
+</tbody></table></div>
+<h3>Model Prisma (dự kiến)</h3>
+<figure class="code"><figcaption>prisma</figcaption><pre><code>model Voucher {
+  id String @id @default(cuid())
+  code String @unique              // "HIKARI30" — khách gõ, luôn viết hoa
+  title String                     // câu khách đọc: "Giảm 30% tối đa 30.000đ"
+  description String?
+  type String                      // PERCENT | AMOUNT | FREESHIP
+  value Int                        // % hoặc số tiền
+  maxDiscount Int?                 // BẮT BUỘC với PERCENT
+  minOrder Int @default(0)
+  modes String[]                   // DINE_IN | TAKEAWAY | DELIVERY
+  branchIds String[]               // rỗng = mọi chi nhánh
+  hourFrom String?                 // "14:00"
+  hourTo String?                   // "17:00"
+  startAt DateTime
+  endAt DateTime
+  quota Int @default(0)            // 0 = không giới hạn
+  used Int @default(0)
+  perUser Int @default(1)
+  firstOrderOnly Boolean @default(false)
+  stackPoints Boolean @default(true)
+  visibility String @default("PUBLIC")   // PUBLIC | SECRET
+  status String @default("ACTIVE")       // ACTIVE | PAUSED
+  redemptions VoucherRedemption[]
+  @@index([status, startAt, endAt])
+  @@map("vouchers")
+}
+
+model VoucherRedemption {
+  id String @id @default(cuid())
+  voucherId String
+  userId String
+  orderId String @unique           // ← LUẬT "MỖI ĐƠN MỘT MÃ" NẰM Ở ĐÂY
+  discountFood Int                 // giảm vào tiền món
+  discountShip Int                 // giảm vào phí giao
+  createdAt DateTime @default(now())
+  voucher Voucher @relation(fields: [voucherId], references: [id])
+  @@index([voucherId, userId])     // đếm perUser
+  @@map("voucher_redemptions")
+}
+
+// Order (spec 08) thêm:
+//   voucherCode     String?   // MỘT ô, không phải mảng
+//   discountVoucher Int @default(0)
+//   discountShip    Int @default(0)</code></pre></figure>
+<p><code>orderId @unique</code> không phải chi tiết kỹ thuật — nó <strong>là</strong> quy tắc nghiệp vụ. Khi ràng buộc nằm trong DB, không có đường vòng nào (API mới, script nhập liệu, hai request song song) tạo ra được một đơn hai mã.</p>
+<h3>DTO (<code>@hikari/shared</code>)</h3>
+<p><code>VoucherDto</code>, <code>VoucherType</code>, <code>VoucherState</code>, <code>AvailableVoucherDto</code> (<code>{ voucher, eligible, reason, discountPreview }</code>), <code>ValidateVoucherDto</code>, <code>CreateVoucherDto</code> — zod, FE &amp; BE cùng import. Nhãn trạng thái mã nằm cùng chỗ với nhãn đơn và nhãn chi nhánh: <code>packages/ui-kit/src/meta/status-meta.ts</code>.</p>
+
+<h2>8. Ảnh hưởng sang các spec khác</h2>
+<div class="table-wrap"><table><thead><tr><th>Spec</th><th>Thay đổi</th></tr></thead><tbody>
+<tr><td><a href="08-dat-hang.html">08 — Đặt hàng</a></td><td>Đơn thêm <code>voucherCode</code> (một mã) + hai dòng giảm giá trong bảng tính tiền; server tính lại toàn bộ khi tạo đơn</td></tr>
+<tr><td><a href="02-tich-diem.html">02 — Tích điểm</a></td><td>Điểm cộng trên <strong>tiền thực trả sau khuyến mãi</strong> (không tính phí giao). Voucher + điểm dùng chung được, trừ mã có <code>stackPoints = false</code>. <span class="q">❓</span> "Đổi điểm lấy ưu đãi" ở spec 02 có sinh voucher vào kho không?</td></tr>
+<tr><td><a href="04-thanh-toan-zalopay.html">04 — ZaloPay</a></td><td>Số tiền ký gửi sang cổng là <strong>số sau khuyến mãi do server tính</strong>. Thanh toán thất bại/hết hạn giữ đơn → phải nhả lượt mã</td></tr>
+<tr><td><a href="03-phi-giao-hang.html">03 — Phí giao hàng</a></td><td>Mã <code>FREESHIP</code> giảm trên phí đối tác giao báo về; phần quán bù <strong>ghi riêng</strong>, không trộn vào doanh thu món</td></tr>
+<tr><td><a href="09-chi-nhanh.html">09 — Chi nhánh</a></td><td>Mã giới hạn theo <code>branchIds</code>; đổi chi nhánh giữa chừng thì kiểm lại mã đang chọn</td></tr>
+<tr><td><a href="05-thong-bao.html">05 — Thông báo</a></td><td>Gửi mã bí mật qua ZNS/OA; <span class="q">❓</span> gửi theo tệp khách nào (mới, lâu không quay lại, theo chi nhánh)</td></tr>
+<tr><td><a href="06-day-don-sapo.html">06 — Sapo</a></td><td><span class="q">❓</span> Đẩy phần giảm giá sang Sapo dưới dạng chiết khấu đơn hay dòng âm — cần khớp cách Sapo ghi nhận</td></tr>
+<tr><td><a href="07-dashboard.html">07 — Dashboard</a></td><td>Thêm quyền <code>promo</code> (chủ quán + quản lý; nhân viên không có) và mục <em>Voucher &amp; ưu đãi</em>; báo cáo tách phần doanh thu đã giảm</td></tr>
+</tbody></table></div>
+
+<h2>9. Edge case &amp; bảo mật</h2>
+<ul>
+<li><strong>Mã hết hạn / hết lượt trong lúc khách đang thanh toán.</strong> Server từ chối ở <code>POST /orders</code> với lý do đọc được và mời chọn mã khác — không âm thầm bỏ mã rồi trừ tiền đầy đủ (khách sẽ thấy mình bị tính thừa).</li>
+<li><strong>Trừ lượt phải nguyên tử.</strong> <code>UPDATE ... SET used = used + 1 WHERE used &lt; quota</code> trong transaction tạo đơn — đọc rồi ghi là cách chắc chắn phát quá số lượt trong giờ cao điểm.</li>
+<li><strong>Đơn huỷ / thanh toán thất bại</strong> → nhả lượt (xoá dòng <code>voucher_redemptions</code> và <code>used = used - 1</code> trong cùng transaction huỷ). <span class="q">❓</span> Đơn <strong>đã giao</strong> rồi mới hoàn tiền thì có trả lại lượt không (đề xuất: <strong>không</strong>).</li>
+<li><strong>Đổi hình thức nhận hàng / địa chỉ / chi nhánh</strong> làm mã hết hợp lệ → gỡ mã và <strong>nói rõ lý do</strong> ngay trên màn, không đợi tới hoá đơn cuối.</li>
+<li><strong>Giảm nhiều hơn tiền đơn</strong> → tổng thanh toán chặn ở 0đ, không hoàn phần thừa thành tiền hay điểm.</li>
+<li><strong>Giảm giá không ăn vào phí giao</strong> (trừ mã <code>FREESHIP</code>) — nếu không, quán âm thầm gánh phí đối tác giao.</li>
+<li><strong>Dò mã bí mật.</strong> <code>/vouchers/claim</code> và <code>/vouchers/validate</code> phải <strong>rate-limit theo tài khoản</strong> (đề xuất 10 lần/phút) và trả lỗi giống nhau cho "mã không tồn tại" và "mã không dành cho bạn" — chênh lệch thông báo là công cụ để dò ra mã.</li>
+<li><strong>Không tin client.</strong> Tiền giảm hiển thị trong app chỉ để xem; số chốt luôn do server tính lại từ giỏ hàng và bảng mã.</li>
+<li><strong>Đếm <code>perUser</code> theo tài khoản Zalo ở máy chủ</strong>, không theo thiết bị và không theo số điện thoại tự khai.</li>
+<li><strong>Ghi nhật ký</strong> mọi lần tạo / sửa / tắt mã (ai, lúc nào, đổi gì) — đây là thao tác trực tiếp tạo ra chi phí, phải truy được (<a href="07-dashboard.html">spec 07</a>).</li>
+<li><strong>Không xoá mã đã có lượt dùng</strong> — mất lịch sử đối soát doanh thu khuyến mãi. Chỉ tạm dừng.</li>
+<li><strong>Mã bí mật không lọt vào</strong> <code>GET /vouchers/available</code> của khách chưa lưu mã — kể cả khi đang <code>ACTIVE</code>.</li>
+<li>Ngày giờ tính theo <strong>Asia/Ho_Chi_Minh</strong>; khung giờ hỗ trợ ca qua nửa đêm (<code>hourTo</code> &lt; <code>hourFrom</code>).</li>
+</ul>
+
+<h2>10. Tiêu chí hoàn thành (Acceptance)</h2>
+<ul class="tasks">
+<li><span class="box">☐</span>Khách chỉ áp được <strong>một mã</strong> cho một đơn; chọn mã khác thì mã cũ tự rời đơn.</li>
+<li><span class="box">☐</span>Gọi thẳng API với hai mã (hoặc mảng mã) <strong>bị từ chối</strong>; ràng buộc <code>orderId</code> UNIQUE có thật trong migration.</li>
+<li><span class="box">☐</span>Mã không dùng được vẫn hiện trong kho kèm <strong>lý do cụ thể</strong> (thiếu bao nhiêu tiền, sai hình thức, sai chi nhánh, ngoài khung giờ, hết lượt, hết hạn).</li>
+<li><span class="box">☐</span>Đổi hình thức nhận hàng làm mã hết hợp lệ → mã bị gỡ kèm thông báo, tổng tiền cập nhật đúng.</li>
+<li><span class="box">☐</span>Mã <code>PERCENT</code> không có trần <strong>không lưu được</strong> ở dashboard.</li>
+<li><span class="box">☐</span>Mã <code>FREESHIP</code> chỉ giảm phí giao; mã khác chỉ giảm tiền món — kiểm bằng hoá đơn có cả hai dòng.</li>
+<li><span class="box">☐</span>Tổng thanh toán không bao giờ âm; điểm cộng tính trên tiền thực trả sau khuyến mãi.</li>
+<li><span class="box">☐</span>Trừ lượt nguyên tử: chạy 50 đơn song song trên mã còn 10 lượt thì đúng 10 đơn được giảm.</li>
+<li><span class="box">☐</span>Huỷ đơn / thanh toán thất bại thì lượt được nhả lại cho khách và cho chương trình.</li>
+<li><span class="box">☐</span>Mã bí mật không hiện với khách chưa lưu mã; <code>claim</code>/<code>validate</code> có rate-limit.</li>
+<li><span class="box">☐</span>Vai trò nhân viên không mở được màn Voucher; mọi thao tác tạo/sửa/tắt đều vào nhật ký.</li>
+<li><span class="box">☐</span>Dashboard xem được một mã đã dùng bao nhiêu lượt và giảm bao nhiêu tiền thật (từ <code>voucher_redemptions</code>, không phải ước tính).</li>
+</ul>
+
+<h2>11. Câu hỏi mở (<span class="q">❓</span> cần chủ quán xác nhận)</h2>
+<ol>
+<li><strong>Chương trình thật đầu tiên là gì</strong> — giảm bao nhiêu, trần bao nhiêu, đơn tối thiểu bao nhiêu, chạy tới ngày nào? (Số trong prototype là số mẫu.)</li>
+<li>Voucher có được <strong>dùng chung với đổi điểm</strong> không (đề xuất: có, trừ mã giảm sâu)?</li>
+<li>Đơn <strong>đã giao rồi mới hoàn tiền</strong> thì có trả lại lượt mã cho khách không (đề xuất: không)?</li>
+<li>Có cần mã <strong>riêng theo hạng thành viên</strong> (chỉ khách Vàng) không?</li>
+<li>Có cần <strong>sinh mã duy nhất cho từng khách</strong> (<code>HIKARI-A7F2</code>, dùng một lần) để gửi ZNS không, hay mã dùng chung là đủ?</li>
+<li>Có cần mã <strong>tặng món</strong> (mua mì tặng matcha) không — spec này chưa làm?</li>
+<li>"<strong>Đổi điểm lấy ưu đãi</strong>" ở <a href="02-tich-diem.html">spec 02</a> nên sinh ra một voucher trong kho, hay giữ cơ chế giảm trực tiếp như hiện tại?</li>
+<li><strong>Ai được tạo mã</strong> — chỉ chủ quán, hay quản lý cũng được (hiện prototype cho cả hai)?</li>
+<li>Phần <strong>quán bù cho mã miễn phí giao</strong> hạch toán vào đâu, và có trần chi phí mỗi ngày không?</li>
+</ol>
+</div>
+<footer class="foot">Hikari Vegetarian Cafe · tài liệu nội bộ · specs dùng định dạng HTML</footer>
+</body>
+</html>

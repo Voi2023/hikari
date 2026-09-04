@@ -2,12 +2,14 @@
  *
  * Dùng ở docs/prototype/menu.html: khách bấm "Tiếp tục đặt hàng" trong giỏ.
  * Nối 3 spec lại thành 1 luồng liền mạch để duyệt UX với chủ quán:
- *   08 (đặt hàng) → 03 (phí giao hàng) → 04 (thanh toán ZaloPay) → 02/05/06 (điểm, thông báo, Sapo).
+ *   08 (đặt hàng) → 03 (phí giao hàng) → 04 (thanh toán ZaloPay) → 02/05/06 (điểm, thông báo, Sapo)
+ *   → 11 (voucher — ô "Ưu đãi" ở màn thanh toán, MỖI ĐƠN CHỈ MỘT MÃ).
  *
  * ⚠️ TẤT CẢ ĐỀU MÔ PHỎNG — không gọi API, không gọi BE, không giao dịch ZaloPay thật.
  * Dòng chữ mono `API: ...` trên mỗi màn là endpoint tương ứng trong spec (bật/tắt bằng nút ⓘ).
  *
  * Cách dùng:
+ *   <script src="shared/vouchers.js"></script>   (nạp TRƯỚC — checkout đọc bảng mã ở đây)
  *   <script src="shared/checkout.js"></script>
  *   Checkout.start({ lines, mode, subtotal, onDone })
  *     lines: [{ name, opt, price, qty }]  ·  mode: 'dine' | 'takeaway' | 'delivery'
@@ -41,7 +43,7 @@
   };
   var MAX_KM = 10;   // ❓ bán kính phục vụ — chờ chủ quán & đơn vị giao chốt
 
-  var USER = { name: 'Minh Anh', points: 320, phone: '0903 *** 456' };
+  var USER = { name: 'Minh Anh', points: 320, phone: '0903 *** 456', isFirstOrder: false };
 
   /* Phương thức thanh toán — `modes` là các hình thức nhận hàng dùng được.
      ĐƠN GIAO HÀNG CHỈ TRẢ TRƯỚC QUA ZALOPAY: tài xế là đối tác giao, không thu tiền hộ quán,
@@ -96,14 +98,62 @@
   function branchName() { return S.branch ? S.branch.name : 'Hikari Vegetarian Cafe'; }
   function packaging() { return S.mode === 'takeaway' ? PACKAGING_FEE : 0; }
   function ship() { return S.mode === 'delivery' && S.quote.state === 'ok' ? S.quote.fee : 0; }
+
+  /* --- Voucher (spec 11) — MỘT MÃ CHO CẢ ĐƠN, giữ trong MỘT ô `S.voucherCode` ---
+     Cố tình không dùng mảng: có mảng là sớm muộn ai đó push mã thứ hai vào. */
+  function voucherCtx() {
+    return {
+      subtotal: S.subtotal, packaging: packaging(), ship: ship(),
+      mode: S.mode, branchId: S.branch ? S.branch.id : null,
+      isFirstOrder: USER.isFirstOrder, now: new Date()
+    };
+  }
+  function curVoucher() { return S.voucherCode ? voucherByCode(S.voucherCode) : null; }
+  /* Hai túi tiền tách bạch: `food` trừ vào tiền món, `ship` trừ vào phí giao.
+     Gộp lại thành một số là cách chắc chắn nhất để giảm giá ăn nhầm sang phí ship. */
+  function vOff() {
+    var v = curVoucher();
+    return v ? voucherDiscount(v, voucherCtx()) : { food: 0, ship: 0 };
+  }
+  /* Mã "sâu" (giảm 15% cả đơn) có thể cấm cộng dồn với đổi điểm — quán không muốn
+     giảm hai lần trên cùng một đơn. Cấm thì phải nói ra ở màn điểm, không lặng lẽ bỏ qua. */
+  function pointsBlockedByVoucher() {
+    var v = curVoucher();
+    return !!(v && v.stackPoints === false);
+  }
   function maxPointsUsable() {
+    if (pointsBlockedByVoucher()) return 0;
     var byPoint = Math.floor(USER.points / POINT_BLOCK);
-    var byBill = Math.floor((S.subtotal + packaging()) / POINT_VALUE);
-    return Math.min(byPoint, byBill) * POINT_BLOCK;
+    // Voucher trừ trước, điểm trừ trên phần còn lại — không cho đổi điểm quá số tiền còn phải trả.
+    var byBill = Math.floor((S.subtotal + packaging() - vOff().food) / POINT_VALUE);
+    return Math.max(0, Math.min(byPoint, byBill)) * POINT_BLOCK;
   }
   function discount() { return S.usePoints ? (maxPointsUsable() / POINT_BLOCK) * POINT_VALUE : 0; }
-  function total() { return S.subtotal + packaging() + ship() - discount(); }
-  function pointsEarned() { return Math.floor((S.subtotal + packaging() - discount()) / EARN_PER); }
+  function total() {
+    var d = vOff();
+    return Math.max(0, S.subtotal + packaging() + ship() - d.food - d.ship - discount());
+  }
+  /* Điểm cộng tính trên TIỀN THỰC TRẢ cho món (không tính phí ship, đã trừ mọi khuyến mãi):
+     cộng điểm trên phần quán đã giảm cho khách là tự trả giá khuyến mãi hai lần. */
+  function pointsEarned() {
+    return Math.max(0, Math.floor((S.subtotal + packaging() - vOff().food - discount()) / EARN_PER));
+  }
+
+  /* Đơn đổi hình thức / đổi địa chỉ thì điều kiện mã có thể không còn đúng (mã miễn phí giao
+     trên đơn tại quán, mã riêng chi nhánh khác…). Gỡ mã và NÓI RÕ vì sao — im lặng bỏ mã đi
+     là kiểu lỗi khách chỉ phát hiện khi nhìn hoá đơn cuối cùng và mất lòng tin. */
+  function syncVoucher() {
+    var v = curVoucher();
+    if (!v) return;
+    // Đơn giao hàng chưa có báo giá thì phí giao đang là 0 — kiểm lúc này sẽ gỡ oan mã miễn phí giao.
+    if (S.mode === 'delivery' && S.quote.state !== 'ok') return;
+    var chk = voucherCheck(v, voucherCtx());
+    if (!chk.ok) {
+      S.voucherMsg = 'Đã gỡ mã ' + v.code + ': ' + chk.reason;
+      S.voucherCode = null;
+    }
+    if (pointsBlockedByVoucher()) S.usePoints = false;
+  }
 
   /* ==== Mô phỏng báo giá ship — thật là POST /api/v1/shipping/quote → đối tác giao trả về ==== */
   function requestQuote() {
@@ -120,6 +170,7 @@
         // Phí & ETA là DO ĐƠN VỊ GIAO CUNG CẤP. Ở prototype mô phỏng theo bán kính cho có số để xem.
         S.quote = { state: 'ok', fee: Math.round((15000 + a.km * 5000) / 1000) * 1000, eta: Math.round(8 + a.km * 3), km: a.km };
       }
+      syncVoucher();      // phí giao vừa đổi → mã miễn phí giao / đơn tối thiểu có thể hết hợp lệ
       render();
     }, 900);
   }
@@ -140,7 +191,7 @@
 
   function stepper() {
     var names = ['Thông tin', 'Thanh toán', 'Theo dõi'];
-    var cur = (S.step === 'info' || S.step === 'addr') ? 0 : S.step === 'done' ? 2 : 1;   // gate/qr/fail vẫn thuộc bước thanh toán
+    var cur = (S.step === 'info' || S.step === 'addr') ? 0 : S.step === 'done' ? 2 : 1;   // gate/qr/fail/voucher vẫn thuộc bước thanh toán
     return '<div class="co-steps">' + names.map(function (n, i) {
       return '<span class="co-st ' + (i < cur ? 'done' : i === cur ? 'now' : '') + '">' +
              '<b>' + (i < cur ? '✓' : i + 1) + '</b>' + n + '</span>';
@@ -150,12 +201,16 @@
   function note(txt) { return '<div class="co-note">API: ' + esc(txt) + '</div>'; }
 
   function sumRows(showShip) {
+    var d = vOff();
     var h = '<div class="co-row"><span>Tạm tính món</span><b>' + vnd(S.subtotal) + '</b></div>';
     if (packaging()) h += '<div class="co-row"><span>Phụ phí đóng gói (mang về)</span><b>' + vnd(packaging()) + '</b></div>';
     if (showShip && S.mode === 'delivery') {
       h += '<div class="co-row"><span>Phí giao hàng <i class="co-hint">do đơn vị giao cung cấp</i></span><b>' +
            (S.quote.state === 'ok' ? vnd(S.quote.fee) : '—') + '</b></div>';
     }
+    // Voucher hiện thành dòng riêng, ghi rõ trừ vào món hay trừ vào phí giao.
+    if (d.food) h += '<div class="co-row disc"><span>Ưu đãi ' + esc(S.voucherCode) + '</span><b>−' + vnd(d.food) + '</b></div>';
+    if (d.ship) h += '<div class="co-row disc"><span>Ưu đãi ' + esc(S.voucherCode) + ' (phí giao)</span><b>−' + vnd(d.ship) + '</b></div>';
     if (discount()) h += '<div class="co-row disc"><span>Giảm giá (' + maxPointsUsable() + ' điểm)</span><b>−' + vnd(discount()) + '</b></div>';
     h += '<div class="co-row tot"><span>Tổng cộng</span><b>' + vnd(total()) + '</b></div>';
     return h;
@@ -287,6 +342,79 @@
     return '';
   }
 
+  /* ==== Ô "Ưu đãi" — MỘT ô cho cả đơn (spec 11) ====
+     Cố ý chỉ có một ô: giao diện không cho chỗ nào để dán mã thứ hai, nên khách không kỳ vọng
+     cộng dồn rồi thất vọng ở bước cuối. */
+  function voucherRow() {
+    var ctx = voucherCtx();
+    var v = curVoucher();
+    var d = vOff();
+    var n = usableVoucherCount(ctx);
+
+    var inner = v
+      ? '<div class="co-vsel">' +
+          '<span class="co-vtag">' + esc(v.code) + '</span>' +
+          '<div class="co-vb"><div>' + esc(v.title) + '</div>' +
+            '<div class="co-sub">' + (d.food + d.ship ? 'Giảm ' + vnd(d.food + d.ship) + ' cho đơn này' : esc(voucherValueLabel(v))) + '</div></div>' +
+          '<button class="co-vx" onclick="Checkout.clearVoucher()" title="Bỏ mã">✕</button>' +
+        '</div>' +
+        '<button class="co-addnew" onclick="Checkout.openVoucher()">Đổi mã khác</button>'
+      : '<button class="co-addnew" onclick="Checkout.openVoucher()">🎟️ ' +
+        (n ? 'Có ' + n + ' mã dùng được — chọn ưu đãi' : 'Nhập / chọn mã ưu đãi') + '</button>';
+
+    return '<div class="co-sec"><h4>Ưu đãi <span class="co-hint" style="display:inline">· mỗi đơn 1 mã</span></h4>' +
+      (S.voucherMsg ? '<div class="co-alert warn" style="margin-bottom:8px">⚠️ ' + esc(S.voucherMsg) + '</div>' : '') +
+      inner +
+      note('GET /api/v1/vouchers/available?branchId&mode&subtotal · POST /api/v1/vouchers/validate') + '</div>';
+  }
+
+  /* ==== Màn chọn mã ==== */
+  function viewVoucher() {
+    var ctx = voucherCtx();
+    var opts = voucherOptions(ctx);
+
+    var body = '<div class="co-sec"><h4>Nhập mã</h4>' +
+      '<div class="co-vform">' +
+        '<input class="co-input" style="margin-top:0;text-transform:uppercase" placeholder="VD: HIKARI30" ' +
+          'value="' + esc(S.codeInput) + '" oninput="Checkout.setCode(this.value)">' +
+        '<button class="co-btn sm" onclick="Checkout.applyCode()">Áp dụng</button>' +
+      '</div>' +
+      (S.codeErr ? '<div class="co-err">' + esc(S.codeErr) + '</div>' : '') +
+      '<p class="co-fine">Mã gửi riêng qua ZNS/tờ rơi không hiện sẵn trong kho — nhập đúng một lần là mã tự vào kho.</p></div>';
+
+    body += '<div class="co-sec"><div class="co-alert warn">🎟️ <strong>Mỗi đơn chỉ dùng được một mã.</strong> ' +
+      'Chọn mã khác là thay mã đang chọn, không cộng dồn.</div></div>';
+
+    body += '<div class="co-sec"><h4>Kho ưu đãi của bạn</h4>' +
+      (S.voucherCode
+        ? '<button class="co-addnew" onclick="Checkout.clearVoucher(1)">Không dùng mã nào</button>'
+        : '') +
+      opts.map(function (o) {
+        var on = o.v.code === S.voucherCode;
+        return '<div class="co-vcard ' + (on ? 'on' : '') + (o.ok ? '' : ' off') + '"' +
+          (o.ok ? ' onclick="Checkout.pickVoucher(\'' + o.v.code + '\')"' : '') + '>' +
+          '<div class="co-vleft"><span class="co-vtag">' + esc(o.v.code) + '</span></div>' +
+          '<div class="co-vb">' +
+            '<div><strong>' + esc(o.v.title) + '</strong></div>' +
+            '<div class="co-sub">' + esc(voucherCondLabel(o.v)) + '</div>' +
+            '<div class="co-sub">HSD ' + dmyText(o.v.endAt) + (o.v.stackPoints === false ? ' · không cộng dồn với điểm' : '') + '</div>' +
+            (o.ok
+              ? '<div class="co-vok">Giảm ' + vnd(o.off) + ' cho đơn này</div>'
+              : '<div class="co-vno">' + esc(o.reason) + '</div>') +
+          '</div>' +
+          '<span class="co-tick">' + (on ? '✓' : '') + '</span></div>';
+      }).join('') +
+      (opts.length ? '' : '<div class="co-card co-sub">Chưa có mã nào trong kho.</div>') +
+      '</div>';
+
+    var v = curVoucher();
+    var foot = '<div class="co-total"><span>Tổng cộng sau ưu đãi</span><b>' + vnd(total()) + '</b></div>' +
+      '<button class="co-btn" onclick="Checkout.backPay()">' +
+      (v ? 'Dùng mã ' + esc(v.code) : 'Không dùng mã, tiếp tục') + '</button>';
+
+    return shell('Chọn ưu đãi', body, foot, { back: 'backPay' });
+  }
+
   /* ==== Bước 2 — thanh toán ==== */
   function viewPay() {
     var body = '<div class="co-sec"><h4>Đơn ' + S.code + '</h4><div class="co-card">' +
@@ -295,13 +423,18 @@
       (S.time === 'now' ? 'sớm nhất' : S.at) + '</b></div>' + sumRows(true) + '</div>' +
       '<p class="co-fine">Số tiền cuối do <strong>server tính lại</strong> từ đơn — app không tin giá client gửi.</p></div>';
 
+    body += voucherRow();
+
     var usable = maxPointsUsable();
     body += '<div class="co-sec"><h4>Điểm thành viên</h4><div class="co-card">' +
       '<div class="co-row"><span>Điểm hiện có</span><b>' + USER.points + ' điểm</b></div>' +
-      (usable
-        ? '<label class="co-check"><input type="checkbox" ' + (S.usePoints ? 'checked' : '') + ' onchange="Checkout.togglePoints()">' +
-          ' Dùng ' + usable + ' điểm — giảm ' + vnd((usable / POINT_BLOCK) * POINT_VALUE) + '</label>'
-        : '<div class="co-sub">Cần tối thiểu ' + POINT_BLOCK + ' điểm để đổi.</div>') +
+      (pointsBlockedByVoucher()
+        ? '<div class="co-sub">Mã <strong>' + esc(S.voucherCode) + '</strong> không cộng dồn với đổi điểm. ' +
+          'Bỏ mã nếu muốn dùng điểm cho đơn này.</div>'
+        : usable
+          ? '<label class="co-check"><input type="checkbox" ' + (S.usePoints ? 'checked' : '') + ' onchange="Checkout.togglePoints()">' +
+            ' Dùng ' + usable + ' điểm — giảm ' + vnd((usable / POINT_BLOCK) * POINT_VALUE) + '</label>'
+          : '<div class="co-sub">Cần tối thiểu ' + POINT_BLOCK + ' điểm để đổi.</div>') +
       '</div>' + note('GET /api/v1/loyalty/me · POST /api/v1/loyalty/redeem') + '</div>';
 
     var methods = methodsFor(S.mode);
@@ -421,6 +554,7 @@
   function render() {
     var v = S.step === 'info' ? viewInfo()
       : S.step === 'addr' ? viewAddr()
+      : S.step === 'voucher' ? viewVoucher()
       : S.step === 'pay' ? viewPay()
       : S.step === 'gate' ? viewGate()
       : S.step === 'qr' ? viewQr()
@@ -456,6 +590,9 @@
         addressId: 'a1', quote: { state: 'idle' },
         time: 'now', at: '18:30', note: '', phoneShared: opts.mode === 'dine',
         usePoints: false, method: 'zalopay',
+        voucherCode: null,        // MỘT ô, một mã — luật "mỗi đơn một mã" (spec 11)
+        voucherMsg: '',           // lý do mã vừa bị gỡ tự động, hiện cho khách đọc
+        codeInput: '', codeErr: '',
         form: null, formErr: '',
         code: '#' + id, appTransId: yy + mm + dd + '_' + id,
         paying: false, paid: false, earned: 0, trackAt: 0,
@@ -473,7 +610,7 @@
       S.mode = m;
       normalizeMethod();
       S.phoneShared = S.phoneShared || m === 'dine';
-      if (m === 'delivery') { requestQuote(); } else { S.quote = { state: 'idle' }; render(); }
+      if (m === 'delivery') { requestQuote(); } else { S.quote = { state: 'idle' }; syncVoucher(); render(); }
     },
     pickAddr: function (id) { S.addressId = id; requestQuote(); },
 
@@ -523,6 +660,21 @@
     backInfo: function () { S.step = 'info'; render(); },
     backPay: function () { S.step = 'pay'; S.paying = false; render(); },
     togglePoints: function () { S.usePoints = !S.usePoints; render(); },
+
+    /* --- Ưu đãi (spec 11): mọi đường vào đều đi qua applyVoucher(), nên không có lối nào
+           nhét được mã thứ hai vào đơn. Chọn mã mới = ghi đè ô cũ. --- */
+    openVoucher: function () { S.step = 'voucher'; S.codeErr = ''; S.voucherMsg = ''; render(); },
+    setCode: function (v) { S.codeInput = v; S.codeErr = ''; },
+    applyCode: function () { Checkout.pickVoucher(S.codeInput); },
+    pickVoucher: function (code) {
+      var r = applyVoucher(code, voucherCtx());
+      if (!r.ok) { S.codeErr = r.reason; render(); return; }
+      S.voucherCode = r.code;                 // ghi đè: mã cũ (nếu có) rời đơn ngay tại đây
+      S.codeInput = ''; S.codeErr = ''; S.voucherMsg = '';
+      if (pointsBlockedByVoucher()) S.usePoints = false;
+      render();
+    },
+    clearVoucher: function () { S.voucherCode = null; S.voucherMsg = ''; S.codeErr = ''; render(); },
     setMethod: function (m) { S.method = m; render(); },
 
     pay: function () {
@@ -541,6 +693,9 @@
 
   /* Vào màn theo dõi + chạy timeline mô phỏng */
   function done() {
+    // Lượt dùng chỉ ghi khi đơn đã được ghi nhận. Thật thì SERVER ghi vào voucher_redemptions
+    // trong cùng transaction tạo đơn — trừ lượt ở client là chỗ để lách dùng mã nhiều lần.
+    if (S.voucherCode) markVoucherUsed(S.voucherCode);
     S.earned = pointsEarned();
     S.step = 'done';
     S.trackAt = 0;
@@ -628,7 +783,20 @@
       '.co-step{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:.84rem;}',
       '.co-step .dot{width:12px;height:12px;border-radius:50%;background:var(--line,#E7E2D8);flex:none;}',
       '.co-step.done .dot{background:var(--matcha,#5F7A4A);} .co-step.now .dot{background:var(--sun,#F2C94C);box-shadow:0 0 0 4px #f7e6a8;}',
-      '.co-step.wait{color:var(--muted,#8A857C);}'
+      '.co-step.wait{color:var(--muted,#8A857C);}',
+      /* Ưu đãi (spec 11) */
+      '.co-vform{display:flex;gap:8px;align-items:center;} .co-vform .co-input{flex:1;}',
+      '.co-vform .co-btn.sm{margin-top:0;flex:none;}',
+      '.co-vsel{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid var(--matcha,#5F7A4A);background:var(--matcha-soft,#EAF0E3);border-radius:12px;padding:10px;margin-bottom:8px;}',
+      '.co-vtag{font-family:ui-monospace,Menlo,monospace;font-size:.7rem;font-weight:700;background:var(--matcha,#5F7A4A);color:#fff;border-radius:6px;padding:4px 7px;white-space:nowrap;}',
+      '.co-vb{flex:1;font-size:.84rem;}',
+      '.co-vx{border:none;background:transparent;color:var(--muted,#8A857C);font:inherit;font-size:1rem;cursor:pointer;padding:0 4px;}',
+      '.co-vcard{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line,#E7E2D8);border-radius:12px;padding:10px;margin-bottom:8px;cursor:pointer;}',
+      '.co-vcard.on{border-color:var(--matcha,#5F7A4A);background:var(--matcha-soft,#EAF0E3);}',
+      /* Mã không dùng được vẫn HIỆN kèm lý do: ẩn đi thì khách tưởng mã của mình bị mất. */
+      '.co-vcard.off{opacity:.62;cursor:default;} .co-vcard.off .co-vtag{background:var(--muted,#8A857C);}',
+      '.co-vok{color:var(--matcha,#5F7A4A);font-weight:700;font-size:.78rem;margin-top:3px;}',
+      '.co-vno{color:var(--chili,#D9534F);font-size:.75rem;margin-top:3px;}'
     ].join('\n');
     var st = document.createElement('style');
     st.id = 'hikari-checkout-css';
