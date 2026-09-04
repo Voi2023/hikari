@@ -33,6 +33,7 @@
 <script src="../shared/branches.js"></script>
 <script src="assets/kit.js"></script>
 <script src="assets/data.js"></script>
+<script src="assets/print.js"></script>
 <script src="assets/shell.js"></script>
 <script>
 Shell.mount({ page:'don-hang', title:'Đơn hàng', sub: todayLabel(),
@@ -114,9 +115,19 @@ function render(){
 /* ---- Chi tiết đơn ---- */
 function detail(code){
   const o = ORDERS.find(x => x.code === code)
-  const lines = o.items.map(([n,q,p]) => `<tr><td>${n}</td><td class="center">${q}</td>
-      <td class="right">${money(p)}</td><td class="right">${money(q*p)}</td></tr>`).join('')
-  const sub = o.items.reduce((s,[,q,p])=> s+q*p, 0)
+  // Topping và mức đường/đá hiện thành dòng con: đây chính là thứ bếp làm và thứ khách trả tiền,
+  // gộp vào một dòng "Trà sữa ×2" là chỗ khiếu nại không tra được.
+  const lines = o.items.map(it => {
+    const [n,q,p] = it
+    const ops = itemOptions(it).map(op => `<tr class="sub-op"><td style="padding-left:14px">+ ${op[0]}</td>
+        <td class="center">${optionQty(op,q)}</td><td class="right">${op[1] ? money(op[1]) : '—'}</td>
+        <td class="right">${optionTotal(op,q) ? money(optionTotal(op,q)) : '—'}</td></tr>`).join('')
+    const nt = itemNote(it) ? `<tr class="sub-op"><td colspan="4" style="padding-left:14px;font-style:italic">
+        * ${itemNote(it)}</td></tr>` : ''
+    return `<tr><td><b>${n}</b></td><td class="center">${q}</td>
+      <td class="right">${money(p)}</td><td class="right">${money(q*p)}</td></tr>${ops}${nt}`
+  }).join('')
+  const sub = orderSubtotal(o)
 
   const steps = ['NEW','CONFIRMED','PREPARING','READY','DELIVERING','COMPLETED']
   const done = steps.indexOf(o.status)
@@ -156,6 +167,8 @@ function detail(code){
           <div class="kv" style="margin-top:10px"><b>Tạm tính</b><span class="right">${money(sub)}</span></div>
           ${o.packaging ? `<div class="kv"><b>Hộp mang về</b><span class="right">${money(o.packaging)}</span></div>` : ''}
           ${o.ship ? `<div class="kv"><b>Phí giao</b><span class="right">${money(o.ship)}</span></div>` : ''}
+          ${(o.discounts||[]).map(d => `<div class="kv"><b>${d.label}</b>
+            <span class="right" style="color:var(--brand)">− ${money(d.amount)}</span></div>`).join('')}
           <div class="kv" style="font-size:15px"><b>Tổng cộng</b><span class="right"><span style="font-weight:700">${money(orderTotal(o))}</span></span></div>
         </div>
         <div>
@@ -168,7 +181,35 @@ function detail(code){
       </div>`,
     actions:`<button class="btn btn-outline" data-close>Đóng</button>
              <button class="btn btn-ghost" onclick="toast('Mô phỏng: đã gửi lại thông báo trạng thái cho khách qua Zalo')">
-               <i class="ti ti-send"></i> Gửi lại thông báo</button>` })
+               <i class="ti ti-send"></i> Gửi lại thông báo</button>
+             <button class="btn btn-outline" onclick="printKitchen('${o.code}')">
+               <i class="ti ti-tools-kitchen-2"></i> In phiếu bếp${Print.countOf(o.code,'kitchen') ? ' (in lại)' : ''}</button>
+             <button class="btn btn-primary" onclick="printReceipt('${o.code}')">
+               <i class="ti ti-receipt"></i> In hoá đơn</button>` })
+}
+
+/* In phiếu bếp. Lần thứ hai trở đi phải HỎI LẠI: phiếu trùng rơi vào bếp là món làm hai lần,
+   và không ai phát hiện cho tới lúc bưng ra bàn. */
+function printKitchen(code){
+  const again = Print.countOf(code, 'kitchen')
+  if(!again) return doKitchen(code)
+  const ov = modal({ title:`In lại phiếu bếp #${code}?`,
+    body:`<p style="font-size:13px">Phiếu này đã in <b>${again} lần</b>. Bếp nhận phiếu trùng
+      có thể <b>làm lại món</b> — chỉ in lại khi phiếu cũ bị mất hoặc mờ.</p>
+      <p class="muted" style="font-size:12.5px">Phiếu mới sẽ đóng dấu “IN LẠI · LẦN ${again+1}” để bếp đối chiếu.</p>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="doKitchen('${code}')">In lại</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal))
+}
+function doKitchen(code){
+  closeModal()
+  const n = Print.kitchen(code)
+  toast(`<i class="ti ti-printer"></i> Đã gửi ${n} phiếu bếp cho #${code} · đã ghi nhật ký`)
+}
+function printReceipt(code){
+  const o = ORDERS.find(x => x.code === code)
+  const n = Print.receipt(code)
+  toast(`<i class="ti ti-receipt"></i> Đã in ${n} liên hoá đơn #${code} — ${money(orderTotal(o))}đ`)
 }
 
 function move(code, to){
@@ -180,6 +221,12 @@ function move(code, to){
   if(to === 'REFUNDED') o.payment = 'REFUNDED'
   closeModal(); initFilters(); render()
   toast(`<i class="ti ti-check"></i> #${code} → <b>${meta('order', to).label}</b> · đã ghi nhật ký`)
+  // Xác nhận đơn là lúc bếp cần biết — in ngay, đừng bắt người ở quầy nhớ bấm thêm một nút
+  // giữa giờ cao điểm (spec 12 §5). Tắt được ở màn Mẫu in.
+  if(to === 'CONFIRMED' && printCfg().autoKitchen){
+    const n = Print.kitchen(code)
+    setTimeout(() => toast(`<i class="ti ti-tools-kitchen-2"></i> Tự động in ${n} phiếu bếp cho #${code}`), 900)
+  }
 }
 function retry(code){
   const o = ORDERS.find(x => x.code === code)

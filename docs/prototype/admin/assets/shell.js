@@ -22,6 +22,7 @@ const NAV = [
     { page: 'chi-nhanh', icon: 'ti-building-store',  label: 'Chi nhánh',     perm: 'branch',
       badge: () => BRANCHES.filter(b => b.status === 'PAUSED').length },
     { page: 'cai-dat-giao-hang', icon: 'ti-settings-bolt', label: 'Cài đặt giao hàng', perm: 'ship' },
+    { page: 'in-phieu',  icon: 'ti-printer',        label: 'Mẫu in',       perm: 'print' },
     { page: 'sapo',      icon: 'ti-plug-connected', label: 'Đồng bộ Sapo', perm: 'sapo' },
     { page: 'tai-khoan', icon: 'ti-shield-lock',    label: 'Tài khoản & nhật ký', perm: 'admin' },
   ]},

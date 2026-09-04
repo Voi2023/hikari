@@ -47,18 +47,35 @@ const PACKAGING_FEE = 5000   // phí hộp mang về — menu.json._meta.packagi
 
 /* ---- Đơn hàng ----
    Quy tắc (spec 08 §5): đơn DELIVERY chỉ có method ZALOPAY — trả trước, tài xế không thu tiền hộ.
-   COD / BANK_TRANSFER chỉ dùng cho DINE_IN và TAKEAWAY. */
+   COD / BANK_TRANSFER chỉ dùng cho DINE_IN và TAKEAWAY.
+
+   Một dòng món: [ tên, SL, đơn giá, [tuỳ chọn], 'ghi chú riêng của món' ]
+     tuỳ chọn = [ nhãn, giá, SL riêng? ] — topping có tiền, mức đường/đá giá 0.
+   Hai phần tử cuối THÊM VÀO SAU (spec 12 — in phiếu): mọi chỗ đang đọc [tên, SL, giá]
+   vẫn chạy nguyên, nhưng phiếu bếp và hoá đơn cần đúng cái khách đã chọn. Không có nó thì
+   bếp làm trà sữa 100% đường cho người xin 40%, và đó là ly trà bị trả lại. */
 const ORDERS = [
   { code: 'H1043', at: ago(4), customer: 'Minh Anh', phone: '0903 xxx 412', tier: 'GOLD',
-    items: [['Tamago Ramen', 1, 50000], ['Cà phê muối hồng', 1, 29000]], ship: 27000,
+    branchId: 'CN01', cashier: 'Bảo Trân',
+    items: [
+      ['Tamago Ramen', 1, 50000, [['Topping: Trứng (nửa trái)', 5000], ['Topping: Nấm kim châm chiên', 9000]], 'Không hành'],
+      ['Cà phê muối hồng', 1, 29000, [['Đường: 50%', 0], ['Đá: 70%', 0]], ''],
+    ], ship: 27000,
+    discounts: [{ kind: 'VOUCHER', label: 'Ưu đãi HIKARI30', amount: 25000 }],
     fulfilment: 'DELIVERY', status: 'NEW', payment: 'PAID', method: 'ZALOPAY',
     shipment: 'PENDING', driver: null, sync: 'PENDING', note: 'Không hành, giao trước 12h15' },
   { code: 'H1042', at: ago(18), customer: 'Khách vãng lai', phone: '—', tier: null,
-    items: [['Trà xanh Nhật, sữa hạt', 2, 45000]], ship: 0,
+    branchId: 'CN01', table: 'Khu vực 1 - Bàn 3', cashier: 'Bảo Trân', cash: 200000,
+    items: [
+      ['Trà xanh Nhật, sữa hạt', 2, 45000, [['Topping: Trân châu trắng', 10000], ['Đường: 40%', 0], ['Đá: 0%', 0]], 'Ít đá'],
+    ], ship: 0,
     fulfilment: 'DINE_IN', status: 'PREPARING', payment: 'PAID', method: 'COD',
-    shipment: null, driver: null, sync: 'SYNCED', note: '' },
+    shipment: null, driver: null, sync: 'SYNCED', note: 'Thêm 2 ống hút' },
   { code: 'H1041', at: ago(31), customer: 'Thanh Nguyên', phone: '0938 xxx 771', tier: 'SILVER',
-    items: [['Yaki Udon', 1, 55000]], ship: 0, packaging: PACKAGING_FEE,
+    branchId: 'CN02', cashier: 'Bảo Trân',
+    items: [['Yaki Udon', 1, 55000, [['Topping: Chả chay', 5000]], 'Sốt Shoyu, cay vừa']],
+    ship: 0, packaging: PACKAGING_FEE,
+    discounts: [{ kind: 'POINTS', label: 'Đổi 100 điểm', amount: 10000 }],
     fulfilment: 'TAKEAWAY', status: 'READY', payment: 'PAID', method: 'ZALOPAY',
     shipment: null, driver: null, sync: 'SYNCED', note: 'Sốt Shoyu' },
   { code: 'H1040', at: ago(48), customer: 'Hồng Vân', phone: '0907 xxx 233', tier: 'MEMBER',
@@ -101,10 +118,26 @@ const ORDERS = [
     shipment: 'CANCELLED', driver: null, sync: 'SKIPPED', note: 'Hết món — hoàn tiền toàn phần' },
 ]
 
-/** Tổng tiền một đơn: món + ship + hộp mang về. Tính một chỗ để bảng, chi tiết đơn
- *  và báo cáo không ra ba con số khác nhau cho cùng một đơn. */
+/* Tuỳ chọn của một món: [nhãn, giá, SL riêng?]. Không ghi SL riêng thì topping đi theo
+   số lượng món — gọi 2 ly trà trân châu là 2 phần trân châu, không phải 1. */
+const itemOptions = it => it[3] || []
+const itemNote = it => it[4] || ''
+const optionQty = (opt, itemQty) => (opt[2] != null ? opt[2] : itemQty)
+const optionTotal = (opt, itemQty) => (opt[1] || 0) * optionQty(opt, itemQty)
+/** Thành tiền một dòng món = giá món × SL + tiền các topping. */
+function lineTotal(it) {
+  const [, q, p] = it
+  return q * p + itemOptions(it).reduce((s, opt) => s + optionTotal(opt, q), 0)
+}
+const orderSubtotal = o => o.items.reduce((s, it) => s + lineTotal(it), 0)
+/** Giảm giá của đơn: voucher (spec 11) + đổi điểm (spec 02), mỗi loại một dòng riêng
+ *  để hoá đơn nói rõ khách được giảm vì cái gì. */
+const orderDiscount = o => (o.discounts || []).reduce((s, d) => s + d.amount, 0)
+
+/** Tổng tiền một đơn: món + topping + hộp mang về + ship − giảm giá. Tính một chỗ để bảng,
+ *  chi tiết đơn, hoá đơn in ra và báo cáo không ra bốn con số khác nhau cho cùng một đơn. */
 function orderTotal(o) {
-  return o.items.reduce((s, [, q, p]) => s + q * p, 0) + (o.ship || 0) + (o.packaging || 0)
+  return Math.max(0, orderSubtotal(o) + (o.ship || 0) + (o.packaging || 0) - orderDiscount(o))
 }
 const itemsText = o => o.items.map(([n, q]) => `${n}${q > 1 ? ` ×${q}` : ''}`).join(', ')
 

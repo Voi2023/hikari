@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mẫu in — Hikari Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="../../../packages/design-tokens/tokens.css">
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../../assets/gate.js"></script>
+<style>
+  .split{display:grid;grid-template-columns:380px 1fr;gap:18px;align-items:start}
+  @media(max-width:1100px){.split{grid-template-columns:1fr}}
+  /* Nền xám quanh tờ giấy — để thấy đúng mép giấy 80mm, không tưởng là hết trang */
+  .paper-stage{background:var(--gray-bg);border:1px solid var(--border);border-radius:var(--radius);
+    padding:20px;display:flex;gap:20px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .paper{background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.14);position:relative}
+  .paper::after{content:attr(data-label);position:absolute;top:-17px;left:0;font-size:11px;
+    color:var(--muted);font-weight:700;letter-spacing:.4px}
+  .field label{display:block}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  .hintbox{font-size:12.5px;color:var(--muted);margin-top:4px}
+</style>
+</head>
+<body>
+<main id="page">
+  <div class="split">
+    <div>
+      <div class="panel">
+        <h2>Khổ giấy &amp; số liên</h2>
+        <div class="field"><label>Khổ giấy</label>
+          <select class="input" id="paper" onchange="setCfg('paper', this.value)">
+            <option value="80">Khổ giấy 80mm</option>
+            <option value="58">Khổ giấy 58mm</option>
+          </select>
+          <div class="hintbox">80mm là khổ máy in nhiệt phổ biến ở quán. 58mm nhỏ hơn —
+            tên món dài sẽ xuống dòng nhiều, xem trước bên phải trước khi chốt.</div></div>
+        <div class="field"><label>Số liên hoá đơn</label>
+          <select class="input" id="copies" onchange="setCfg('copies', +this.value)">
+            <option value="1">1 liên — chỉ đưa khách</option>
+            <option value="2">2 liên — khách giữ + quầy lưu</option>
+          </select></div>
+      </div>
+
+      <div class="panel">
+        <h2>Phiếu bếp</h2>
+        <label class="row-flex" style="gap:8px;font-size:13.5px;margin-bottom:8px">
+          <input type="checkbox" class="switch" id="autoKitchen" onchange="setCfg('autoKitchen', this.checked)">
+          Tự in khi xác nhận đơn</label>
+        <div class="hintbox" style="margin:-4px 0 12px">Tắt đi thì phải nhớ bấm in tay cho từng đơn —
+          giờ cao điểm là lúc quên, và món chỉ được phát hiện là chưa làm khi khách hỏi.</div>
+        <label class="row-flex" style="gap:8px;font-size:13.5px">
+          <input type="checkbox" class="switch" id="splitStation" onchange="setCfg('splitStation', this.checked)">
+          Tách phiếu bếp và quầy pha chế</label>
+        <div class="hintbox">Món mì/cơm ra máy in ở bếp, cà phê/trà ra máy ở quầy pha chế.
+          In chung một tờ thì mỗi bên phải đọc lướt qua phần việc của người kia.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Chân hoá đơn</h2>
+        <div class="field"><label>Lời cảm ơn</label>
+          <input class="input" id="footer" onchange="setCfg('footer', this.value)"></div>
+        <label class="row-flex" style="gap:8px;font-size:13.5px;margin-bottom:8px">
+          <input type="checkbox" class="switch" id="showWifi" onchange="setCfg('showWifi', this.checked)">
+          In wifi cho khách</label>
+        <div class="row2">
+          <div class="field"><label>Tên wifi</label>
+            <input class="input" id="wifiName" onchange="setCfg('wifiName', this.value)"></div>
+          <div class="field"><label>Mật khẩu</label>
+            <input class="input" id="wifiPass" onchange="setCfg('wifiPass', this.value)"></div>
+        </div>
+        <div class="hintbox">Tên quán, địa chỉ và SĐT trên hoá đơn lấy thẳng từ
+          <a href="chi-nhanh.html">chi nhánh</a> của đơn — sửa ở đó, không khai lại ở đây,
+          để hai chỗ không bao giờ lệch nhau.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="toolbar">
+          <div class="tabs" id="tabs"></div>
+          <select class="input" id="order" onchange="render()" style="flex:1;min-width:200px"></select>
+          <button class="btn btn-primary btn-sm" onclick="doPrint()"><i class="ti ti-printer"></i> In thử</button>
+        </div>
+        <div id="explain" class="schedule-banner"></div>
+        <div class="paper-stage" id="stage"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Ba loại phiếu bếp, ba việc khác nhau</h2>
+        <div class="table-scroll"><table class="data">
+          <thead><tr><th>Loại</th><th>In khi nào</th><th>Vì sao phải khác nhau</th></tr></thead>
+          <tbody>
+            <tr><td><b>Phiếu thường</b></td><td>Xác nhận đơn</td><td>Đầy đủ món của đơn</td></tr>
+            <tr><td><b>IN LẠI</b></td><td>Bấm in lần thứ hai trở đi</td>
+              <td>Phiếu giống hệt rơi vào bếp lần hai là <b>hai tô mì</b> — quán chịu tiền tô thừa.
+                Dấu “IN LẠI · LẦN 2” để bếp dừng lại hỏi.</td></tr>
+            <tr><td><b>PHIẾU BỔ SUNG</b></td><td>Khách gọi thêm món</td>
+              <td>Chỉ in <b>món mới</b>. In lại cả đơn thì bếp làm lại từ đầu.</td></tr>
+            <tr><td><b>PHIẾU HUỶ MÓN</b></td><td>Khách bỏ món đã gọi</td>
+              <td>Bếp <b>không tự biết</b> món bị huỷ. Không có phiếu này thì món vẫn được làm và đổ đi.</td></tr>
+          </tbody></table></div>
+      </div>
+
+      <div class="panel">
+        <h2>Ghi chú nghiệp vụ</h2>
+        <ul style="font-size:13px;margin:0;padding-left:18px">
+          <li><b>Phiếu bếp không in giá.</b> Người làm món không cần biết khách trả bao nhiêu;
+            giá chỉ làm phiếu dài thêm và khó đọc lúc đông khách.</li>
+          <li><b>Hoá đơn không in công thức pha chế</b> — nhưng vẫn in topping, vì topping có tiền
+            và khách cần đối chiếu được từng dòng.</li>
+          <li><b>Số hoá đơn khác mã đơn.</b> Mã đơn là của hệ thống; số hoá đơn là thứ khách đọc
+            khi khiếu nại và kế toán dò khi đối soát.</li>
+          <li><b>Mỗi lần in đều ghi nhật ký</b> (ai in, lúc nào, lần thứ mấy) — in lại là thao tác
+            tạo ra món thừa và hoá đơn thừa, phải truy được.</li>
+          <li>Đơn <b>mang về / giao hàng</b> có dòng nhắc đóng gói trên phiếu bếp — bếp nhìn phiếu
+            chứ không nhìn màn hình.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="../shared/branches.js"></script>
+<script src="../shared/vouchers.js"></script>
+<script src="assets/kit.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/print.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+Shell.mount({ page:'in-phieu', title:'Mẫu in',
+  sub:'Phiếu bếp &amp; hoá đơn thanh toán — spec 12',
+  actions: can('print')
+    ? `<button class="btn btn-outline btn-sm" onclick="restore()"><i class="ti ti-rotate"></i> Khôi phục mặc định</button>`
+    : `<span class="badge gray"><i class="ti ti-lock"></i> Vai trò này chỉ xem</span>` })
+
+let TAB = 'kitchen'
+let CFG = printCfg()
+
+/* Chèn CSS của mẫu in vào trang để bản xem trước giống hệt bản in ra.
+   Hai bộ CSS riêng cho preview và cho máy in là cách chắc chắn nhất để "xem một đằng, in một nẻo". */
+const st = document.createElement('style')
+st.textContent = printCss()
+document.head.appendChild(st)
+
+function setCfg(k, v){
+  if(!can('print')) return toast('<i class="ti ti-lock"></i> Vai trò này không sửa được cấu hình in')
+  CFG[k] = v; savePrintCfg(CFG); render()
+  toast('<i class="ti ti-check"></i> Đã lưu cấu hình in')
+}
+function restore(){
+  resetPrintCfg(); CFG = printCfg(); fillForm(); render()
+  toast('<i class="ti ti-rotate"></i> Đã khôi phục mẫu in mặc định')
+}
+function fillForm(){
+  paper.value = CFG.paper; copies.value = CFG.copies
+  autoKitchen.checked = CFG.autoKitchen; splitStation.checked = CFG.splitStation
+  showWifi.checked = CFG.showWifi; footer.value = CFG.footer
+  wifiName.value = CFG.wifiName; wifiPass.value = CFG.wifiPass
+  const dis = !can('print')
+  ;['paper','copies','autoKitchen','splitStation','showWifi','footer','wifiName','wifiPass']
+    .forEach(id => document.getElementById(id).disabled = dis)
+}
+
+/* Chọn đơn để xem trước — mỗi đơn mẫu cho thấy một tình huống khác nhau
+   (giao hàng có voucher, tại quán trả tiền mặt, mang về đổi điểm). */
+function fillOrders(){
+  document.getElementById('order').innerHTML = ORDERS.slice(0, 6).map(o =>
+    `<option value="${o.code}">#${o.code} · ${meta('fulfilment', o.fulfilment).label} · ${itemsText(o)}</option>`).join('')
+}
+const curOrder = () => ORDERS.find(o => o.code === document.getElementById('order').value)
+
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = [['kitchen','Phiếu bếp'],['receipt','Hoá đơn']]
+    .map(([k,l]) => `<button class="${TAB===k?'active':''}" onclick="setTab('${k}')">${l}</button>`).join('')
+}
+function setTab(t){ TAB = t; render() }
+
+function render(){
+  CFG = printCfg()
+  renderTabs()
+  const o = curOrder()
+  const stage = document.getElementById('stage')
+  const ex = document.getElementById('explain')
+
+  if(TAB === 'kitchen'){
+    const groups = splitByStation(o)
+    ex.innerHTML = `<b>Phiếu bếp — không có tiền.</b> Đơn này ra <b>${groups.length} tờ</b>
+      (${groups.map(g => g.all ? 'gộp bếp &amp; quầy' : STATION_LABEL[g.station]).join(' · ')}).
+      Bếp cần mức đường/đá, topping và ghi chú; giá tiền là việc của thu ngân.`
+    stage.innerHTML = groups.map(g => `<div class="paper" data-label="${g.all ? 'Bếp &amp; quầy' : STATION_LABEL[g.station]} · ${CFG.paper}mm">
+        ${kitchenTicketHtml(o, g, { reprint: Print.countOf(o.code, 'kitchen') })}</div>`).join('')
+  } else {
+    ex.innerHTML = `<b>Hoá đơn — cho thu ngân và khách.</b> In <b>${CFG.copies} liên</b>.
+      Tên quán, địa chỉ, SĐT lấy từ chi nhánh <b>${branchOf(o).name}</b> của đơn.`
+    stage.innerHTML = Array.from({length: CFG.copies}, (_,i) =>
+      `<div class="paper" data-label="Liên ${i+1}/${CFG.copies} · ${CFG.paper}mm">
+        ${receiptHtml(o, { copy: i+1 })}</div>`).join('')
+  }
+}
+
+function doPrint(){
+  const o = curOrder()
+  const n = TAB === 'kitchen' ? Print.kitchen(o.code) : Print.receipt(o.code)
+  render()   // vẽ lại để thấy dấu "IN LẠI" xuất hiện đúng như khi in thật
+  toast(`<i class="ti ti-printer"></i> Đã gửi ${n} tờ tới máy in`)
+}
+
+fillForm(); fillOrders(); render()
+</script>
+</body>
+</html>

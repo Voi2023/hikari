@@ -139,9 +139,11 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 const ROLE_KEY = 'hikari_proto_role'
 // 'admin' ở đây là quyền MỞ màn tài khoản/nhật ký. Quản lý xem được nhật ký (cần cho
 // đối soát ca), nhưng tạo tài khoản và reset 2FA vẫn chỉ chủ quán — khoá trong chính màn đó.
+// 'print' là quyền SỬA MẪU IN. Bấm in phiếu/hoá đơn thì đi theo quyền 'orders' — thu ngân
+// phải in được hoá đơn cho khách, chỉ không được đổi mẫu.
 const ROLE_CAN = {
-  owner:   ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin', 'branch', 'promo'],
-  manager: ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin', 'branch', 'promo'],
+  owner:   ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin', 'branch', 'promo', 'print'],
+  manager: ['orders', 'menu', 'points', 'notify', 'ship', 'sapo', 'report', 'admin', 'branch', 'promo', 'print'],
   staff:   ['orders', 'ship'],
 }
 // Tổng số nhóm quyền — tính ra thay vì viết số cứng, thêm quyền mới không phải nhớ sửa chỗ hiển thị.

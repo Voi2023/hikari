@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12 — In phiếu bếp &amp; hoá đơn — Hikari Vegetarian Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1B19;--paper:#FAF8F3;--paper-2:#FFFFFF;--matcha:#5F7A4A;--matcha-soft:#EAF0E3;--sun:#F2C94C;--sky:#4A90D9;--chili:#D9534F;--muted:#8A857C;--line:#E7E2D8;--radius:14px;--shadow:0 2px 10px rgba(28,27,25,.06),0 8px 24px rgba(28,27,25,.05);--font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--font-script:"Caveat","Segoe Script",cursive;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;}
+.brand-logo{font-family:var(--font-script);font-weight:700;letter-spacing:.3px;}
+.brand-sub{color:var(--matcha);font-weight:600;letter-spacing:2px;text-transform:lowercase;font-size:.72rem;}
+.muted{color:var(--muted);}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,248,243,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+.topbar .inner{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;}
+.topbar .brand-logo{font-size:1.5rem;line-height:1;}
+.topbar nav{margin-left:auto;display:flex;gap:14px;font-size:.85rem;}
+.topbar nav a{color:var(--muted);text-decoration:none;font-weight:600;}
+.topbar nav a:hover{color:var(--matcha);}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 72px;}
+h1{font-size:1.9rem;line-height:1.25;margin:8px 0 18px;}
+h2{font-size:1.2rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+h3{font-size:1rem;margin:24px 0 8px;color:var(--matcha);}
+h4{font-size:.92rem;margin:18px 0 6px;}
+p{margin:10px 0;}
+a{color:var(--matcha);}
+hr{border:none;border-top:1px solid var(--line);margin:32px 0;}
+code{font-family:var(--mono);font-size:.86em;background:#f1ede3;border:1px solid var(--line);border-radius:6px;padding:1px 5px;}
+figure.code{margin:14px 0;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+figure.code figcaption{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);background:#f4f1ea;border-bottom:1px solid var(--line);padding:6px 14px;}
+figure.code pre{margin:0;padding:14px 16px;overflow-x:auto;}
+figure.code code{background:none;border:none;padding:0;font-size:.82rem;line-height:1.55;}
+blockquote{margin:14px 0;padding:12px 16px;background:#fff8e6;border:1px solid #f0e2b8;border-left:3px solid var(--sun);border-radius:var(--radius);}
+blockquote p:first-child{margin-top:0;}
+blockquote p:last-child{margin-bottom:0;}
+ul,ol{margin:10px 0;padding-left:22px;}
+li{margin:5px 0;}
+li>ul,li>ol{margin:5px 0;}
+ul.tasks{list-style:none;padding-left:2px;}
+ul.tasks .box{color:var(--matcha);font-size:1rem;margin-right:8px;}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);box-shadow:var(--shadow);}
+table{border-collapse:collapse;width:100%;font-size:.92rem;}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{background:var(--matcha-soft);color:var(--matcha);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#faf9f5;}
+.q{color:var(--chili);font-weight:700;}
+footer.foot{max-width:920px;margin:0 auto;padding:0 20px 48px;color:var(--muted);font-size:.8rem;}
+@media(max-width:640px){h1{font-size:1.5rem;}.topbar nav{gap:10px;font-size:.78rem;}}
+</style>
+<!-- Khoá xem tài liệu (docs/assets/gate.js). Thẻ style giữ trang ẩn khi JS tắt.
+     Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
+<style id="hikari-gate">html{visibility:hidden!important}</style>
+<script src="../assets/gate.js"></script>
+</head>
+<body>
+<div class="topbar"><div class="inner">
+  <span class="brand-logo">Hikari</span><span class="brand-sub">vegetarian cafe</span>
+  <nav>
+    <a href="README.html">Specs</a>
+    <a href="FEATURES.html">Chức năng</a>
+    <a href="00-tong-quan.html">Tổng quan</a>
+    <a href="../prototype/index.html">Prototype</a>
+  </nav>
+</div></div>
+<div class="wrap">
+<h1>12 — In phiếu bếp &amp; hoá đơn</h1><p>Trạng thái: 🎨 Prototype · Dashboard: <a href="../prototype/admin/in-phieu.html"><code>../prototype/admin/in-phieu.html</code></a> (mẫu in, xem trước, in thử) · <a href="../prototype/admin/don-hang.html"><code>../prototype/admin/don-hang.html</code></a> (nút in trong chi tiết đơn) · Mã dùng chung: <a href="../prototype/admin/assets/print.js"><code>admin/assets/print.js</code></a></p>
+
+<h2>1. Mục tiêu &amp; phạm vi</h2>
+<p><strong>Làm:</strong> khi có đơn, dashboard in <strong>hai mẫu khác nhau cho hai người khác nhau</strong> — <strong>phiếu bếp</strong> cho người làm món và <strong>hoá đơn thanh toán</strong> cho thu ngân &amp; khách. Kèm màn cấu hình mẫu in (khổ giấy 80/58mm, số liên, chân hoá đơn) và xem trước đúng bằng bản in ra.</p>
+<blockquote><p><strong>Hai mẫu không phải hai bản sao của một tờ giấy.</strong> Phiếu bếp <strong>không có tiền</strong>; hoá đơn <strong>không có công thức pha chế</strong>. In lẫn của nhau là bắt cả hai người đọc phần việc của người kia giữa lúc đông khách.</p></blockquote>
+<p><strong>Không làm (ở spec này):</strong> tem dán túi cho đơn giao hàng (mẫu thứ ba, có tên + SĐT khách cho tài xế đối chiếu — <span class="q">❓</span> §12), phiếu tạm tính đưa khách xem trước khi thanh toán, báo cáo cuối ca (X/Z report), in hoá đơn điện tử có mã số thuế.</p>
+
+<h2>2. Hai mẫu, hai mục đích</h2>
+<div class="table-wrap"><table><thead><tr><th>Thông tin</th><th>Phiếu bếp</th><th>Hoá đơn</th><th>Vì sao</th></tr></thead><tbody>
+<tr><td>Mã đơn, giờ, bàn / hình thức nhận</td><td>✅</td><td>✅</td><td>Cả hai đều phải đối chiếu được với đơn</td></tr>
+<tr><td>Mức đường, đá, topping đã chọn</td><td>✅ <strong>chữ to</strong></td><td>✅ (vì topping có tiền)</td><td>Bếp làm sai mức đường là ly trà bị trả lại</td></tr>
+<tr><td>Ghi chú của khách</td><td>✅ đậm</td><td>✅</td><td>“Ít đá”, “không hành” là việc của bếp trước tiên</td></tr>
+<tr><td>Đơn giá, thành tiền, giảm giá</td><td>❌ <strong>không in</strong></td><td>✅</td><td>Bếp không cần biết khách trả bao nhiêu; giá làm phiếu dài và khó liếc</td></tr>
+<tr><td>Tên quán, địa chỉ, SĐT</td><td>❌</td><td>✅</td><td>Phiếu bếp không rời khỏi quán</td></tr>
+<tr><td>Tiền khách đưa, tiền thừa</td><td>❌</td><td>✅ (khi trả tiền mặt)</td><td>Thu ngân đếm tiền theo dòng này</td></tr>
+<tr><td>Nhắc đóng gói mang đi</td><td>✅</td><td>❌</td><td>Bếp nhìn phiếu chứ không nhìn màn hình</td></tr>
+<tr><td>Wifi, lời cảm ơn</td><td>❌</td><td>✅</td><td>Khách giữ tờ này</td></tr>
+</tbody></table></div>
+
+<h2>3. In lúc nào</h2>
+<figure class="code"><figcaption>text</figcaption><pre><code>Khách đặt (Mini App)  → đơn vào dashboard: TRẠNG THÁI "Đơn mới"
+      ↓ nhân viên bấm "Xác nhận đơn"
+   IN PHIẾU BẾP  ← TỰ ĐỘNG (bật/tắt ở màn Mẫu in)
+      ├─ món mì / cơm  → máy in ở BẾP
+      └─ cà phê / trà  → máy in ở QUẦY PHA CHẾ
+      ↓ khách gọi thêm món      → IN PHIẾU BỔ SUNG (chỉ món mới)
+      ↓ khách bỏ món            → IN PHIẾU HUỶ MÓN
+      ↓ món xong → phục vụ / giao
+   IN HOÁ ĐƠN    ← khi khách thanh toán (bấm tay ở chi tiết đơn)
+      └─ đủ số liên đã cấu hình (1 = khách giữ · 2 = khách + quầy lưu)</code></pre></figure>
+<p>Phiếu bếp <strong>in tự động lúc xác nhận đơn</strong>, không bắt người ở quầy nhớ bấm thêm một nút: giờ cao điểm là lúc quên, và món chỉ được phát hiện là chưa làm khi khách hỏi. Hoá đơn thì ngược lại — <strong>chỉ in khi khách yêu cầu thanh toán</strong>, vì in sớm là tờ giấy bỏ đi khi khách gọi thêm món.</p>
+
+<h2>4. Phiếu bếp</h2>
+<h3>Bốn loại phiếu, bốn việc khác nhau</h3>
+<div class="table-wrap"><table><thead><tr><th>Loại</th><th>In khi nào</th><th>Nếu làm sai thì sao</th></tr></thead><tbody>
+<tr><td><strong>Phiếu thường</strong></td><td>Xác nhận đơn</td><td>—</td></tr>
+<tr><td><strong>IN LẠI · LẦN n</strong></td><td>Bấm in lần thứ hai trở đi</td><td>Phiếu giống hệt rơi vào bếp lần hai là <strong>hai tô mì</strong>. Dấu đóng to để bếp dừng lại hỏi, và hệ thống <strong>hỏi xác nhận</strong> trước khi in lại.</td></tr>
+<tr><td><strong>PHIẾU BỔ SUNG</strong></td><td>Khách gọi thêm món</td><td>In lại cả đơn thì bếp làm lại từ đầu — chỉ in <strong>món mới</strong>.</td></tr>
+<tr><td><strong>PHIẾU HUỶ MÓN</strong></td><td>Khách bỏ món đã gọi</td><td>Bếp <strong>không tự biết</strong> món bị huỷ. Không có phiếu này thì món vẫn được làm rồi đổ đi.</td></tr>
+</tbody></table></div>
+<h3>Tách theo trạm làm món</h3>
+<p>Quán có hai nơi làm: <strong>bếp</strong> (mì, cơm) và <strong>quầy pha chế</strong> (cà phê, trà). Mỗi trạm một tờ, ra máy in của trạm đó. In chung một tờ thì barista phải đọc lướt qua món mì để tìm ly trà của mình — và ngược lại. Món không thuộc nhóm nào thì <strong>về bếp</strong>: thà bếp hỏi lại còn hơn phiếu rơi vào khoảng không.</p>
+
+<h2>5. Hoá đơn thanh toán</h2>
+<ul>
+<li><strong>Đầu hoá đơn lấy từ chi nhánh của đơn</strong> (<a href="09-chi-nhanh.html">spec 09</a>) — tên, địa chỉ, SĐT. Khai lại ở màn cấu hình in là tạo ra chỗ thứ hai để lệch.</li>
+<li><strong>Số hoá đơn khác mã đơn.</strong> Mã đơn (<code>H1043</code>) là của hệ thống; số hoá đơn là thứ khách đọc khi khiếu nại và kế toán dò khi đối soát. Cấp theo <strong>dãy liên tục của từng chi nhánh</strong>, không phải số ngẫu nhiên.</li>
+<li><strong>Liên 1/2 – 2/2:</strong> liên 1 khách giữ, liên 2 quầy lưu (kẹp vào cọc cuối ca). Quán không cần lưu giấy thì đặt 1 liên.</li>
+<li><strong>Topping là dòng con có tiền</strong>, thụt vào dưới món cha. Gộp vào một dòng “Trà sữa ×2” là chỗ khiếu nại không tra được.</li>
+<li><strong>Giảm giá ghi rõ vì cái gì</strong> — voucher (<a href="11-voucher.html">spec 11</a>) và đổi điểm (<a href="02-tich-diem.html">spec 02</a>) là hai dòng riêng, không gộp thành một số “giảm giá”.</li>
+<li><strong>Đơn chưa thanh toán mà in</strong> → đóng dấu <code>** CHỜ THANH TOÁN **</code> giữa hoá đơn, để không ai cầm nhầm tờ đó làm bằng chứng đã trả tiền.</li>
+</ul>
+
+<h2>6. Khổ giấy</h2>
+<div class="table-wrap"><table><thead><tr><th>Khổ</th><th>Dùng khi</th><th>Lưu ý</th></tr></thead><tbody>
+<tr><td><strong>80mm</strong> (mặc định)</td><td>Máy in nhiệt phổ biến ở quán</td><td>Vùng in thật ~72mm</td></tr>
+<tr><td><strong>58mm</strong></td><td>Máy nhỏ, máy cầm tay</td><td>Tên món dài xuống dòng nhiều — phải xem trước rồi mới chốt</td></tr>
+</tbody></table></div>
+<p>Bản xem trước ở dashboard dựng bằng <strong>đúng bộ CSS dùng khi in</strong> và đơn vị <code>mm</code>. Hai bộ CSS riêng cho xem trước và cho máy in là cách chắc chắn nhất để “xem một đằng, in một nẻo” — và lỗi chỉ lộ ra khi giấy đã chạy.</p>
+
+<h2>7. API &amp; dữ liệu</h2>
+<h3>REST (envelope chuẩn)</h3>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Mô tả</th></tr></thead><tbody>
+<tr><td><code>POST</code></td><td><code>/api/v1/admin/orders/:code/print</code></td><td><code>{ kind: KITCHEN|ADDITION|VOID|RECEIPT, station?, copies? }</code> → tạo lệnh in. Quyền <code>orders</code>.</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/v1/admin/print-jobs?status=QUEUED</code></td><td>Agent in tại quán lấy hàng đợi (hoặc nhận qua Socket.IO room <code>branch:{id}:printers</code>)</td></tr>
+<tr><td><code>PATCH</code></td><td><code>/api/v1/admin/print-jobs/:id</code></td><td><code>{ status: PRINTED|FAILED, error? }</code> — agent báo lại kết quả</td></tr>
+<tr><td><code>GET/PUT</code></td><td><code>/api/v1/admin/print-settings</code></td><td>Khổ giấy, số liên, chân hoá đơn, tự in phiếu bếp. Quyền <code>print</code>.</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/v1/admin/orders/:code/prints</code></td><td>Lịch sử in của một đơn — ai in, lúc nào, lần thứ mấy</td></tr>
+</tbody></table></div>
+<h3>Model Prisma (dự kiến)</h3>
+<figure class="code"><figcaption>prisma</figcaption><pre><code>model PrintJob {
+  id String @id @default(cuid())
+  orderId String
+  branchId String
+  kind String                    // KITCHEN | ADDITION | VOID | RECEIPT
+  station String?                // BEP | BAR (chỉ với phiếu bếp)
+  seq Int                        // lần in thứ mấy của (order, kind) → in dấu "IN LẠI · LẦN n"
+  copies Int @default(1)
+  paper String @default("80")
+  payload Json                   // ẢNH CHỤP nội dung lúc in, không phải tham chiếu đơn
+  status String @default("QUEUED")   // QUEUED | PRINTED | FAILED
+  error String?
+  printedById String
+  createdAt DateTime @default(now())
+  printedAt DateTime?
+  @@index([branchId, status])
+  @@map("print_jobs")
+}
+
+model Receipt {
+  id String @id @default(cuid())
+  orderId String @unique
+  branchId String
+  no String                      // số hoá đơn, dãy liên tục theo chi nhánh
+  total Int
+  cashierId String
+  issuedAt DateTime @default(now())
+  voidedAt DateTime?             // huỷ thì đánh dấu, KHÔNG xoá và KHÔNG cấp lại số
+  @@unique([branchId, no])
+  @@map("receipts")
+}
+
+model Printer {
+  id String @id @default(cuid())
+  branchId String
+  station String                 // BEP | BAR | CASHIER
+  name String                    // "Máy in bếp tầng 1"
+  kind String                    // ESC_POS_LAN | ESC_POS_USB
+  address String?                // IP:port với máy LAN
+  paper String @default("80")
+  enabled Boolean @default(true)
+  @@map("printers")
+}</code></pre></figure>
+<p><code>payload</code> lưu <strong>ảnh chụp nội dung lúc in</strong>, không phải tham chiếu tới đơn. Đơn sửa sau đó (đổi món, đổi giá) thì tờ giấy đã nằm trong tay khách vẫn phải tra lại được đúng như lúc in.</p>
+
+<h2>8. In thật bằng cách nào</h2>
+<p>Đây là chỗ dễ chọn sai nhất, nên chốt trước khi code:</p>
+<div class="table-wrap"><table><thead><tr><th>Cách</th><th>Ưu</th><th>Nhược</th></tr></thead><tbody>
+<tr><td><code>window.print()</code> của trình duyệt</td><td>Không cần cài gì, làm được ngay</td><td><strong>Hiện hộp thoại in mỗi lần</strong>, không chọn được máy theo trạm, không có hàng đợi. Ở quầy lúc đông khách là không dùng được.</td></tr>
+<tr><td><strong>Agent in tại quán</strong> (đề xuất)</td><td>In im lặng, đúng máy theo trạm, có hàng đợi, mất mạng vẫn giữ lệnh</td><td>Phải cài một ứng dụng nhỏ trên máy ở quầy</td></tr>
+<tr><td>Dịch vụ in đám mây</td><td>Không tự dựng agent</td><td>Tốn thuê bao, mất mạng là mất phiếu, dữ liệu đơn đi qua bên thứ ba</td></tr>
+</tbody></table></div>
+<p><strong>Đề xuất:</strong> bản đầu dùng <code>window.print()</code> để chạy được ngay (đúng như prototype), rồi chuyển sang <strong>agent ESC/POS</strong> khi quán chạy thật. Prototype đã tách sẵn phần “dựng nội dung” khỏi phần “gửi lệnh in”, nên đổi cách in không phải viết lại mẫu.</p>
+<blockquote><p><strong>Tiếng Việt trên máy in nhiệt.</strong> Nhiều máy giá rẻ không có bảng mã tiếng Việt — in ra <em>“Tra sua matcha”</em> hoặc ký tự rác. Cách chắc ăn là <strong>dựng phiếu thành ảnh (raster) rồi in ảnh</strong>, chấp nhận chậm hơn một chút để không bao giờ mất dấu.</p></blockquote>
+
+<h2>9. Ảnh hưởng sang các spec khác</h2>
+<div class="table-wrap"><table><thead><tr><th>Spec</th><th>Thay đổi</th></tr></thead><tbody>
+<tr><td><a href="08-dat-hang.html">08 — Đặt hàng</a></td><td>Dòng món phải mang theo <strong>tuỳ chọn</strong> (đường, đá, topping) và <strong>ghi chú riêng từng món</strong> — không có nó thì phiếu bếp vô dụng</td></tr>
+<tr><td><a href="11-voucher.html">11 — Voucher</a></td><td>Hoá đơn in dòng giảm giá kèm <strong>mã đã dùng</strong></td></tr>
+<tr><td><a href="02-tich-diem.html">02 — Tích điểm</a></td><td>Hoá đơn in số điểm cộng của đơn cho khách đã đăng nhập</td></tr>
+<tr><td><a href="09-chi-nhanh.html">09 — Chi nhánh</a></td><td>Đầu hoá đơn và danh sách máy in <strong>theo từng chi nhánh</strong></td></tr>
+<tr><td><a href="07-dashboard.html">07 — Dashboard</a></td><td>Thêm quyền <code>print</code> (sửa mẫu in — chủ quán + quản lý). <strong>Bấm in</strong> thì theo quyền <code>orders</code>: thu ngân phải in được hoá đơn.</td></tr>
+<tr><td><a href="06-day-don-sapo.html">06 — Sapo</a></td><td><span class="q">❓</span> Hoá đơn của Hikari và hoá đơn Sapo có phải cùng một số không, hay hai dãy riêng</td></tr>
+</tbody></table></div>
+
+<h2>10. Edge case &amp; bảo mật</h2>
+<ul>
+<li><strong>Máy in bếp mất kết nối là sự cố im lặng — và là lỗi tệ nhất ở đây.</strong> Bếp không biết mình đang thiếu phiếu, khách ngồi chờ món chưa ai làm. Agent phải <strong>báo về dashboard</strong> và màn Đơn hàng hiện băng đỏ khi có lệnh in <code>QUEUED</code> quá 60 giây.</li>
+<li><strong>Hết giấy giữa chừng</strong> → lệnh in giữ nguyên <code>QUEUED</code>, thay giấy xong in tiếp; không đánh dấu <code>PRINTED</code> khi chưa có xác nhận từ máy.</li>
+<li><strong>In lại phải hỏi xác nhận</strong> và đóng dấu — với phiếu bếp là món làm hai lần, với hoá đơn là hai tờ cùng một số tiền có thể bị dùng để đối soát hai lần.</li>
+<li><strong>Huỷ hoá đơn không xoá và không cấp lại số</strong> — đánh dấu <code>voidedAt</code>. Dãy số nhảy cóc là dấu hiệu kế toán sẽ hỏi.</li>
+<li><strong>Không in đầy đủ số điện thoại khách</strong> trên hoá đơn (che giữa) — tờ giấy này bị bỏ lại trên bàn, rơi ra ngoài quán.</li>
+<li><strong>Phiếu bếp không in địa chỉ khách</strong>: địa chỉ là việc của tài xế, không phải của bếp; in ra là để lộ chỗ ở của khách trên tờ giấy nằm trong khu bếp.</li>
+<li><strong>Mỗi lần in ghi nhật ký</strong> (ai, lúc nào, lần thứ mấy, trạm nào) — in lại là thao tác tạo ra món thừa và giấy tờ thừa, phải truy được (<a href="07-dashboard.html">spec 07</a>).</li>
+<li><strong>Đơn huỷ sau khi đã in phiếu bếp</strong> → bắt buộc in <strong>phiếu huỷ món</strong>, không chỉ đổi trạng thái trên màn hình.</li>
+<li>Nội dung phiếu <strong>dựng ở server</strong> khi chuyển sang agent — client gửi số tiền lên rồi in là mở đường cho hoá đơn sai lệch có chủ ý.</li>
+</ul>
+
+<h2>11. Tiêu chí hoàn thành (Acceptance)</h2>
+<ul class="tasks">
+<li><span class="box">☐</span>Xác nhận đơn → phiếu bếp tự in, tách đúng <strong>bếp / quầy pha chế</strong>, mỗi trạm một tờ.</li>
+<li><span class="box">☐</span>Phiếu bếp <strong>không có bất kỳ con số tiền nào</strong>; có đủ mức đường/đá, topping, ghi chú.</li>
+<li><span class="box">☐</span>In phiếu bếp lần hai: hỏi xác nhận, tờ in ra có dấu <strong>IN LẠI · LẦN n</strong>.</li>
+<li><span class="box">☐</span>Gọi thêm món → phiếu bổ sung <strong>chỉ có món mới</strong>; huỷ món → có phiếu huỷ.</li>
+<li><span class="box">☐</span>Hoá đơn in đúng số liên đã cấu hình, có số hoá đơn <strong>liên tục theo chi nhánh</strong>.</li>
+<li><span class="box">☐</span>Hoá đơn khớp từng đồng với chi tiết đơn: topping, hộp mang về, phí giao, voucher, điểm.</li>
+<li><span class="box">☐</span>Trả tiền mặt → có dòng tiền khách đưa và tiền thừa; đơn chưa thanh toán → có dấu cảnh báo.</li>
+<li><span class="box">☐</span>Đổi khổ giấy 80 ⇄ 58mm: bản xem trước và bản in ra giống nhau, không mất cột nào.</li>
+<li><span class="box">☐</span>Rút dây máy in bếp → dashboard báo trong vòng 60 giây, không im lặng nuốt lệnh in.</li>
+<li><span class="box">☐</span>Nhân viên thu ngân in được hoá đơn nhưng <strong>không sửa được mẫu in</strong>.</li>
+<li><span class="box">☐</span>Tiếng Việt in ra <strong>đủ dấu</strong> trên máy in nhiệt thật.</li>
+</ul>
+
+<h2>12. Câu hỏi mở (<span class="q">❓</span> cần chủ quán xác nhận)</h2>
+<ol>
+<li><strong>Quán có mấy máy in</strong>, đặt ở đâu (một máy ở quầy, hay thêm một máy trong bếp)? Đây là câu quyết định có tách trạm được hay không.</li>
+<li>Khổ giấy máy đang dùng là <strong>80mm hay 58mm</strong>?</li>
+<li>Hoá đơn in <strong>mấy liên</strong> — quán có giữ liên lưu cuối ca không?</li>
+<li>Có cần <strong>tem dán túi</strong> cho đơn mang về / giao hàng (tên khách + SĐT + mã đơn) không? Đây là mẫu thứ ba, chưa làm ở spec này.</li>
+<li>Có cần <strong>phiếu tạm tính</strong> đưa khách xem trước khi thanh toán không?</li>
+<li>Có cần <strong>báo cáo cuối ca</strong> (tổng tiền mặt, tổng ZaloPay, số hoá đơn từ–đến) in ra giấy khi giao ca không?</li>
+<li>Hoá đơn có cần <strong>mã số thuế / hoá đơn điện tử</strong> không, hay chỉ là phiếu tính tiền nội bộ?</li>
+<li>Wifi và mật khẩu in trên hoá đơn — <strong>giữ hay bỏ</strong> (mật khẩu wifi nằm trên giấy rơi ra ngoài quán)?</li>
+</ol>
+</div>
+<footer class="foot">Hikari Vegetarian Cafe · tài liệu nội bộ · specs dùng định dạng HTML</footer>
+</body>
+</html>
