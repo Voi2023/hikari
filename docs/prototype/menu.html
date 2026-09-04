@@ -170,6 +170,13 @@ const BYO = {
       { name:"Cải thìa luộc", price:3000 }, { name:"Bông cải luộc", price:4000 }, { name:"Nấm bào ngư luộc", price:4000 } ]},
   ]
 };
+/* ==== Topping thêm cho MÓN CỐ ĐỊNH ====
+   Lấy thẳng bảng giá của "Tô tự chọn" thay vì chép lại: cùng một miếng đậu hủ mà chỗ này
+   5k chỗ kia 7k là khách thấy ngay, và sửa giá một chỗ sẽ quên chỗ còn lại. */
+const EXTRAS = [
+  { key:"topping", title:"Thêm topping", choices: BYO.steps.find(s=>s.key==="topping").choices },
+  { key:"veg",     title:"Thêm rau",     choices: BYO.steps.find(s=>s.key==="veg").choices },
+];
 const PACKAGING_FEE = 5000;
 
 /* ==== State ==== */
@@ -193,20 +200,20 @@ function renderList(){
   let html = "";
   // Mì signature
   const noodles = MENU.find(m=>m.id==="signature-noodles");
-  html += group("signature-noodles", noodles.name, "", noodles.items.map(itemCard).join(""));
+  html += group("signature-noodles", noodles.name, "", noodles.items.map(it=>itemCard(it,true)).join(""));
   // Tô tự chọn
   html += group("byo", BYO.name, "'Tự chọn' theo cách của riêng bạn", byoCard());
   // Đồ uống
   ["coffee","latte","detox"].forEach(cid=>{
     const c = MENU.find(m=>m.id===cid);
-    html += group(cid, c.name, "", c.items.map(itemCard).join(""));
+    html += group(cid, c.name, "", c.items.map(it=>itemCard(it,false)).join(""));
   });
   el.innerHTML = html;
 }
 function group(id,title,sub,inner){
   return `<div id="grp-${id}"><div class="grp-title">${title}</div>${sub?`<div class="grp-sub">${sub}</div>`:""}${inner}</div>`;
 }
-function itemCard(it){
+function itemCard(it, canExtra){
   const out = !it.available;
   const tags = `${it.spicy?'<span class="tag tag-spicy">🌶️ Cay</span>':''}${out?'<span class="tag tag-out">Tạm hết</span>':''}`;
   return `<div class="card item ${out?'out':''}">
@@ -215,6 +222,7 @@ function itemCard(it){
       <div class="en">${it.en||""}</div>
       ${it.desc?`<div class="desc">${it.desc}</div>`:""}
       ${it.tops?`<div class="tops">+ ${it.tops}</div>`:""}
+      ${canExtra&&!out?`<div class="tops" style="color:var(--matcha);font-weight:600">＋ Thêm được topping / rau</div>`:""}
       <div class="foot"><span class="price">${vnd(it.price)}</span>
         <button class="add" ${out?'disabled':`onclick="pick('${it.id}')"`}>+</button></div>
     </div></div>`;
@@ -228,32 +236,77 @@ function byoCard(){
   </div></div>`;
 }
 
-/* ==== Sheet: món có tuỳ chọn ==== */
+/* ==== Sheet: món cố định — chọn tuỳ chọn bắt buộc + THÊM TOPPING ====
+   Món signature đã có topping sẵn trong tô, nhưng khách hay muốn thêm trứng/đậu hủ.
+   Trước đây chỉ "Tô tự chọn" mới thêm được, nên ai muốn Tamago Ramen + trứng phải tự
+   dựng lại cả tô từ đầu — vừa lâu vừa dễ ra khác món gốc. */
+let dishBase = 0;
+
 function pick(id){
-  const it = MENU.flatMap(m=>m.items).find(x=>x.id===id);
+  const grp = MENU.find(m => m.items.some(x=>x.id===id));
+  const it  = grp && grp.items.find(x=>x.id===id);
   if(!it) return;
-  if(it.options){ openOptionSheet(it); }
-  else { addToCart({ key:id, name:it.name, opt:"", price:it.price }); toast(); }
+  // Chỉ món mì mới thêm topping; đồ uống thêm thẳng cho nhanh, đừng bắt qua thêm một sheet trống.
+  const canExtra = grp.id === "signature-noodles";
+  if(!canExtra && !it.options){
+    addToCart({ key:id, name:it.name, opt:"", price:it.price }); toast(); return;
+  }
+  openDishSheet(it, canExtra);
 }
-function openOptionSheet(it){
+
+function openDishSheet(it, canExtra){
   const s = document.getElementById("sheet");
   s.innerHTML = `<h3>${it.name}</h3>
-    <div class="byo-step"><h4>${it.options.group} <span>*</span></h4>
-      ${it.options.choices.map((c,i)=>`<label class="opt" onclick="selOne(this)">
-        <span class="r"><input type="radio" name="opt" ${i===0?'checked':''} value="${c}"> ${c}</span></label>`).join("")}
-    </div>
-    <button class="btn btn-matcha" style="width:100%;margin-top:6px" onclick="confirmOption('${it.id}')">Thêm vào giỏ · ${vnd(it.price)}đ</button>`;
-  s.querySelectorAll(".opt")[0].classList.add("sel");
-  openSheet();
+    ${it.tops?`<div class="muted" style="font-size:.78rem;margin:-4px 0 10px">Đã có sẵn trong tô: ${it.tops}</div>`:""}
+    <div id="dishBody"></div>
+    <div class="sumrow total"><span>Tạm tính</span><span class="price" id="dishTotal">0</span></div>
+    <button class="btn btn-matcha" style="width:100%;margin-top:10px" onclick="confirmDish('${it.id}')">Thêm vào giỏ</button>`;
+
+  let html = `<div class="byo-step"><h4>Món</h4>
+    <label class="opt sel"><span class="r">${it.name}</span><span class="price">${vnd(it.price)}</span></label></div>`;
+  if(it.options){
+    html += `<div class="byo-step"><h4>${it.options.group} <span>*</span></h4>` +
+      it.options.choices.map((c,i)=>`<label class="opt ${i===0?'sel':''}">
+        <span class="r"><input type="radio" name="dish-opt" value="${c}" ${i===0?'checked':''} onchange="onDishChange(this)"> ${c}</span>
+      </label>`).join("") + `</div>`;
+  }
+  if(canExtra) html += EXTRAS.map((g,gi)=>`<div class="byo-step">
+      <h4>${g.title} <span style="color:var(--muted);font-weight:400">· không bắt buộc</span></h4>
+      ${g.choices.map((c,ci)=>`<label class="opt">
+        <span class="r"><input type="checkbox" data-gi="${gi}" data-ci="${ci}" onchange="onDishChange(this)"> ${c.name}</span>
+        <span class="price">+${vnd(c.price)}</span></label>`).join("")}
+    </div>`).join("");
+  document.getElementById("dishBody").innerHTML = html;
+  dishBase = it.price;
+  recalcDish(); openSheet();
 }
-function selOne(el){
-  el.closest(".sheet").querySelectorAll(".opt").forEach(o=>o.classList.remove("sel"));
-  el.classList.add("sel"); el.querySelector("input").checked = true;
+
+function onDishChange(inp){
+  const label = inp.closest(".opt");
+  if(inp.type==="radio") label.parentElement.querySelectorAll(".opt").forEach(o=>o.classList.remove("sel"));
+  label.classList.toggle("sel", inp.checked);
+  recalcDish();
 }
-function confirmOption(id){
+/** Extras đang chọn — dùng chung cho tính tiền và cho dòng mô tả trong giỏ,
+ *  để hai chỗ không bao giờ lệch nhau. */
+function dishExtras(){
+  return [...document.querySelectorAll('#dishBody input[type=checkbox]:checked')]
+    .map(i => EXTRAS[i.dataset.gi].choices[i.dataset.ci]);
+}
+function dishTotalCalc(){ return dishBase + dishExtras().reduce((s,c)=>s+c.price, 0); }
+function recalcDish(){ document.getElementById("dishTotal").textContent = vnd(dishTotalCalc()); }
+
+function confirmDish(id){
   const it = MENU.flatMap(m=>m.items).find(x=>x.id===id);
-  const val = document.querySelector('#sheet input[name="opt"]:checked').value;
-  addToCart({ key:id+":"+val, name:it.name, opt:val, price:it.price });
+  const sauce = document.querySelector('#dishBody input[name="dish-opt"]:checked')?.value || "";
+  const extras = dishExtras();
+  const parts = [];
+  if(sauce) parts.push(sauce);
+  if(extras.length) parts.push("+ " + extras.map(c=>c.name).join(" · "));
+  addToCart({
+    key: id + ":" + [sauce, ...extras.map(c=>c.name)].join("|"),   // món + topping khác nhau là 2 dòng giỏ
+    name: it.name, opt: parts.join(" · "), price: dishTotalCalc()
+  });
   closeSheet(); toast();
 }
 
