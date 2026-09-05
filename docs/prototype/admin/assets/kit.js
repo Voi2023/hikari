@@ -44,6 +44,9 @@ const META = {
     SYNCED:   ['green', 'Đã đồng bộ'],
     FAILED:   ['red',   'Lỗi đồng bộ'],
     SKIPPED:  ['gray',  'Bỏ qua'],
+    // Đơn đã vào Sapo bằng TAY (nhập file hoặc gõ lại). Phải là một trạng thái riêng, không
+    // gộp vào "đã đồng bộ": ngày bật API lên mà đẩy lại mấy đơn này là nhân đôi doanh thu bên Sapo.
+    MANUAL:   ['blue',  'Đã nhập tay'],
   },
   notify: {
     DRAFT:     ['gray',  'Nháp'],
