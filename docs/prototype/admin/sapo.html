@@ -12,40 +12,42 @@
      Đây là rào cản cho người xem tình cờ, KHÔNG phải bảo mật — nội dung vẫn nằm trong file. -->
 <style id="hikari-gate">html{visibility:hidden!important}</style>
 <script src="../../assets/gate.js"></script>
+<style>
+  /* Ba chế độ là ba lựa chọn loại trừ nhau — bày thành thẻ chọn để thấy hết hệ quả của từng cái,
+     thay vì một ô select mà chọn xong không biết mình vừa tắt mất cái gì. */
+  .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:900px){.modes{grid-template-columns:1fr}}
+  .mode{border:2px solid var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;background:var(--surface)}
+  .mode.on{border-color:var(--brand);background:var(--brand-tint)}
+  .mode h3{margin:0 0 4px;font-size:14px;display:flex;align-items:center;gap:7px}
+  .mode p{margin:0;font-size:12.4px;color:var(--muted);line-height:1.45}
+  .mode .tag{font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--gray-bg);color:var(--muted)}
+  .mode.on .tag{background:var(--brand);color:#fff}
+  .queue-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 24px;margin:10px 0}
+  .qnum{font-size:22px;font-weight:800;line-height:1.1}
+  .qlab{font-size:12px;color:var(--muted)}
+</style>
 </head>
 <body>
 <main id="page">
+  <div id="alert"></div>
+
+  <div class="panel">
+    <h2>Chế độ tích hợp Sapo</h2>
+    <p class="muted" style="font-size:12.8px;margin:2px 0 12px">
+      <b>Sapo là bản sao, không phải nguồn sự thật.</b> Đơn của quán nằm ở hệ thống này; Sapo chỉ để
+      quản lý kho và doanh thu. Vì vậy Sapo hỏng — hay chưa liên kết được — <b>không bao giờ được chặn việc bán hàng</b>.
+    </p>
+    <div class="modes" id="modes"></div>
+  </div>
+
+  <div id="conn"></div>
+
   <div class="stat-grid" id="kpis"></div>
 
   <div class="panel">
-    <h2>Kết nối Sapo
-      <span class="badge green"><i class="ti ti-plug-connected"></i> Đang hoạt động</span></h2>
-    <div class="grid-2">
-      <div>
-        <div class="kv"><b>Cửa hàng</b><span>hikari-cafe.mysapo.net</span></div>
-        <div class="kv"><b>Token</b><span class="mono">sapo_at_••••••••••3f9c</span></div>
-        <div class="kv"><b>Hết hạn</b><span>còn 22 ngày <span class="badge amber">nên gia hạn sớm</span></span></div>
-        <div class="kv"><b>Đồng bộ lần cuối</b><span id="lastSync">—</span></div>
-      </div>
-      <div>
-        <div class="kv"><b>Cách đẩy</b><span>tự động khi đơn chuyển <span style="font-weight:700">Hoàn tất</span></span></div>
-        <div class="kv"><b>Thử lại</b><span>3 lần, giãn cách 1 / 5 / 15 phút</span></div>
-        <div class="kv"><b>Chống trùng</b><span>khoá theo mã đơn (idempotency key)</span></div>
-        <div class="action-row">
-          <button class="btn btn-outline btn-sm" onclick="toast('Mô phỏng: kết nối Sapo OK — token còn hạn')">
-            <i class="ti ti-plug"></i> Kiểm tra kết nối</button>
-          <button class="btn btn-ghost btn-sm" onclick="toast('Mô phỏng: đã mở màn nhập token mới')">
-            <i class="ti ti-key"></i> Cập nhật token</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="panel">
     <h2><span id="title"></span>
-      <span>
-        <button class="btn btn-outline btn-sm" onclick="retryAll()"><i class="ti ti-refresh"></i> Thử lại tất cả đơn lỗi</button>
-      </span></h2>
+      <span id="bulkActions"></span></h2>
     <div class="toolbar"><div class="tabs" id="tabs"></div></div>
     <div class="table-scroll"><table class="data wide" id="tbl"></table></div>
   </div>
@@ -59,8 +61,13 @@
       thì phải khai mã hàng tương ứng bên Sapo trước khi bật bán.
     </div>
     <div class="schedule-banner">
-      <b>Đẩy trùng không làm hỏng số liệu:</b> mỗi đơn đẩy kèm khoá chống trùng theo mã đơn — bấm "Thử lại"
+      <b>Đẩy trùng không làm hỏng số liệu:</b> mỗi đơn đẩy kèm khoá chống trùng theo mã đơn — bấm “Thử lại”
       nhiều lần cũng chỉ tạo đúng một đơn bên Sapo. Cứ thử lại thoải mái khi nghi ngờ.
+    </div>
+    <div class="schedule-banner" style="background:var(--danger-bg)">
+      <b>Nhưng khoá chống trùng KHÔNG cứu được đơn đã nhập tay.</b> Đơn bạn tự gõ vào Sapo (hoặc nhập bằng file)
+      thì Sapo không biết nó ứng với mã đơn nào bên này — bật API lên rồi đẩy lại là <b>doanh thu bị tính hai lần</b>.
+      Nhập tay xong phải bấm <b>“Đánh dấu đã nhập tay”</b> cho đúng những đơn đó.
     </div>
   </div>
 </main>
@@ -72,23 +79,270 @@
 <script>
 Shell.mount({ page:'sapo', title:'Đồng bộ Sapo', sub:'Đẩy đơn sang phần mềm bán hàng (spec 06)' })
 
+/* ==== Ba chế độ ====
+   AUTO  — có API key, đẩy tự động (đích đến).
+   QUEUE — CHƯA liên kết được API: KHÔNG gọi API, nhưng VẪN XẾP HÀNG mọi đơn.
+           Đây là chỗ dễ làm sai nhất: không xếp hàng từ đầu thì ngày lấy được key,
+           dữ liệu mấy tuần trước mất trắng, không có gì để đẩy dồn.
+   OFF   — quán quyết định không dùng Sapo. Không xếp hàng, không cảnh báo.
+   Mặc định là QUEUE vì quán hiện chưa có Open API key (spec 06 §2). */
+const MODE_KEY = 'hikari_sapo_mode'
+const MODES = {
+  AUTO:  { icon:'ti-plug-connected', title:'Tự động (API)', tag:'cần API key',
+           desc:'Đơn hoàn tất tự đẩy sang Sapo, lỗi thì tự thử lại. Đây là đích đến.' },
+  QUEUE: { icon:'ti-clock-pause', title:'Chờ liên kết', tag:'đang dùng',
+           desc:'Chưa có API key: <b>không gọi Sapo</b> nhưng vẫn xếp hàng mọi đơn, và xuất file để nhập tay. Có key là đẩy dồn được toàn bộ.' },
+  OFF:   { icon:'ti-plug-off', title:'Tắt hẳn', tag:'không dùng Sapo',
+           desc:'Không xếp hàng, không cảnh báo. <b>Những ngày tắt sẽ không có gì để đẩy dồn về sau.</b>' },
+}
+function sapoMode(){ try { return localStorage.getItem(MODE_KEY) || 'QUEUE' } catch { return 'QUEUE' } }
+function setMode(m){
+  if(!can('sapo')) return toast('<i class="ti ti-lock"></i> Vai trò này không đổi được cấu hình Sapo')
+  if(m === 'OFF') return confirmOff()
+  try { localStorage.setItem(MODE_KEY, m) } catch {}
+  render()
+  toast(`<i class="ti ti-${MODES[m].icon.replace('ti-','')}"></i> Chế độ Sapo: <b>${MODES[m].title}</b>`)
+}
+/* Tắt hẳn là quyết định có hậu quả kéo dài: những ngày tắt sẽ KHÔNG có dữ liệu để bù về sau.
+   Phải nói trước, đừng để ba tháng sau mới phát hiện lỗ hổng trong sổ sách. */
+function confirmOff(){
+  const ov = modal({ title:'Tắt hẳn tích hợp Sapo?',
+    body:`<p style="font-size:13px">Đơn từ giờ <b>sẽ không được xếp hàng</b>. Nếu sau này quán nối được API,
+      những ngày tắt <b>không có gì để đẩy dồn</b> — muốn có số liệu thì phải gõ tay lại từng đơn.</p>
+      <p class="muted" style="font-size:12.5px">Chỉ tắt khi quán quyết định bỏ hẳn Sapo. Còn nếu chỉ đang
+      chờ API key thì chọn <b>Chờ liên kết</b> — vẫn xếp hàng, không gọi Sapo, không tốn gì.</p>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-danger" onclick="doOff()">Tôi hiểu, tắt hẳn</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal))
+}
+function doOff(){ try { localStorage.setItem(MODE_KEY,'OFF') } catch {}; closeModal(); render()
+  toast('<i class="ti ti-plug-off"></i> Đã tắt tích hợp Sapo — đơn mới không còn được xếp hàng') }
+
 const ERRORS = {
   H1039: 'HTTP 422 — product_variant_id không tồn tại: "Cà phê sữa" chưa khai mã hàng bên Sapo',
   H1033: 'HTTP 401 — access_token hết hiệu lực tại thời điểm đẩy (đã tự làm mới, chờ thử lại)',
 }
 let tab = 'ALL'
-const TABS = [['ALL','Tất cả'],['PENDING','Chờ đồng bộ'],['SYNCED','Đã đồng bộ'],['FAILED','Lỗi'],['SKIPPED','Bỏ qua']]
+const TABS = [['ALL','Tất cả'],['PENDING','Chờ đồng bộ'],['SYNCED','Đã đồng bộ'],
+              ['MANUAL','Đã nhập tay'],['FAILED','Lỗi'],['SKIPPED','Bỏ qua']]
 
+/* Đơn "đang chờ lên Sapo" = còn nợ Sapo. Đơn huỷ/hoàn không tính (không đẩy),
+   đơn đã nhập tay cũng không tính (đã có bên Sapo rồi, dù bằng đường khác). */
+const QUEUE_STATES = ['PENDING','RETRYING','FAILED']
+const queued = () => ORDERS.filter(o => QUEUE_STATES.includes(o.sync) && !['CANCELLED','REFUNDED'].includes(o.status))
+const oldestQueued = () => queued().reduce((a,o) => !a || o.at < a.at ? o : a, null)
+const daysWaiting = () => {
+  const o = oldestQueued()
+  return o ? Math.floor((Date.now() - new Date(o.at)) / 86400000) : 0
+}
+/* Ngưỡng cảnh báo — có ngưỡng thì hỏng mới nổi lên được. Không có, đơn cứ dồn im lặng
+   cho tới ngày kế toán hỏi "sao tháng này Sapo thiếu 300 đơn". */
+const MAX_WAIT_DAYS = 7
+const MAX_QUEUE = 200
+
+function renderModes(){
+  const m = sapoMode()
+  document.getElementById('modes').innerHTML = Object.keys(MODES).map(k => `
+    <div class="mode ${m===k?'on':''}" onclick="setMode('${k}')">
+      <h3><i class="ti ${MODES[k].icon}"></i> ${MODES[k].title}
+        <span class="tag" style="margin-left:auto">${m===k?'đang chọn':MODES[k].tag}</span></h3>
+      <p>${MODES[k].desc}</p>
+    </div>`).join('')
+}
+
+/* Băng cảnh báo đầu màn: chỉ hiện khi có việc phải làm. Băng đỏ thường trực thì hai hôm sau
+   không ai nhìn nữa. */
+function renderAlert(){
+  const m = sapoMode(), q = queued(), d = daysWaiting()
+  let html = ''
+  if(m === 'OFF'){
+    html = `<div class="panel" style="border-color:var(--warning,#c98a00)">
+      <div class="row-flex" style="gap:10px;align-items:flex-start">
+        <i class="ti ti-plug-off" style="font-size:22px"></i>
+        <div><b>Tích hợp Sapo đang tắt hẳn.</b>
+          <div class="muted" style="font-size:13px">Đơn từ lúc tắt không được xếp hàng và
+            <b>không thể đẩy dồn về sau</b>. Doanh thu bên Sapo sẽ thiếu đúng khoảng thời gian này.</div></div>
+      </div></div>`
+  } else if(q.length >= MAX_QUEUE || d >= MAX_WAIT_DAYS){
+    html = `<div class="panel" style="border-color:var(--danger)">
+      <div class="row-flex" style="gap:10px;align-items:flex-start">
+        <i class="ti ti-alert-triangle" style="font-size:22px;color:var(--danger)"></i>
+        <div><b>${q.length} đơn đã chờ ${d} ngày chưa lên Sapo.</b>
+          <div class="muted" style="font-size:13px">Quá ngưỡng (${MAX_QUEUE} đơn hoặc ${MAX_WAIT_DAYS} ngày).
+            Đẩy dồn khi có key, hoặc <b>xuất file nhập tay</b> để sổ sách không hụt thêm.</div></div>
+      </div></div>`
+  }
+  document.getElementById('alert').innerHTML = html
+}
+
+/* ==== Khối kết nối — khác hẳn nhau theo chế độ ==== */
+function renderConn(){
+  const m = sapoMode(), q = queued(), d = daysWaiting()
+  const box = document.getElementById('conn')
+
+  if(m === 'OFF'){ box.innerHTML = ''; return }
+
+  if(m === 'QUEUE'){
+    const oldest = oldestQueued()
+    box.innerHTML = `<div class="panel">
+      <h2>Chưa liên kết được API <span class="badge amber"><i class="ti ti-clock-pause"></i> Đang xếp hàng</span></h2>
+      <div class="schedule-banner">
+        <b>Quán vẫn bán bình thường.</b> Mọi đơn vẫn được ghi nhận đầy đủ ở đây và <b>xếp hàng chờ</b> —
+        ngày nối được API chỉ cần bấm <b>Đẩy dồn</b> là toàn bộ lên Sapo, không mất đơn nào.
+      </div>
+      <div class="queue-box">
+        <div><div class="qnum">${q.length}</div><div class="qlab">đơn đang xếp hàng</div></div>
+        <div><div class="qnum">${d} ngày</div><div class="qlab">đơn cũ nhất chờ từ ${oldest ? dmy(oldest.at) : '—'}</div></div>
+        <div><div class="qnum">${vnd(q.reduce((s,o)=>s+orderTotal(o),0))}đ</div><div class="qlab">giá trị đang chờ</div></div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary btn-sm" onclick="exportCsv()">
+          <i class="ti ti-file-spreadsheet"></i> Xuất file nhập vào Sapo (${q.length} đơn)</button>
+        <button class="btn btn-outline btn-sm" onclick="tryConnect()">
+          <i class="ti ti-plug"></i> Tôi đã có API key — kiểm tra kết nối</button>
+      </div>
+      <p class="muted" style="font-size:12.5px;margin:10px 0 0">
+        Đường thoát không cần API: xuất file rồi dùng chức năng <b>nhập đơn từ Excel</b> của Sapo.
+        Nhập xong nhớ bấm <b>“Đánh dấu đã nhập tay”</b> — nếu không, ngày bật API sẽ đẩy lại đúng những đơn đó
+        và doanh thu bên Sapo bị tính hai lần.</p>
+    </div>`
+    return
+  }
+
+  box.innerHTML = `<div class="panel">
+    <h2>Kết nối Sapo <span class="badge green"><i class="ti ti-plug-connected"></i> Đang hoạt động</span></h2>
+    <div class="grid-2">
+      <div>
+        <div class="kv"><b>Cửa hàng</b><span>hikari-cafe.mysapo.net</span></div>
+        <div class="kv"><b>Token</b><span class="mono">sapo_at_••••••••••3f9c</span></div>
+        <div class="kv"><b>Hết hạn</b><span>còn 22 ngày <span class="badge amber">nên gia hạn sớm</span></span></div>
+        <div class="kv"><b>Đồng bộ lần cuối</b><span>${new Date().toLocaleString('vi-VN')}</span></div>
+      </div>
+      <div>
+        <div class="kv"><b>Cách đẩy</b><span>tự động khi đơn chuyển <b>Hoàn tất</b></span></div>
+        <div class="kv"><b>Thử lại</b><span>3 lần, giãn cách 1 / 5 / 15 phút</span></div>
+        <div class="kv"><b>Chống trùng</b><span>khoá theo mã đơn (idempotency key)</span></div>
+        <div class="action-row">
+          <button class="btn btn-outline btn-sm" onclick="toast('Mô phỏng: kết nối Sapo OK — token còn hạn')">
+            <i class="ti ti-plug"></i> Kiểm tra kết nối</button>
+          <button class="btn btn-ghost btn-sm" onclick="toast('Mô phỏng: đã mở màn nhập token mới')">
+            <i class="ti ti-key"></i> Cập nhật token</button>
+        </div>
+      </div>
+    </div>
+    ${q.length ? `<div class="schedule-banner" style="margin-top:12px">
+      Còn <b>${q.length} đơn</b> tồn từ lúc chưa liên kết.
+      <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="backfill()">
+        <i class="ti ti-cloud-upload"></i> Đẩy dồn ${q.length} đơn</button></div>` : ''}
+  </div>`
+}
+
+/* Mô phỏng nối được API. Bản thật: gọi thử GET /admin/orders.json của Sapo bằng token vừa nhập —
+   phải gọi thật một lần rồi mới báo "kết nối OK", đừng chỉ kiểm tra chuỗi token có đúng định dạng. */
+function tryConnect(){
+  const ov = modal({ title:'Đã có Open API key của Sapo?', persistent:true,
+    sub:'Cần cửa hàng *.mysapo.net, client_id/client_secret hoặc API key, và quyền ghi đơn hàng.',
+    body:`<div class="field"><label>Cửa hàng Sapo</label>
+        <input class="input" id="sStore" value="hikari-cafe.mysapo.net"></div>
+      <div class="field"><label>Access token</label>
+        <input class="input" id="sToken" placeholder="dán token lấy từ apps.sapo.vn"></div>
+      <p class="muted" style="font-size:12.5px">Hệ thống sẽ <b>gọi thử một lệnh đọc đơn</b> trước khi bật chế độ tự động —
+        token đúng định dạng mà thiếu quyền ghi thì vẫn hỏng, chỉ khác là hỏng muộn hơn.</p>`,
+    actions:`<button class="btn btn-outline" data-close>Để sau</button>
+             <button class="btn btn-primary" onclick="doConnect()">Kiểm tra &amp; bật tự động</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal))
+}
+function doConnect(){
+  const t = document.getElementById('sToken').value.trim()
+  if(!t) return toast('<i class="ti ti-alert-circle"></i> Chưa dán token — chưa kiểm tra được')
+  closeModal()
+  try { localStorage.setItem(MODE_KEY,'AUTO') } catch {}
+  render()
+  toast('<i class="ti ti-plug-connected"></i> Mô phỏng: kết nối OK — đã bật chế độ tự động. Nhớ <b>đẩy dồn</b> đơn tồn.', 5000)
+}
+
+/* ==== Xuất file cho Sapo ====
+   Cột đúng theo mẫu nhập đơn của Sapo. Xuất xong KHÔNG tự đánh dấu đã nhập: file tải về
+   chưa chắc đã được nhập vào Sapo (mở ra xem rồi để đó là chuyện thường). Người nhập
+   xác nhận thì mới đánh dấu — trạng thái phải phản ánh việc đã xảy ra, không phải ý định. */
+function exportCsv(){
+  const q = queued()
+  if(!q.length) return toast('Không có đơn nào đang chờ')
+  const head = ['Mã đơn','Ngày','Chi nhánh','Khách hàng','Điện thoại','Mặt hàng','Số lượng','Đơn giá','Thành tiền','Giảm giá','Tổng thu','Phương thức','Kênh']
+  const rows = []
+  q.forEach(o => {
+    const b = BRANCHES.find(x => x.id === o.branchId)
+    o.items.forEach(it => {
+      const [n,qty,p] = it
+      rows.push([o.code, dmy(o.at), b ? b.name : '', o.customer, o.phone,
+        n, qty, p, qty*p, '', '', meta('method', o.method).label, 'Zalo Mini App'])
+      itemOptions(it).forEach(op => rows.push([o.code, dmy(o.at), b ? b.name : '', o.customer, o.phone,
+        '+ ' + op[0], optionQty(op,qty), op[1]||0, optionTotal(op,qty), '', '', '', '']))
+    })
+    rows.push([o.code,'','','','','TỔNG ĐƠN','','','', orderDiscount(o), orderTotal(o), '', ''])
+  })
+  const csv = [head, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n')
+  const blob = new Blob(['﻿' + csv], { type:'text/csv;charset=utf-8' })   // BOM để Excel không vỡ dấu tiếng Việt
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `hikari-sapo-${new Date().toISOString().slice(0,10)}.csv`
+  a.click()
+  URL.revokeObjectURL(a.href)
+
+  const ov = modal({ title:`Đã xuất ${q.length} đơn`,
+    body:`<p style="font-size:13px">Mở Sapo → <b>Đơn hàng → Nhập từ file</b> và tải file vừa xuất lên.</p>
+      <p class="muted" style="font-size:12.5px">Nhập xong hãy quay lại bấm nút dưới đây. Chưa nhập mà đánh dấu
+      thì mấy đơn này sẽ <b>không bao giờ</b> được đẩy nữa — chúng biến mất khỏi hàng đợi.</p>`,
+    actions:`<button class="btn btn-outline" data-close>Chưa nhập</button>
+             <button class="btn btn-primary" onclick="markManual()">Tôi đã nhập xong vào Sapo</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal))
+}
+function markManual(){
+  const q = queued()
+  q.forEach(o => o.sync = 'MANUAL')
+  closeModal(); render()
+  toast(`<i class="ti ti-check"></i> Đã đánh dấu ${q.length} đơn là <b>nhập tay</b> — sẽ không đẩy lại khi bật API`, 4500)
+}
+
+/* ==== Đẩy dồn khi vừa nối được API ====
+   Bỏ qua đơn MANUAL. Đây chính là chỗ nhân đôi doanh thu nếu làm ẩu. */
+function backfill(){
+  const q = queued()
+  const manual = ORDERS.filter(o => o.sync === 'MANUAL').length
+  const ov = modal({ title:`Đẩy dồn ${q.length} đơn tồn lên Sapo?`,
+    body:`<p style="font-size:13px">Đẩy toàn bộ đơn đang xếp hàng, cũ nhất từ <b>${dmy(oldestQueued().at)}</b>.</p>
+      ${manual ? `<div class="schedule-banner"><b>Bỏ qua ${manual} đơn đã nhập tay</b> — chúng đã có bên Sapo,
+        đẩy lại là tính doanh thu hai lần.</div>` : ''}
+      <p class="muted" style="font-size:12.5px">Đẩy theo lô nhỏ và giãn nhịp để không đụng giới hạn gọi API của Sapo.
+        Đơn nào lỗi vẫn nằm lại hàng đợi để thử lại, không chặn các đơn còn lại.</p>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="doBackfill()">Đẩy dồn</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal))
+}
+function doBackfill(){
+  closeModal()
+  const q = queued()
+  q.forEach(o => o.sync = 'RETRYING'); render()
+  setTimeout(() => {
+    q.forEach(o => { o.sync = o.code === 'H1039' ? 'FAILED' : 'SYNCED' })
+    render()
+    const bad = q.filter(o => o.sync === 'FAILED').length
+    toast(bad
+      ? `<i class="ti ti-alert-triangle"></i> Đẩy dồn xong: ${q.length-bad} đơn lên Sapo, <b>${bad} đơn lỗi</b> — xem cột chi tiết lỗi`
+      : `<i class="ti ti-check"></i> Đẩy dồn xong ${q.length} đơn`, 5000)
+  }, 1200)
+}
+
+/* ==== Bảng nhật ký ==== */
 function renderKpis(){
   const c = k => ORDERS.filter(o => o.sync === k).length
   const card = (l,v,f) => `<div class="stat-card" style="cursor:default"><div class="label">${l}</div>
     <div class="value">${v}</div><div class="kpi-trend muted" style="margin-top:4px">${f}</div></div>`
   document.getElementById('kpis').innerHTML =
     card('Đã đồng bộ', c('SYNCED'), `${pct(c('SYNCED'), ORDERS.length)}% tổng đơn`) +
-    card('Chờ đồng bộ', c('PENDING') + c('RETRYING'), 'đơn chưa hoàn tất hoặc đang thử lại') +
-    card('Lỗi đồng bộ', `<span style="color:${c('FAILED')?'var(--danger)':'inherit'}">${c('FAILED')}</span>`, 'cần can thiệp tay') +
-    card('Bỏ qua', c('SKIPPED'), 'đơn huỷ / hoàn tiền — không đẩy')
-  document.getElementById('lastSync').textContent = new Date().toLocaleString('vi-VN')
+    card('Đang xếp hàng', queued().length, sapoMode()==='QUEUE' ? 'chờ có API key' : 'chưa đẩy hoặc đang thử lại') +
+    card('Đã nhập tay', c('MANUAL'), 'nhập bằng file — không đẩy lại') +
+    card('Lỗi đồng bộ', `<span style="color:${c('FAILED')?'var(--danger)':'inherit'}">${c('FAILED')}</span>`, 'cần can thiệp tay')
 }
 function renderTabs(){
   document.getElementById('tabs').innerHTML = TABS.map(([k,l]) => {
@@ -98,12 +352,32 @@ function renderTabs(){
 }
 function setTab(k){ tab = k; render() }
 
+function renderBulk(){
+  const m = sapoMode(), q = queued()
+  document.getElementById('bulkActions').innerHTML = m === 'OFF' ? '' : `
+    ${m === 'AUTO' ? `<button class="btn btn-outline btn-sm" onclick="retryAll()">
+      <i class="ti ti-refresh"></i> Thử lại tất cả đơn lỗi</button>` : ''}
+    ${q.length ? `<button class="btn btn-ghost btn-sm" onclick="markManualAsk()">
+      <i class="ti ti-checkbox"></i> Đánh dấu ${q.length} đơn đã nhập tay</button>` : ''}`
+}
+function markManualAsk(){
+  const ov = modal({ title:`Đánh dấu ${queued().length} đơn là đã nhập tay?`,
+    body:`<p style="font-size:13px">Dùng khi bạn đã tự gõ hoặc nhập file những đơn này vào Sapo.</p>
+      <p class="muted" style="font-size:12.5px">Sau khi đánh dấu, chúng <b>rời hàng đợi</b> và sẽ không được đẩy
+      khi bật chế độ tự động — đó chính là mục đích: tránh tính doanh thu hai lần.</p>`,
+    actions:`<button class="btn btn-outline" data-close>Huỷ</button>
+             <button class="btn btn-primary" onclick="markManual()">Đánh dấu</button>` })
+  ov.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeModal))
+}
+
 function render(){
+  renderModes(); renderAlert(); renderConn(); renderBulk()
+  const m = sapoMode()
   const rows = ORDERS.filter(o => tab === 'ALL' || o.sync === tab)
   document.getElementById('title').textContent = `Nhật ký đồng bộ · ${rows.length} đơn`
   document.getElementById('tbl').innerHTML = `
     <thead><tr><th>Đơn</th><th>Khách</th><th class="right">Tiền</th><th>Trạng thái đơn</th>
-      <th>Đồng bộ</th><th>Chi tiết lỗi</th><th></th></tr></thead>
+      <th>Đồng bộ</th><th>Chi tiết</th><th></th></tr></thead>
     <tbody>${rows.map(o => `<tr>
       <td><b>#${o.code}</b><div class="muted" style="font-size:11.5px">${hhmm(o.at)}</div></td>
       <td>${o.customer}</td>
@@ -113,11 +387,13 @@ function render(){
       <td style="max-width:330px;font-size:12.4px" class="${ERRORS[o.code] ? '' : 'muted'}">
         ${o.sync === 'FAILED' ? `<span class="mono" style="color:var(--danger)">${ERRORS[o.code] || 'HTTP 500 — Sapo không phản hồi'}</span>`
           : o.sync === 'SYNCED' ? `Sapo #SO-${8400 + (Number(o.code.slice(1)) % 900)}`
-          : o.sync === 'SKIPPED' ? 'Đơn huỷ/hoàn — theo quy tắc không đẩy' : '—'}</td>
-      <td class="right">${o.sync === 'FAILED'
-        ? `<button class="btn btn-primary btn-sm" onclick="retry('${o.code}')">Thử lại</button>`
-        : o.sync === 'PENDING' && o.status === 'COMPLETED'
-          ? `<button class="btn btn-outline btn-sm" onclick="retry('${o.code}')">Đẩy ngay</button>` : ''}</td>
+          : o.sync === 'MANUAL' ? 'Đã nhập tay/bằng file — không đẩy lại'
+          : o.sync === 'SKIPPED' ? 'Đơn huỷ/hoàn — theo quy tắc không đẩy'
+          : m === 'QUEUE' ? 'Đang xếp hàng, chờ có API key' : '—'}</td>
+      <td class="right">${
+        m === 'AUTO' && o.sync === 'FAILED' ? `<button class="btn btn-primary btn-sm" onclick="retry('${o.code}')">Thử lại</button>`
+        : m === 'AUTO' && o.sync === 'PENDING' && o.status === 'COMPLETED' ? `<button class="btn btn-outline btn-sm" onclick="retry('${o.code}')">Đẩy ngay</button>`
+        : ''}</td>
     </tr>`).join('')}</tbody>`
   renderKpis(); renderTabs()
 }
